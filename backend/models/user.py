@@ -1,0 +1,63 @@
+from datetime import datetime
+from typing import Optional, Dict
+from utils.dynamodb import get_table
+from config import config
+
+class User:
+    def __init__(self, user_id: str, nickname: Optional[str] = None, 
+                 total_score: int = 0, created_at: Optional[str] = None):
+        self.user_id = user_id
+        self.nickname = nickname
+        self.total_score = total_score
+        self.created_at = created_at or datetime.utcnow().isoformat()
+    
+    def to_dict(self) -> Dict:
+        """辞書形式に変換"""
+        return {
+            'user_id': self.user_id,
+            'nickname': self.nickname,
+            'total_score': self.total_score,
+            'created_at': self.created_at
+        }
+    
+    def save(self):
+        """DynamoDBに保存"""
+        table = get_table(config.USERS_TABLE)
+        table.put_item(Item=self.to_dict())
+    
+    @staticmethod
+    def get(user_id: str) -> Optional['User']:
+        """ユーザーIDからユーザーを取得"""
+        table = get_table(config.USERS_TABLE)
+        response = table.get_item(Key={'user_id': user_id})
+        
+        if 'Item' not in response:
+            return None
+        
+        item = response['Item']
+        return User(
+            user_id=item['user_id'],
+            nickname=item.get('nickname'),
+            total_score=item.get('total_score', 0),
+            created_at=item.get('created_at')
+        )
+    
+    def update_nickname(self, nickname: str):
+        """ニックネームを更新"""
+        table = get_table(config.USERS_TABLE)
+        table.update_item(
+            Key={'user_id': self.user_id},
+            UpdateExpression='SET nickname = :nickname',
+            ExpressionAttributeValues={':nickname': nickname}
+        )
+        self.nickname = nickname
+    
+    def add_score(self, score: int):
+        """得点を加算"""
+        table = get_table(config.USERS_TABLE)
+        table.update_item(
+            Key={'user_id': self.user_id},
+            UpdateExpression='SET total_score = total_score + :score',
+            ExpressionAttributeValues={':score': score}
+        )
+        self.total_score += score

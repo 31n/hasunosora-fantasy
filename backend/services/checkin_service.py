@@ -1,0 +1,55 @@
+from models.user import User
+from models.spot import Spot
+from models.checkin import CheckIn
+from utils.distance import is_within_range
+from typing import Dict
+
+class CheckInService:
+    @staticmethod
+    def checkin(user_id: str, spot_id: str, latitude: float, longitude: float) -> Dict:
+        """チェックイン処理"""
+        # ユーザーとスポットの存在確認
+        user = User.get(user_id)
+        if not user:
+            raise ValueError('USER_NOT_FOUND')
+        
+        spot = Spot.get(spot_id)
+        if not spot:
+            raise ValueError('SPOT_NOT_FOUND')
+        
+        # 距離チェック
+        if not is_within_range(latitude, longitude, 
+                               spot.latitude, spot.longitude, 
+                               spot.detection_radius):
+            raise ValueError('OUT_OF_RANGE')
+        
+        # 訪問履歴チェック
+        is_first_visit = not CheckIn.has_visited(user_id, spot_id)
+        
+        # チェックイン記録を保存（クイズ回答前）
+        checkin = CheckIn(
+            user_id=user_id,
+            spot_id=spot_id,
+            quiz_answered=False,
+            quiz_correct=False,
+            score_earned=0
+        )
+        checkin.save()
+        
+        # 初回訪問ならクイズを返す
+        if is_first_visit:
+            return {
+                'is_first_visit': True,
+                'quiz_available': True,
+                'quiz': {
+                    'question': spot.quiz.get('question'),
+                    'choices': spot.quiz.get('choices'),
+                    'score': spot.quiz.get('score')
+                }
+            }
+        else:
+            return {
+                'is_first_visit': False,
+                'quiz_available': False,
+                'message': 'チェックイン完了！このスポットは訪問済みです。'
+            }
