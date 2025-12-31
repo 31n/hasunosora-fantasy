@@ -1,1 +1,12 @@
+# ルートの .gitignore
+node_modules/
+*/node_modules/
+**/node_modules/
+
+# その他の除外ファイル
+.env
+.env.local
+*.log
+dist/
+build/
 .DS_Store
