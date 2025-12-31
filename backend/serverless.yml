@@ -34,9 +34,17 @@ provider:
           Resource:
             - "arn:aws:s3:::${self:provider.environment.S3_BUCKET_NAME}/*"
 
+package:
+  patterns:
+    - '!node_modules/**'
+    - '!.git/**'
+    - '!.venv/**'
+    - '!venv/**'
+    - 'lambda/**'
+
 functions:
   api:
-    handler: lambda/handler.handler
+    handler: handler.handler
     events:
       # ユーザー関連
       - http:
@@ -203,3 +211,11 @@ plugins:
 custom:
   pythonRequirements:
     dockerizePip: true
+    layer: false
+    zip: true
+    slim: true
+    strip: false
+    pythonBin: python3
+    fileName: lambda/requirements.txt
+    useDownloadCache: false
+    useStaticCache: false
