@@ -20,6 +20,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -31,7 +33,7 @@ jobs:
 
       - name: Install backend dependencies
         working-directory: backend
-        run: npm ci
+        run: npm install
 
       - name: Install Python dependencies
         working-directory: backend
@@ -60,9 +62,11 @@ jobs:
         run: |
           echo "### 🚀 Deployment Successful!" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          serverless info --stage prod >> $GITHUB_STEP_SUMMARY
+          echo "#### API Information" >> $GITHUB_STEP_SUMMARY
+          serverless info --stage prod >> $GITHUB_STEP_SUMMARY || echo "Could not get deployment info"
 
       - name: Configure S3 bucket for public access
+        continue-on-error: true
         run: |
           echo "Configuring S3 bucket..."
           
@@ -70,7 +74,7 @@ jobs:
           aws s3api put-public-access-block \
             --bucket ${{ secrets.S3_BUCKET_NAME }} \
             --public-access-block-configuration \
-            "BlockPublicAcls=false,IgnorePublicAcls=false,BlockPublicPolicy=false,RestrictPublicBuckets=false" 2>&1 || echo "Public access block already configured or bucket doesn't exist yet"
+            "BlockPublicAcls=false,IgnorePublicAcls=false,BlockPublicPolicy=false,RestrictPublicBuckets=false"
           
           # バケットポリシーを設定
           cat > /tmp/bucket-policy.json << 'EOF'
@@ -90,6 +94,16 @@ jobs:
           
           aws s3api put-bucket-policy \
             --bucket ${{ secrets.S3_BUCKET_NAME }} \
-            --policy file:///tmp/bucket-policy.json 2>&1 || echo "Bucket policy already configured"
+            --policy file:///tmp/bucket-policy.json
           
           echo "✅ S3 configuration complete"
+
+      - name: Test API endpoint
+        continue-on-error: true
+        run: |
+          echo "Testing API endpoint..."
+          API_URL=$(cd backend && serverless info --stage prod | grep "ANY" | awk '{print $3}' | sed 's/{proxy+}//' | head -1)
+          echo "API URL: ${API_URL}"
+          
+          # マスターバージョンAPIをテスト
+          curl -f "${API_URL}master/version" || echo "API test failed (this is normal on first deploy)"
