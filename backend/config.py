@@ -2,11 +2,11 @@ import os
 
 class Config:
     # DynamoDB
-    DYNAMODB_TABLE_PREFIX = os.getenv('DYNAMODB_TABLE_PREFIX', 'spot-checkin-')
-    AWS_REGION = os.getenv('AWS_DEFAULT_REGION', 'ap-northeast-1')
+    DYNAMODB_TABLE_PREFIX = os.getenv('DYNAMODB_TABLE_PREFIX', 'hasu-fantasy-')
+    AWS_REGION = os.getenv('APP_REGION', 'ap-northeast-1')
     
     # S3
-    S3_BUCKET_NAME = os.getenv('S3_BUCKET_NAME', 'spot-checkin-images')
+    S3_BUCKET_NAME = os.getenv('S3_BUCKET_NAME', 'hasu-fantasy-images')
     S3_REGION = os.getenv('S3_REGION', 'ap-northeast-1')
     
     # Quiz
