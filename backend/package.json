@@ -1,0 +1,25 @@
+{
+  "name": "hasu-fantasy-api",
+  "version": "1.0.0",
+  "description": "HASU Fantasy PWA バックエンドAPI",
+  "main": "lambda/handler.py",
+  "scripts": {
+    "deploy": "serverless deploy",
+    "deploy:dev": "serverless deploy --stage dev",
+    "deploy:prod": "serverless deploy --stage prod",
+    "remove": "serverless remove",
+    "logs": "serverless logs -f api --tail"
+  },
+  "keywords": [
+    "lambda",
+    "serverless",
+    "dynamodb",
+    "pwa"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "serverless": "^3.38.0",
+    "serverless-python-requirements": "^6.1.0"
+  }
+}
