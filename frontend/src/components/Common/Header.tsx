@@ -46,7 +46,7 @@ export default function Header({ user, onLogout }: HeaderProps) {
             cursor: 'pointer'
           }}
         >
-          📍 スポットチェックイン
+          🌸 HASU Fantasy
         </div>
 
         {/* ナビゲーション */}

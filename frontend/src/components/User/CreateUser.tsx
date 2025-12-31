@@ -33,7 +33,7 @@ export default function CreateUser({ onLogin }: CreateUserProps) {
       minHeight: '100vh',
       padding: '24px'
     }}>
-      <h1 style={{ marginBottom: '24px' }}>スポットチェックイン</h1>
+      <h1 style={{ marginBottom: '24px' }}>HASU Fantasy</h1>
       <p style={{ marginBottom: '32px', textAlign: 'center' }}>
         ようこそ！新しいユーザーIDを作成します。
       </p>

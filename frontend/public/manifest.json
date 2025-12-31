@@ -1,6 +1,6 @@
 {
-  "name": "スポットチェックイン",
-  "short_name": "スポットチェックイン",
+  "name": "HASU Fantasy",
+  "short_name": "HASU Fantasy",
   "description": "位置情報を使ったスポット巡りアプリ",
   "start_url": "/",
   "display": "standalone",

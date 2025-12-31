@@ -1,0 +1,91 @@
+name: Deploy Backend to AWS Lambda
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+  workflow_dispatch:  # 手動実行も可能
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Serverless Framework
+        run: npm install -g serverless
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm install
+
+      - name: Install Python dependencies
+        working-directory: backend/lambda
+        run: pip install -r requirements.txt
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Deploy to AWS Lambda
+        working-directory: backend
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          DYNAMODB_TABLE_PREFIX: ${{ secrets.DYNAMODB_TABLE_PREFIX }}
+          S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
+          S3_REGION: ${{ secrets.AWS_REGION }}
+          QUIZ_COOLDOWN_MINUTES: ${{ secrets.QUIZ_COOLDOWN_MINUTES }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+        run: serverless deploy --stage prod
+
+      - name: Configure S3 bucket for public access
+        run: |
+          # パブリックアクセスブロックを解除
+          aws s3api put-public-access-block \
+            --bucket ${{ secrets.S3_BUCKET_NAME }} \
+            --public-access-block-configuration \
+            "BlockPublicAcls=false,IgnorePublicAcls=false,BlockPublicPolicy=false,RestrictPublicBuckets=false" || true
+          
+          # バケットポリシーを設定
+          cat > /tmp/bucket-policy.json << EOF
+          {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Sid": "PublicReadGetObject",
+                "Effect": "Allow",
+                "Principal": "*",
+                "Action": "s3:GetObject",
+                "Resource": "arn:aws:s3:::${{ secrets.S3_BUCKET_NAME }}/*"
+              }
+            ]
+          }
+          EOF
+          
+          aws s3api put-bucket-policy \
+            --bucket ${{ secrets.S3_BUCKET_NAME }} \
+            --policy file:///tmp/bucket-policy.json || true
+
+      - name: Get API URL
+        working-directory: backend
+        run: |
+          API_URL=$(serverless info --stage prod | grep "ANY" | awk '{print $3}' | sed 's/{proxy+}//')
+          echo "API_URL=${API_URL}" >> $GITHUB_ENV
+          echo "::notice::API URL: ${API_URL}"
