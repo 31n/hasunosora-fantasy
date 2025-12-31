@@ -3,15 +3,15 @@ service: hasu-fantasy-api
 provider:
   name: aws
   runtime: python3.11
-  region: ap-northeast-1
+  region: ${env:AWS_REGION, 'ap-northeast-1'}
   stage: ${opt:stage, 'dev'}
   environment:
     DYNAMODB_TABLE_PREFIX: ${env:DYNAMODB_TABLE_PREFIX, 'hasu-fantasy-'}
-    APP_REGION: ap-northeast-1
-    S3_BUCKET_NAME: ${env:S3_BUCKET_NAME}
-    S3_REGION: ap-northeast-1
+    AWS_REGION: ${env:AWS_REGION, 'ap-northeast-1'}
+    S3_BUCKET_NAME: ${env:S3_BUCKET_NAME, 'hasu-fantasy-images'}
+    S3_REGION: ${env:S3_REGION, 'ap-northeast-1'}
     QUIZ_COOLDOWN_MINUTES: ${env:QUIZ_COOLDOWN_MINUTES, '30'}
-    ADMIN_PASSWORD: ${env:ADMIN_PASSWORD}
+    ADMIN_PASSWORD: ${env:ADMIN_PASSWORD, 'change_me'}
   
   iam:
     role:
@@ -25,7 +25,7 @@ provider:
             - dynamodb:UpdateItem
             - dynamodb:DeleteItem
           Resource:
-            - "arn:aws:dynamodb:ap-northeast-1:*:table/${self:provider.environment.DYNAMODB_TABLE_PREFIX}*"
+            - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE_PREFIX}*"
         - Effect: Allow
           Action:
             - s3:PutObject
@@ -33,19 +33,83 @@ provider:
             - s3:GetObject
             - s3:DeleteObject
           Resource:
-            - "arn:aws:s3:::${env:S3_BUCKET_NAME}/*"
+            - "arn:aws:s3:::${self:provider.environment.S3_BUCKET_NAME}/*"
 
 functions:
   api:
-    handler: handler.handler
+    handler: lambda/handler.handler
     events:
+      # ユーザー関連
       - http:
-          path: /{proxy+}
-          method: ANY
+          path: /users/create
+          method: post
+          cors: true
+      - http:
+          path: /users/login
+          method: post
+          cors: true
+      - http:
+          path: /users/{user_id}/nickname
+          method: put
+          cors: true
+      - http:
+          path: /users/{user_id}/history
+          method: get
+          cors: true
+      
+      # マスタ関連
+      - http:
+          path: /master/version
+          method: get
+          cors: true
+      - http:
+          path: /master/spots
+          method: get
+          cors: true
+      
+      # チェックイン・クイズ
+      - http:
+          path: /checkins
+          method: post
+          cors: true
+      - http:
+          path: /quiz/answer
+          method: post
+          cors: true
+      - http:
+          path: /quiz/cooldown/{user_id}/{spot_id}
+          method: get
+          cors: true
+      
+      # 管理画面
+      - http:
+          path: /admin/login
+          method: post
+          cors: true
+      - http:
+          path: /admin/spots
+          method: get
+          cors: true
+      - http:
+          path: /admin/spots
+          method: post
+          cors: true
+      - http:
+          path: /admin/spots/{spot_id}
+          method: put
+          cors: true
+      - http:
+          path: /admin/spots/{spot_id}
+          method: delete
+          cors: true
+      - http:
+          path: /admin/images/upload
+          method: post
           cors: true
 
 resources:
   Resources:
+    # DynamoDB Tables
     UsersTable:
       Type: AWS::DynamoDB::Table
       Properties:
@@ -113,10 +177,11 @@ resources:
             KeyType: HASH
         BillingMode: PAY_PER_REQUEST
     
+    # S3 Bucket
     ImagesBucket:
       Type: AWS::S3::Bucket
       Properties:
-        BucketName: ${env:S3_BUCKET_NAME}
+        BucketName: ${self:provider.environment.S3_BUCKET_NAME}
         PublicAccessBlockConfiguration:
           BlockPublicAcls: false
           BlockPublicPolicy: false
