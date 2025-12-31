@@ -1,0 +1,141 @@
+service: hasu-fantasy-api
+
+provider:
+  name: aws
+  runtime: python3.11
+  region: ${env:AWS_REGION, 'ap-northeast-1'}
+  stage: ${opt:stage, 'dev'}
+  environment:
+    DYNAMODB_TABLE_PREFIX: ${env:DYNAMODB_TABLE_PREFIX, 'hasu-fantasy-'}
+    AWS_REGION: ${env:AWS_REGION, 'ap-northeast-1'}
+    S3_BUCKET_NAME: ${env:S3_BUCKET_NAME}
+    S3_REGION: ${env:S3_REGION, 'ap-northeast-1'}
+    QUIZ_COOLDOWN_MINUTES: ${env:QUIZ_COOLDOWN_MINUTES, '30'}
+    ADMIN_PASSWORD: ${env:ADMIN_PASSWORD}
+  
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+          Resource:
+            - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE_PREFIX}*"
+        - Effect: Allow
+          Action:
+            - s3:PutObject
+            - s3:PutObjectAcl
+            - s3:GetObject
+            - s3:DeleteObject
+          Resource:
+            - "arn:aws:s3:::${self:provider.environment.S3_BUCKET_NAME}/*"
+
+functions:
+  api:
+    handler: handler.handler
+    events:
+      - http:
+          path: /{proxy+}
+          method: ANY
+          cors: true
+
+resources:
+  Resources:
+    UsersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.DYNAMODB_TABLE_PREFIX}users
+        AttributeDefinitions:
+          - AttributeName: user_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: user_id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+    
+    SpotsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.DYNAMODB_TABLE_PREFIX}spots
+        AttributeDefinitions:
+          - AttributeName: spot_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: spot_id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+    
+    CheckInsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.DYNAMODB_TABLE_PREFIX}checkins
+        AttributeDefinitions:
+          - AttributeName: user_id
+            AttributeType: S
+          - AttributeName: spot_id_timestamp
+            AttributeType: S
+        KeySchema:
+          - AttributeName: user_id
+            KeyType: HASH
+          - AttributeName: spot_id_timestamp
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST
+    
+    CooldownsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.DYNAMODB_TABLE_PREFIX}cooldowns
+        AttributeDefinitions:
+          - AttributeName: user_spot_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: user_spot_id
+            KeyType: HASH
+        TimeToLiveSpecification:
+          AttributeName: ttl
+          Enabled: true
+        BillingMode: PAY_PER_REQUEST
+    
+    MasterVersionTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.DYNAMODB_TABLE_PREFIX}master_version
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+    
+    ImagesBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${env:S3_BUCKET_NAME}
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: false
+          BlockPublicPolicy: false
+          IgnorePublicAcls: false
+          RestrictPublicBuckets: false
+        CorsConfiguration:
+          CorsRules:
+            - AllowedOrigins:
+                - '*'
+              AllowedMethods:
+                - GET
+                - PUT
+                - POST
+              AllowedHeaders:
+                - '*'
+
+plugins:
+  - serverless-python-requirements
+
+custom:
+  pythonRequirements:
+    dockerizePip: true
