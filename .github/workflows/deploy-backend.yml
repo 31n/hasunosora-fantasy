@@ -1,4 +1,4 @@
-name: Deploy Backend to AWS Lambda
+name: Deploy Backend
 
 on:
   push:
@@ -13,15 +13,13 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: backend/package-lock.json
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -31,23 +29,34 @@ jobs:
       - name: Install Serverless Framework
         run: npm install -g serverless
 
-      - name: Install backend dependencies
-        working-directory: backend
-        run: npm install
+      - name: Install dependencies
+        run: |
+          cd backend
+          npm install
+          pip install -r lambda/requirements.txt
 
-      - name: Install Python dependencies
-        working-directory: backend
-        run: pip install -r lambda/requirements.txt
-
-      - name: Configure AWS credentials
+      - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Deploy to AWS Lambda
-        working-directory: backend
+      - name: Verify setup
+        run: |
+          echo "=== AWS Identity ==="
+          aws sts get-caller-identity
+          echo ""
+          echo "=== Backend directory ==="
+          ls -la backend/
+          echo ""
+          echo "=== serverless.yml ==="
+          head -10 backend/serverless.yml
+
+      - name: Deploy to AWS
+        run: |
+          cd backend
+          serverless deploy --stage prod --verbose
         env:
           AWS_REGION: ${{ secrets.AWS_REGION }}
           DYNAMODB_TABLE_PREFIX: ${{ secrets.DYNAMODB_TABLE_PREFIX }}
@@ -55,55 +64,22 @@ jobs:
           S3_REGION: ${{ secrets.AWS_REGION }}
           QUIZ_COOLDOWN_MINUTES: ${{ secrets.QUIZ_COOLDOWN_MINUTES }}
           ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
-        run: serverless deploy --stage prod --verbose
 
       - name: Get deployment info
-        working-directory: backend
         run: |
+          cd backend
           echo "### 🚀 Deployment Successful!" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "#### API Information" >> $GITHUB_STEP_SUMMARY
-          serverless info --stage prod >> $GITHUB_STEP_SUMMARY || echo "Could not get deployment info"
+          serverless info --stage prod >> $GITHUB_STEP_SUMMARY
+          
+          API_URL=$(serverless info --stage prod | grep "ANY" | awk '{print $3}' | sed 's/{proxy+}//' | head -1)
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**API URL:** \`${API_URL}\`" >> $GITHUB_STEP_SUMMARY
 
-      - name: Configure S3 bucket for public access
+      - name: Configure S3 bucket
         continue-on-error: true
         run: |
-          echo "Configuring S3 bucket..."
-          
-          # パブリックアクセスブロックを解除
           aws s3api put-public-access-block \
             --bucket ${{ secrets.S3_BUCKET_NAME }} \
             --public-access-block-configuration \
             "BlockPublicAcls=false,IgnorePublicAcls=false,BlockPublicPolicy=false,RestrictPublicBuckets=false"
-          
-          # バケットポリシーを設定
-          cat > /tmp/bucket-policy.json << 'EOF'
-          {
-            "Version": "2012-10-17",
-            "Statement": [
-              {
-                "Sid": "PublicReadGetObject",
-                "Effect": "Allow",
-                "Principal": "*",
-                "Action": "s3:GetObject",
-                "Resource": "arn:aws:s3:::${{ secrets.S3_BUCKET_NAME }}/*"
-              }
-            ]
-          }
-          EOF
-          
-          aws s3api put-bucket-policy \
-            --bucket ${{ secrets.S3_BUCKET_NAME }} \
-            --policy file:///tmp/bucket-policy.json
-          
-          echo "✅ S3 configuration complete"
-
-      - name: Test API endpoint
-        continue-on-error: true
-        run: |
-          echo "Testing API endpoint..."
-          API_URL=$(cd backend && serverless info --stage prod | grep "ANY" | awk '{print $3}' | sed 's/{proxy+}//' | head -1)
-          echo "API URL: ${API_URL}"
-          
-          # マスターバージョンAPIをテスト
-          curl -f "${API_URL}master/version" || echo "API test failed (this is normal on first deploy)"
