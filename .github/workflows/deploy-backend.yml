@@ -6,7 +6,7 @@ on:
       - main
     paths:
       - 'backend/**'
-  workflow_dispatch:  # 手動実行も可能
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -31,11 +31,11 @@ jobs:
 
       - name: Install backend dependencies
         working-directory: backend
-        run: npm install
+        run: npm ci
 
       - name: Install Python dependencies
-        working-directory: backend/lambda
-        run: pip install -r requirements.txt
+        working-directory: backend
+        run: pip install -r lambda/requirements.txt
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -53,18 +53,27 @@ jobs:
           S3_REGION: ${{ secrets.AWS_REGION }}
           QUIZ_COOLDOWN_MINUTES: ${{ secrets.QUIZ_COOLDOWN_MINUTES }}
           ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
-        run: serverless deploy --stage prod
+        run: serverless deploy --stage prod --verbose
+
+      - name: Get deployment info
+        working-directory: backend
+        run: |
+          echo "### 🚀 Deployment Successful!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          serverless info --stage prod >> $GITHUB_STEP_SUMMARY
 
       - name: Configure S3 bucket for public access
         run: |
+          echo "Configuring S3 bucket..."
+          
           # パブリックアクセスブロックを解除
           aws s3api put-public-access-block \
             --bucket ${{ secrets.S3_BUCKET_NAME }} \
             --public-access-block-configuration \
-            "BlockPublicAcls=false,IgnorePublicAcls=false,BlockPublicPolicy=false,RestrictPublicBuckets=false" || true
+            "BlockPublicAcls=false,IgnorePublicAcls=false,BlockPublicPolicy=false,RestrictPublicBuckets=false" 2>&1 || echo "Public access block already configured or bucket doesn't exist yet"
           
           # バケットポリシーを設定
-          cat > /tmp/bucket-policy.json << EOF
+          cat > /tmp/bucket-policy.json << 'EOF'
           {
             "Version": "2012-10-17",
             "Statement": [
@@ -81,11 +90,6 @@ jobs:
           
           aws s3api put-bucket-policy \
             --bucket ${{ secrets.S3_BUCKET_NAME }} \
-            --policy file:///tmp/bucket-policy.json || true
-
-      - name: Get API URL
-        working-directory: backend
-        run: |
-          API_URL=$(serverless info --stage prod | grep "ANY" | awk '{print $3}' | sed 's/{proxy+}//')
-          echo "API_URL=${API_URL}" >> $GITHUB_ENV
-          echo "::notice::API URL: ${API_URL}"
+            --policy file:///tmp/bucket-policy.json 2>&1 || echo "Bucket policy already configured"
+          
+          echo "✅ S3 configuration complete"
