@@ -20,8 +20,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: backend/package-lock.json
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -39,6 +37,18 @@ jobs:
         working-directory: backend
         run: pip install -r lambda/requirements.txt
 
+      - name: Create .env file
+        working-directory: backend
+        run: |
+          cat > .env << EOF
+          DYNAMODB_TABLE_PREFIX=${{ secrets.DYNAMODB_TABLE_PREFIX }}
+          S3_BUCKET_NAME=${{ secrets.S3_BUCKET_NAME }}
+          S3_REGION=${{ secrets.AWS_REGION }}
+          QUIZ_COOLDOWN_MINUTES=${{ secrets.QUIZ_COOLDOWN_MINUTES }}
+          ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}
+          EOF
+          echo "✅ .env file created"
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -48,21 +58,7 @@ jobs:
 
       - name: Deploy to AWS Lambda
         working-directory: backend
-        env:
-          AWS_REGION: ${{ secrets.AWS_REGION }}
-          DYNAMODB_TABLE_PREFIX: ${{ secrets.DYNAMODB_TABLE_PREFIX }}
-          S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
-          S3_REGION: ${{ secrets.AWS_REGION }}
-          QUIZ_COOLDOWN_MINUTES: ${{ secrets.QUIZ_COOLDOWN_MINUTES }}
-          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
-        run: |
-          export AWS_REGION="${{ secrets.AWS_REGION }}"
-          export DYNAMODB_TABLE_PREFIX="${{ secrets.DYNAMODB_TABLE_PREFIX }}"
-          export S3_BUCKET_NAME="${{ secrets.S3_BUCKET_NAME }}"
-          export S3_REGION="${{ secrets.AWS_REGION }}"
-          export QUIZ_COOLDOWN_MINUTES="${{ secrets.QUIZ_COOLDOWN_MINUTES }}"
-          export ADMIN_PASSWORD="${{ secrets.ADMIN_PASSWORD }}"
-          serverless deploy --stage prod --verbose
+        run: serverless deploy --stage prod --verbose
 
       - name: Get deployment info
         working-directory: backend
@@ -77,13 +73,11 @@ jobs:
         run: |
           echo "Configuring S3 bucket..."
           
-          # パブリックアクセスブロックを解除
           aws s3api put-public-access-block \
             --bucket ${{ secrets.S3_BUCKET_NAME }} \
             --public-access-block-configuration \
             "BlockPublicAcls=false,IgnorePublicAcls=false,BlockPublicPolicy=false,RestrictPublicBuckets=false"
           
-          # バケットポリシーを設定
           cat > /tmp/bucket-policy.json << 'EOF'
           {
             "Version": "2012-10-17",
@@ -111,6 +105,10 @@ jobs:
           echo "Testing API endpoint..."
           API_URL=$(cd backend && serverless info --stage prod | grep "ANY" | awk '{print $3}' | sed 's/{proxy+}//' | head -1)
           echo "API URL: ${API_URL}"
+          echo "### 📡 API Endpoint" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "${API_URL}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           
           # マスターバージョンAPIをテスト
-          curl -f "${API_URL}master/version" || echo "API test failed (this is normal on first deploy)"
+          curl -s -f "${API_URL}master/version" && echo "✅ API is working!" || echo "⚠️ API test failed (normal on first deploy)"

@@ -7,7 +7,6 @@ provider:
   stage: ${opt:stage, 'dev'}
   environment:
     DYNAMODB_TABLE_PREFIX: ${env:DYNAMODB_TABLE_PREFIX, 'hasu-fantasy-'}
-    AWS_REGION: ${env:AWS_REGION, 'ap-northeast-1'}
     S3_BUCKET_NAME: ${env:S3_BUCKET_NAME, 'hasu-fantasy-images'}
     S3_REGION: ${env:S3_REGION, 'ap-northeast-1'}
     QUIZ_COOLDOWN_MINUTES: ${env:QUIZ_COOLDOWN_MINUTES, '30'}
