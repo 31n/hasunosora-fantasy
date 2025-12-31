@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Optional, Dict
+from decimal import Decimal
 from utils.dynamodb import get_table
 from config import config
 
@@ -8,7 +9,8 @@ class User:
                  total_score: int = 0, created_at: Optional[str] = None):
         self.user_id = user_id
         self.nickname = nickname
-        self.total_score = total_score
+        # Decimal型をintに変換
+        self.total_score = int(total_score) if isinstance(total_score, Decimal) else total_score
         self.created_at = created_at or datetime.utcnow().isoformat()
     
     def to_dict(self) -> Dict:
@@ -16,7 +18,7 @@ class User:
         return {
             'user_id': self.user_id,
             'nickname': self.nickname,
-            'total_score': self.total_score,
+            'total_score': int(self.total_score),  # 必ずintに変換
             'created_at': self.created_at
         }
     

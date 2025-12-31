@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import List, Dict, Optional
+from decimal import Decimal
 import uuid
 from utils.dynamodb import get_table
 from config import config
@@ -13,9 +14,10 @@ class Spot:
         self.spot_id = spot_id or str(uuid.uuid4())
         self.spot_name = spot_name
         self.description = description
-        self.latitude = latitude
-        self.longitude = longitude
-        self.detection_radius = detection_radius
+        # Decimal型をfloatに変換
+        self.latitude = float(latitude) if isinstance(latitude, Decimal) else latitude
+        self.longitude = float(longitude) if isinstance(longitude, Decimal) else longitude
+        self.detection_radius = float(detection_radius) if isinstance(detection_radius, Decimal) else detection_radius
         self.images = images or []
         self.quiz = quiz or {}
         self.version = version or datetime.utcnow().strftime('%Y%m%d')
@@ -28,15 +30,27 @@ class Spot:
             'spot_id': self.spot_id,
             'spot_name': self.spot_name,
             'description': self.description,
-            'latitude': self.latitude,
-            'longitude': self.longitude,
-            'detection_radius': self.detection_radius,
+            'latitude': float(self.latitude),
+            'longitude': float(self.longitude),
+            'detection_radius': float(self.detection_radius),
             'images': self.images,
-            'quiz': self.quiz,
+            'quiz': self._convert_quiz_decimals(self.quiz),
             'version': self.version,
             'created_at': self.created_at,
             'updated_at': self.updated_at
         }
+    
+    def _convert_quiz_decimals(self, quiz: Dict) -> Dict:
+        """QuizのDecimal型をintに変換"""
+        if not quiz:
+            return {}
+        
+        converted = quiz.copy()
+        if 'score' in converted and isinstance(converted['score'], Decimal):
+            converted['score'] = int(converted['score'])
+        if 'correct_answer' in converted and isinstance(converted['correct_answer'], Decimal):
+            converted['correct_answer'] = int(converted['correct_answer'])
+        return converted
     
     def save(self):
         """DynamoDBに保存"""

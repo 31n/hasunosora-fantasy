@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import List, Dict, Optional
+from decimal import Decimal
 from utils.dynamodb import get_table
 from config import config
 
@@ -13,7 +14,8 @@ class CheckIn:
         self.checked_in_at = checked_in_at or datetime.utcnow().isoformat()
         self.quiz_answered = quiz_answered
         self.quiz_correct = quiz_correct
-        self.score_earned = score_earned
+        # Decimal型をintに変換
+        self.score_earned = int(score_earned) if isinstance(score_earned, Decimal) else score_earned
     
     def to_dict(self) -> Dict:
         """辞書形式に変換"""
@@ -24,7 +26,7 @@ class CheckIn:
             'checked_in_at': self.checked_in_at,
             'quiz_answered': self.quiz_answered,
             'quiz_correct': self.quiz_correct,
-            'score_earned': self.score_earned
+            'score_earned': int(self.score_earned)  # 必ずintに変換
         }
     
     def save(self):

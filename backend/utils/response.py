@@ -1,5 +1,17 @@
 import json
+from decimal import Decimal
 from typing import Any, Dict, Optional
+
+class DecimalEncoder(json.JSONEncoder):
+    """Decimal型をJSONにシリアライズするためのエンコーダー"""
+    def default(self, obj):
+        if isinstance(obj, Decimal):
+            # 整数の場合はintに、小数の場合はfloatに変換
+            if obj % 1 == 0:
+                return int(obj)
+            else:
+                return float(obj)
+        return super(DecimalEncoder, self).default(obj)
 
 def success_response(data: Any, status_code: int = 200) -> Dict:
     """成功レスポンスを生成"""
@@ -15,7 +27,7 @@ def success_response(data: Any, status_code: int = 200) -> Dict:
             'success': True,
             'data': data,
             'error': None
-        }, ensure_ascii=False)
+        }, ensure_ascii=False, cls=DecimalEncoder)
     }
 
 def error_response(code: str, message: str, status_code: int = 400) -> Dict:
