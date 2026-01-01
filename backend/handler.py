@@ -280,26 +280,54 @@ def admin_upload_image(event):
         check_admin_auth(event)
         
         # multipart/form-dataの処理
-        content_type = event.get('headers', {}).get('content-type', '')
+        from multipart import MultipartParser
+        from io import BytesIO
         
-        if 'multipart/form-data' in content_type:
-            # Base64デコード
-            body = event.get('body', '')
-            is_base64 = event.get('isBase64Encoded', False)
-            
-            if is_base64:
-                file_data = base64.b64decode(body)
-            else:
-                file_data = body.encode('utf-8')
-            
-            # 簡易的な実装: 実際にはmultipart parserを使用すべき
-            # ここでは画像データとcontent-typeが渡されると仮定
-            image_content_type = 'image/jpeg'  # デフォルト
-            
-            result = AdminService.upload_image(file_data, image_content_type)
-            return success_response(result)
-        else:
+        content_type_header = event.get('headers', {}).get('content-type') or event.get('headers', {}).get('Content-Type', '')
+        
+        if 'multipart/form-data' not in content_type_header:
             return error_response('INVALID_REQUEST', 'Invalid content type', 400)
+        
+        # Base64デコード
+        body = event.get('body', '')
+        is_base64 = event.get('isBase64Encoded', False)
+        
+        if is_base64:
+            body_bytes = base64.b64decode(body)
+        else:
+            body_bytes = body.encode('utf-8')
+        
+        # boundaryを取得
+        boundary = None
+        for part in content_type_header.split(';'):
+            if 'boundary=' in part:
+                boundary = part.split('boundary=')[1].strip()
+                break
+        
+        if not boundary:
+            return error_response('INVALID_REQUEST', 'No boundary in content type', 400)
+        
+        # multipartパース
+        parser = MultipartParser(
+            BytesIO(body_bytes),
+            boundary.encode('utf-8'),
+            len(body_bytes)
+        )
+        
+        file_data = None
+        file_content_type = None
+        
+        for part in parser:
+            if part.name == 'file':
+                file_data = part.file.read()
+                file_content_type = part.content_type or 'image/jpeg'
+                break
+        
+        if not file_data:
+            return error_response('INVALID_REQUEST', 'No file in request', 400)
+        
+        result = AdminService.upload_image(file_data, file_content_type)
+        return success_response(result)
     
     except ValueError as e:
         return error_response(str(e), str(e), 400)
