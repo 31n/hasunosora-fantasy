@@ -1,17 +1,5 @@
 import json
-from decimal import Decimal
 from typing import Any, Dict, Optional
-
-class DecimalEncoder(json.JSONEncoder):
-    """Decimal型をJSONにシリアライズするためのエンコーダー"""
-    def default(self, obj):
-        if isinstance(obj, Decimal):
-            # 整数の場合はintに、小数の場合はfloatに変換
-            if obj % 1 == 0:
-                return int(obj)
-            else:
-                return float(obj)
-        return super(DecimalEncoder, self).default(obj)
 
 def success_response(data: Any, status_code: int = 200) -> Dict:
     """成功レスポンスを生成"""
@@ -20,14 +8,14 @@ def success_response(data: Any, status_code: int = 200) -> Dict:
         'headers': {
             'Content-Type': 'application/json',
             'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Headers': 'Content-Type,X-Admin-Password,Authorization',
+            'Access-Control-Allow-Headers': 'Content-Type,X-Admin-Password,Authorization,x-admin-password,authorization',
             'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS'
         },
         'body': json.dumps({
             'success': True,
             'data': data,
             'error': None
-        }, ensure_ascii=False, cls=DecimalEncoder)
+        }, ensure_ascii=False)
     }
 
 def error_response(code: str, message: str, status_code: int = 400) -> Dict:
@@ -37,7 +25,7 @@ def error_response(code: str, message: str, status_code: int = 400) -> Dict:
         'headers': {
             'Content-Type': 'application/json',
             'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Headers': 'Content-Type,X-Admin-Password,Authorization',
+            'Access-Control-Allow-Headers': 'Content-Type,X-Admin-Password,Authorization,x-admin-password,authorization',
             'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS'
         },
         'body': json.dumps({

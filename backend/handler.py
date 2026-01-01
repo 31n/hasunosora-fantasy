@@ -16,7 +16,15 @@ def handler(event, context):
         
         # OPTIONSリクエスト（CORS preflight）
         if http_method == 'OPTIONS':
-            return success_response({})
+            return {
+                'statusCode': 200,
+                'headers': {
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Headers': 'Content-Type,X-Admin-Password,Authorization,x-admin-password,authorization',
+                    'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS'
+                },
+                'body': ''
+            }
         
         # ルーティング
         if path == '/users/create' and http_method == 'POST':
