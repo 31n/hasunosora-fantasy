@@ -75,7 +75,7 @@ class Spot:
             return {}
         
         converted = quiz.copy()
-        if 'score' in converted:for_dynamodb=True
+        if 'score' in converted:
             converted['score'] = int(converted['score'])
         if 'correct_answer' in converted:
             converted['correct_answer'] = int(converted['correct_answer'])
