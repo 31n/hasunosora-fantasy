@@ -92,27 +92,87 @@ functions:
       - http:
           path: /admin/login
           method: post
-          cors: true
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+              - x-admin-password
+            allowCredentials: false
       - http:
           path: /admin/spots
           method: get
-          cors: true
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+              - x-admin-password
+            allowCredentials: false
       - http:
           path: /admin/spots
           method: post
-          cors: true
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+              - x-admin-password
+            allowCredentials: false
       - http:
           path: /admin/spots/{spot_id}
           method: put
-          cors: true
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+              - x-admin-password
+            allowCredentials: false
       - http:
           path: /admin/spots/{spot_id}
           method: delete
-          cors: true
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+              - x-admin-password
+            allowCredentials: false
       - http:
           path: /admin/images/upload
           method: post
-          cors: true
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+              - x-admin-password
+            allowCredentials: false
 
 resources:
   Resources:
