@@ -12,13 +12,6 @@ export default function Header({ user, onLogout }: HeaderProps) {
 
   const isActive = (path: string) => location.pathname === path;
 
-  const handleLogout = () => {
-    if (confirm('ログアウトしますか？')) {
-      onLogout();
-      navigate('/login');
-    }
-  };
-
   return (
     <header style={{
       backgroundColor: 'white',
@@ -111,54 +104,6 @@ export default function Header({ user, onLogout }: HeaderProps) {
           >
             マイページ
           </button>
-
-          {/* ユーザー情報・ログアウト */}
-          <div style={{
-            marginLeft: '8px',
-            paddingLeft: '8px',
-            borderLeft: '1px solid #e5e7eb',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}>
-            <div style={{ 
-              textAlign: 'right',
-              display: 'none',
-              '@media (min-width: 640px)': {
-                display: 'block'
-              }
-            } as any}>
-              <p style={{ 
-                fontSize: '13px', 
-                fontWeight: '600', 
-                color: '#374151',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                maxWidth: '100px'
-              }}>
-                {user.nickname || user.user_id}
-              </p>
-              <p style={{ fontSize: '11px', color: '#6b7280' }}>
-                {user.total_score}点
-              </p>
-            </div>
-            <button
-              onClick={handleLogout}
-              style={{
-                padding: '6px 10px',
-                backgroundColor: '#f3f4f6',
-                color: '#6b7280',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: '12px',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              ログアウト
-            </button>
-          </div>
         </nav>
       </div>
 
