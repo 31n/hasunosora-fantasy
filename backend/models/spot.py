@@ -24,24 +24,41 @@ class Spot:
         self.created_at = created_at or datetime.utcnow().isoformat()
         self.updated_at = updated_at or datetime.utcnow().isoformat()
     
-    def to_dict(self) -> Dict:
+    def to_dict(self, for_dynamodb: bool = False) -> Dict:
         """辞書形式に変換"""
-        return {
-            'spot_id': self.spot_id,
-            'spot_name': self.spot_name,
-            'description': self.description,
-            'latitude': float(self.latitude),
-            'longitude': float(self.longitude),
-            'detection_radius': float(self.detection_radius),
-            'images': self.images,
-            'quiz': self._convert_quiz_decimals(self.quiz),
-            'version': self.version,
-            'created_at': self.created_at,
-            'updated_at': self.updated_at
-        }
+        if for_dynamodb:
+            # DynamoDB用にDecimal型で返す
+            return {
+                'spot_id': self.spot_id,
+                'spot_name': self.spot_name,
+                'description': self.description,
+                'latitude': Decimal(str(self.latitude)),
+                'longitude': Decimal(str(self.longitude)),
+                'detection_radius': Decimal(str(self.detection_radius)),
+                'images': self.images,
+                'quiz': self._convert_quiz_for_dynamodb(self.quiz),
+                'version': self.version,
+                'created_at': self.created_at,
+                'updated_at': self.updated_at
+            }
+        else:
+            # API用にfloat型で返す
+            return {
+                'spot_id': self.spot_id,
+                'spot_name': self.spot_name,
+                'description': self.description,
+                'latitude': float(self.latitude),
+                'longitude': float(self.longitude),
+                'detection_radius': float(self.detection_radius),
+                'images': self.images,
+                'quiz': self._convert_quiz_decimals(self.quiz),
+                'version': self.version,
+                'created_at': self.created_at,
+                'updated_at': self.updated_at
+            }
     
     def _convert_quiz_decimals(self, quiz: Dict) -> Dict:
-        """QuizのDecimal型をintに変換"""
+        """QuizのDecimal型をintに変換（API用）"""
         if not quiz:
             return {}
         
@@ -49,6 +66,18 @@ class Spot:
         if 'score' in converted and isinstance(converted['score'], Decimal):
             converted['score'] = int(converted['score'])
         if 'correct_answer' in converted and isinstance(converted['correct_answer'], Decimal):
+            converted['correct_answer'] = int(converted['correct_answer'])
+        return converted
+    
+    def _convert_quiz_for_dynamodb(self, quiz: Dict) -> Dict:
+        """QuizをDynamoDB用に変換"""
+        if not quiz:
+            return {}
+        
+        converted = quiz.copy()
+        if 'score' in converted:for_dynamodb=True
+            converted['score'] = int(converted['score'])
+        if 'correct_answer' in converted:
             converted['correct_answer'] = int(converted['correct_answer'])
         return converted
     
