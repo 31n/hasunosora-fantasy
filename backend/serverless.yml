@@ -34,41 +34,85 @@ provider:
           Resource:
             - "arn:aws:s3:::${self:provider.environment.S3_BUCKET_NAME}/*"
 
+package:
+  patterns:
+    - '!node_modules/**'
+    - '!.git/**'
+    - '!.venv/**'
+    - '!venv/**'
+    - 'lambda/**'
+
 functions:
   api:
-    handler: lambda/handler.handler
+    handler: handler.handler
     events:
-      # すべてのエンドポイントを1つのルートで処理
+      # ユーザー関連
       - http:
-          path: /{proxy+}
-          method: ANY
-          cors:
-            origin: '*'
-            headers:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-              - X-Api-Key
-              - X-Amz-Security-Token
-              - X-Amz-User-Agent
-              - X-Admin-Password
-              - x-admin-password
-            allowCredentials: false
+          path: /users/create
+          method: post
+          cors: true
       - http:
-          path: /
-          method: ANY
-          cors:
-            origin: '*'
-            headers:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-              - X-Api-Key
-              - X-Amz-Security-Token
-              - X-Amz-User-Agent
-              - X-Admin-Password
-              - x-admin-password
-            allowCredentials: false
+          path: /users/login
+          method: post
+          cors: true
+      - http:
+          path: /users/{user_id}/nickname
+          method: put
+          cors: true
+      - http:
+          path: /users/{user_id}/history
+          method: get
+          cors: true
+      
+      # マスタ関連
+      - http:
+          path: /master/version
+          method: get
+          cors: true
+      - http:
+          path: /master/spots
+          method: get
+          cors: true
+      
+      # チェックイン・クイズ
+      - http:
+          path: /checkins
+          method: post
+          cors: true
+      - http:
+          path: /quiz/answer
+          method: post
+          cors: true
+      - http:
+          path: /quiz/cooldown/{user_id}/{spot_id}
+          method: get
+          cors: true
+      
+      # 管理画面
+      - http:
+          path: /admin/login
+          method: post
+          cors: true
+      - http:
+          path: /admin/spots
+          method: get
+          cors: true
+      - http:
+          path: /admin/spots
+          method: post
+          cors: true
+      - http:
+          path: /admin/spots/{spot_id}
+          method: put
+          cors: true
+      - http:
+          path: /admin/spots/{spot_id}
+          method: delete
+          cors: true
+      - http:
+          path: /admin/images/upload
+          method: post
+          cors: true
 
 resources:
   Resources:
@@ -167,3 +211,11 @@ plugins:
 custom:
   pythonRequirements:
     dockerizePip: true
+    layer: false
+    zip: true
+    slim: true
+    strip: false
+    pythonBin: python3
+    fileName: lambda/requirements.txt
+    useDownloadCache: false
+    useStaticCache: false
