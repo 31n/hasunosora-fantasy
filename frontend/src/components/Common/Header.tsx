@@ -23,7 +23,7 @@ export default function Header({ user, onLogout }: HeaderProps) {
     <header style={{
       backgroundColor: 'white',
       borderBottom: '1px solid #e5e7eb',
-      padding: '16px',
+      padding: '12px 16px',
       position: 'sticky',
       top: 0,
       zIndex: 100,
@@ -34,16 +34,19 @@ export default function Header({ user, onLogout }: HeaderProps) {
         margin: '0 auto',
         display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: 'center',
+        gap: '12px'
       }}>
         {/* ロゴ・タイトル */}
         <div
           onClick={() => navigate('/')}
           style={{
-            fontSize: '20px',
+            fontSize: '18px',
             fontWeight: 'bold',
             color: '#3b82f6',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            whiteSpace: 'nowrap',
+            minWidth: 'fit-content'
           }}
         >
           🌸 HASU Fantasy
@@ -52,13 +55,15 @@ export default function Header({ user, onLogout }: HeaderProps) {
         {/* ナビゲーション */}
         <nav style={{
           display: 'flex',
-          gap: '8px',
-          alignItems: 'center'
+          gap: '4px',
+          alignItems: 'center',
+          flex: 1,
+          justifyContent: 'flex-end'
         }}>
           <button
             onClick={() => navigate('/')}
             style={{
-              padding: '8px 16px',
+              padding: '6px 12px',
               backgroundColor: isActive('/') ? '#dbeafe' : 'transparent',
               color: isActive('/') ? '#1e40af' : '#6b7280',
               border: 'none',
@@ -66,7 +71,8 @@ export default function Header({ user, onLogout }: HeaderProps) {
               cursor: 'pointer',
               fontSize: '14px',
               fontWeight: isActive('/') ? '600' : '400',
-              transition: 'all 0.2s'
+              transition: 'all 0.2s',
+              whiteSpace: 'nowrap'
             }}
           >
             地図
@@ -74,7 +80,7 @@ export default function Header({ user, onLogout }: HeaderProps) {
           <button
             onClick={() => navigate('/spots')}
             style={{
-              padding: '8px 16px',
+              padding: '6px 12px',
               backgroundColor: isActive('/spots') ? '#dbeafe' : 'transparent',
               color: isActive('/spots') ? '#1e40af' : '#6b7280',
               border: 'none',
@@ -82,7 +88,8 @@ export default function Header({ user, onLogout }: HeaderProps) {
               cursor: 'pointer',
               fontSize: '14px',
               fontWeight: isActive('/spots') ? '600' : '400',
-              transition: 'all 0.2s'
+              transition: 'all 0.2s',
+              whiteSpace: 'nowrap'
             }}
           >
             一覧
@@ -90,7 +97,7 @@ export default function Header({ user, onLogout }: HeaderProps) {
           <button
             onClick={() => navigate('/mypage')}
             style={{
-              padding: '8px 16px',
+              padding: '6px 12px',
               backgroundColor: isActive('/mypage') ? '#dbeafe' : 'transparent',
               color: isActive('/mypage') ? '#1e40af' : '#6b7280',
               border: 'none',
@@ -98,39 +105,55 @@ export default function Header({ user, onLogout }: HeaderProps) {
               cursor: 'pointer',
               fontSize: '14px',
               fontWeight: isActive('/mypage') ? '600' : '400',
-              transition: 'all 0.2s'
+              transition: 'all 0.2s',
+              whiteSpace: 'nowrap'
             }}
           >
             マイページ
           </button>
 
-          {/* ユーザー情報 */}
+          {/* ユーザー情報・ログアウト */}
           <div style={{
-            marginLeft: '16px',
-            paddingLeft: '16px',
+            marginLeft: '8px',
+            paddingLeft: '8px',
             borderLeft: '1px solid #e5e7eb',
             display: 'flex',
             alignItems: 'center',
-            gap: '12px'
+            gap: '8px'
           }}>
-            <div style={{ textAlign: 'right' }}>
-              <p style={{ fontSize: '14px', fontWeight: '600', color: '#374151' }}>
+            <div style={{ 
+              textAlign: 'right',
+              display: 'none',
+              '@media (min-width: 640px)': {
+                display: 'block'
+              }
+            } as any}>
+              <p style={{ 
+                fontSize: '13px', 
+                fontWeight: '600', 
+                color: '#374151',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                maxWidth: '100px'
+              }}>
                 {user.nickname || user.user_id}
               </p>
-              <p style={{ fontSize: '12px', color: '#6b7280' }}>
+              <p style={{ fontSize: '11px', color: '#6b7280' }}>
                 {user.total_score}点
               </p>
             </div>
             <button
               onClick={handleLogout}
               style={{
-                padding: '6px 12px',
+                padding: '6px 10px',
                 backgroundColor: '#f3f4f6',
                 color: '#6b7280',
                 border: 'none',
                 borderRadius: '6px',
                 cursor: 'pointer',
-                fontSize: '12px'
+                fontSize: '12px',
+                whiteSpace: 'nowrap'
               }}
             >
               ログアウト
@@ -138,6 +161,34 @@ export default function Header({ user, onLogout }: HeaderProps) {
           </div>
         </nav>
       </div>
+
+      {/* モバイル用ユーザー情報バー */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: '12px',
+        marginTop: '8px',
+        padding: '8px',
+        backgroundColor: '#f9fafb',
+        borderRadius: '6px'
+      }}
+      className="mobile-user-info">
+        <span style={{ fontSize: '13px', fontWeight: '600', color: '#374151' }}>
+          {user.nickname || user.user_id}
+        </span>
+        <span style={{ fontSize: '13px', color: '#6b7280' }}>
+          {user.total_score}点
+        </span>
+      </div>
+
+      <style>{`
+        @media (min-width: 640px) {
+          .mobile-user-info {
+            display: none;
+          }
+        }
+      `}</style>
     </header>
   );
 }
