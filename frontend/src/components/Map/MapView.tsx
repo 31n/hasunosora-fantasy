@@ -17,6 +17,7 @@ export default function MapView({ user, spots }: MapViewProps) {
   const map = useRef<mapboxgl.Map | null>(null);
   const userMarker = useRef<mapboxgl.Marker | null>(null);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+  const [userHeading, setUserHeading] = useState<number>(0);
   const [selectedSpot, setSelectedSpot] = useState<Spot | null>(null);
   const [quizData, setQuizData] = useState<CheckInResponse | null>(null);
   const [showQuiz, setShowQuiz] = useState(false);
@@ -49,13 +50,18 @@ export default function MapView({ user, spots }: MapViewProps) {
             // 矢印型のマーカーを作成
             const el = document.createElement('div');
             el.className = 'user-location-marker';
-            el.style.width = '40px';
-            el.style.height = '40px';
-            el.style.backgroundImage = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%233b82f6'%3E%3Cpath d='M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z'/%3E%3C/svg%3E")`;
-            el.style.backgroundSize = 'contain';
-            el.style.backgroundRepeat = 'no-repeat';
-            el.style.backgroundPosition = 'center';
-            el.style.filter = 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))';
+            el.innerHTML = `
+              <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity="0.3"/>
+                  </filter>
+                </defs>
+                <circle cx="20" cy="20" r="18" fill="#3b82f6" opacity="0.2"/>
+                <circle cx="20" cy="20" r="12" fill="#3b82f6" filter="url(#shadow)"/>
+                <path d="M 20 8 L 24 18 L 20 16 L 16 18 Z" fill="white" filter="url(#shadow)"/>
+              </svg>
+            `;
 
             // ユーザー位置マーカーを作成
             userMarker.current = new mapboxgl.Marker({
@@ -78,9 +84,11 @@ export default function MapView({ user, spots }: MapViewProps) {
             navigator.geolocation.watchPosition(
               (position) => {
                 const { latitude, longitude } = position.coords;
-                setUserLocation([longitude, latitude]);
+                const newLocation: [number, number] = [longitude, latitude];
+                setUserLocation(newLocation);
+                
                 if (userMarker.current) {
-                  userMarker.current.setLngLat([longitude, latitude]);
+                  userMarker.current.setLngLat(newLocation);
                 }
               },
               (error) => console.error('位置情報更新エラー:', error),
@@ -102,18 +110,28 @@ export default function MapView({ user, spots }: MapViewProps) {
     };
   }, []);
 
-  const handleOrientation = (event: DeviceOrientationEvent) => {
-    if (userMarker.current && event.alpha !== null) {
-      // デバイスの向きに応じてマーカーを回転
-      const heading = event.webkitCompassHeading || event.alpha;
-      const rotation = 360 - heading;
+  // 方角が変わったときに矢印を回転
+  useEffect(() => {
+    if (userMarker.current) {
       const el = userMarker.current.getElement();
-      el.style.transform = `rotate(${rotation}deg)`;
+      // rotation プロパティを使用してマーカー自体を回転
+      userMarker.current.setRotation(userHeading);
+    }
+  }, [userHeading]);
+
+  const handleOrientation = (event: DeviceOrientationEvent) => {
+    if (event.alpha !== null) {
+      // デバイスの向きを取得
+      let heading = event.webkitCompassHeading || (360 - event.alpha);
+      setUserHeading(heading);
     }
   };
 
   useEffect(() => {
     if (!map.current) return;
+
+    // 既存のマーカーをクリア
+    const markers: mapboxgl.Marker[] = [];
 
     // スポットマーカーを追加
     spots.forEach((spot) => {
@@ -131,6 +149,8 @@ export default function MapView({ user, spots }: MapViewProps) {
         .setLngLat([spot.longitude, spot.latitude])
         .addTo(map.current!);
 
+      markers.push(marker);
+
       // クリックイベント
       el.addEventListener('click', () => {
         handleSpotClick(spot);
@@ -142,6 +162,11 @@ export default function MapView({ user, spots }: MapViewProps) {
       
       marker.setPopup(popup);
     });
+
+    // クリーンアップ
+    return () => {
+      markers.forEach(marker => marker.remove());
+    };
   }, [spots]);
 
   const handleSpotClick = async (spot: Spot) => {
@@ -196,7 +221,12 @@ export default function MapView({ user, spots }: MapViewProps) {
 
       <style>{`
         .user-location-marker {
-          transition: transform 0.3s ease-out;
+          width: 40px;
+          height: 40px;
+        }
+        
+        .user-location-marker svg {
+          display: block;
         }
       `}</style>
     </div>
