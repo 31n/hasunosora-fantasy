@@ -282,11 +282,19 @@ def admin_upload_image(event):
         # multipart/form-dataの処理
         from email import message_from_bytes
         from email.policy import default
+        import traceback
         
-        content_type_header = event.get('headers', {}).get('content-type') or event.get('headers', {}).get('Content-Type', '')
+        # ヘッダーの取得（大文字小文字を考慮）
+        headers = event.get('headers', {})
+        content_type_header = headers.get('content-type') or headers.get('Content-Type', '')
+        
+        # デバッグログ
+        print(f"Headers: {headers}")
+        print(f"Content-Type: {content_type_header}")
+        print(f"isBase64Encoded: {event.get('isBase64Encoded')}")
         
         if 'multipart/form-data' not in content_type_header:
-            return error_response('INVALID_REQUEST', 'Invalid content type', 400)
+            return error_response('INVALID_REQUEST', f'Invalid content type: {content_type_header}', 400)
         
         # Base64デコード
         body = event.get('body', '')
@@ -297,6 +305,8 @@ def admin_upload_image(event):
         else:
             body_bytes = body.encode('utf-8')
         
+        print(f"Body length: {len(body_bytes)}")
+        
         # HTTPヘッダーを構築してメッセージとしてパース
         message_bytes = f"Content-Type: {content_type_header}\r\n\r\n".encode('utf-8') + body_bytes
         msg = message_from_bytes(message_bytes, policy=default)
@@ -305,20 +315,28 @@ def admin_upload_image(event):
         file_content_type = None
         
         # マルチパートの各パートを処理
+        part_count = 0
         for part in msg.iter_parts():
+            part_count += 1
             content_disposition = part.get('Content-Disposition', '')
-            if 'name="file"' in content_disposition:
+            print(f"Part {part_count}: {content_disposition}")
+            
+            if 'name="file"' in content_disposition or "name='file'" in content_disposition:
                 file_data = part.get_payload(decode=True)
                 file_content_type = part.get_content_type() or 'image/jpeg'
+                print(f"Found file: {len(file_data) if file_data else 0} bytes, type: {file_content_type}")
                 break
         
         if not file_data:
-            return error_response('INVALID_REQUEST', 'No file in request', 400)
+            return error_response('INVALID_REQUEST', f'No file in request (found {part_count} parts)', 400)
         
         result = AdminService.upload_image(file_data, file_content_type)
         return success_response(result)
     
     except ValueError as e:
+        print(f"ValueError: {str(e)}")
         return error_response(str(e), str(e), 400)
     except Exception as e:
+        print(f"Exception: {str(e)}")
+        traceback.print_exc()
         return error_response('INTERNAL_ERROR', str(e), 500)
