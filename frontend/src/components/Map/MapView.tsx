@@ -205,6 +205,8 @@ export default function MapView({ user, spots, selectedSpotId }: MapViewProps) {
         .addTo(map.current);
 
       console.log(`✓ マーカー[${index}]追加完了:`, marker.getLngLat());
+      console.log(`  - マーカー要素の親:`, marker.getElement().parentElement?.className);
+      console.log(`  - マーカー要素のスタイル:`, marker.getElement().style.transform);
 
       spotMarkers.current.push(marker);
 
@@ -221,6 +223,13 @@ export default function MapView({ user, spots, selectedSpotId }: MapViewProps) {
     });
 
     console.log('✅ マーカー追加完了:', spotMarkers.current.length);
+    console.log('🗺️ 地図コンテナ情報:');
+    console.log('  - 地図の中心:', map.current.getCenter());
+    console.log('  - 地図のズーム:', map.current.getZoom());
+    if (mapContainer.current) {
+      const markers = mapContainer.current.querySelectorAll('.spot-marker');
+      console.log('  - DOM内のスポットマーカー数:', markers.length);
+    }
 
     // クリーンアップ
     return () => {
