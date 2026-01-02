@@ -40,8 +40,11 @@ export default function MapView({ user, spots }: MapViewProps) {
 
     // 位置情報を取得
     if (navigator.geolocation) {
+      console.log('位置情報の取得を開始します');
+      
       navigator.geolocation.getCurrentPosition(
         (position) => {
+          console.log('位置情報の取得に成功:', position.coords);
           const { latitude, longitude } = position.coords;
           setUserLocation([longitude, latitude]);
           setLocationStatus('available');
@@ -102,7 +105,9 @@ export default function MapView({ user, spots }: MapViewProps) {
           }
         },
         (error) => {
-          console.error('Geolocation error:', error);
+          console.error('位置情報取得エラー:', error);
+          console.error('エラーコード:', error.code);
+          console.error('エラーメッセージ:', error.message);
           setLocationStatus('error');
           
           // エラーメッセージを表示
@@ -111,10 +116,14 @@ export default function MapView({ user, spots }: MapViewProps) {
           } else if (error.code === error.POSITION_UNAVAILABLE) {
             alert('位置情報を取得できませんでした。');
           } else if (error.code === error.TIMEOUT) {
-            alert('位置情報の取得がタイムアウトしました。');
+            alert('位置情報の取得がタイムアウトしました。再読み込みしてください。');
           }
         },
-        { enableHighAccuracy: true, timeout: 10000 }
+        { 
+          enableHighAccuracy: true, 
+          timeout: 10000,
+          maximumAge: 0 
+        }
       );
     } else {
       setLocationStatus('error');
