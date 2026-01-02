@@ -38,7 +38,7 @@ select {
 
 /* スポットマーカー */
 .spot-marker {
-  transition: transform 0.2s;
+  /* transition: transform 0.2s; */
 }
 
 .spot-marker:hover {
