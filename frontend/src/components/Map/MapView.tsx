@@ -17,6 +17,7 @@ export default function MapView({ user, spots, selectedSpotId }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const userMarker = useRef<mapboxgl.Marker | null>(null);
+  const spotMarkers = useRef<mapboxgl.Marker[]>([]);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [userHeading, setUserHeading] = useState<number>(0);
   const [selectedSpot, setSelectedSpot] = useState<Spot | null>(null);
@@ -146,7 +147,8 @@ export default function MapView({ user, spots, selectedSpotId }: MapViewProps) {
     if (!map.current) return;
 
     // 既存のマーカーをクリア
-    const markers: mapboxgl.Marker[] = [];
+    spotMarkers.current.forEach(marker => marker.remove());
+    spotMarkers.current = [];
 
     // スポットマーカーを追加
     spots.forEach((spot) => {
@@ -164,7 +166,7 @@ export default function MapView({ user, spots, selectedSpotId }: MapViewProps) {
         .setLngLat([spot.longitude, spot.latitude])
         .addTo(map.current!);
 
-      markers.push(marker);
+      spotMarkers.current.push(marker);
 
       // クリックイベント
       el.addEventListener('click', () => {
@@ -180,9 +182,10 @@ export default function MapView({ user, spots, selectedSpotId }: MapViewProps) {
 
     // クリーンアップ
     return () => {
-      markers.forEach(marker => marker.remove());
+      spotMarkers.current.forEach(marker => marker.remove());
+      spotMarkers.current = [];
     };
-  }, [spots, map.current]);
+  }, [spots]);
 
   const handleSpotClick = async (spot: Spot) => {
     setSelectedSpot(spot);
