@@ -337,9 +337,9 @@ resources:
       Properties:
         BucketName: ${self:provider.environment.S3_BUCKET_NAME}
         PublicAccessBlockConfiguration:
-          BlockPublicAcls: false
+          BlockPublicAcls: true
           BlockPublicPolicy: false
-          IgnorePublicAcls: false
+          IgnorePublicAcls: true
           RestrictPublicBuckets: false
         CorsConfiguration:
           CorsRules:
@@ -351,6 +351,20 @@ resources:
                 - POST
               AllowedHeaders:
                 - '*'
+    
+    # S3 Bucket Policy for public read access
+    ImagesBucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        Bucket: !Ref ImagesBucket
+        PolicyDocument:
+          Statement:
+            - Effect: Allow
+              Principal: '*'
+              Action:
+                - 's3:GetObject'
+              Resource:
+                - 'arn:aws:s3:::${self:provider.environment.S3_BUCKET_NAME}/*'
 
 plugins:
   - serverless-python-requirements

@@ -29,8 +29,7 @@ def upload_image(file_data: bytes, content_type: str) -> str:
         Bucket=config.S3_BUCKET_NAME,
         Key=file_name,
         Body=file_data,
-        ContentType=content_type,
-        ACL='public-read'
+        ContentType=content_type
     )
     
     # URLを生成
