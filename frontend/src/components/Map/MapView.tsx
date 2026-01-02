@@ -10,10 +10,9 @@ mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN || '';
 interface MapViewProps {
   user: User;
   spots: Spot[];
-  selectedSpotId?: string;
 }
 
-export default function MapView({ user, spots, selectedSpotId }: MapViewProps) {
+export default function MapView({ user, spots }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const userMarker = useRef<mapboxgl.Marker | null>(null);
@@ -23,54 +22,19 @@ export default function MapView({ user, spots, selectedSpotId }: MapViewProps) {
   const [selectedSpot, setSelectedSpot] = useState<Spot | null>(null);
   const [quizData, setQuizData] = useState<CheckInResponse | null>(null);
   const [showQuiz, setShowQuiz] = useState(false);
-  const [mapLoaded, setMapLoaded] = useState(false);
 
-  // selectedSpotIdが変更されたときにスポットの位置に移動
+  // 地図の初期化
   useEffect(() => {
-    if (selectedSpotId && map.current) {
-      const spot = spots.find(s => s.spot_id === selectedSpotId);
-      if (spot) {
-        map.current.flyTo({
-          center: [spot.longitude, spot.latitude],
-          zoom: 17,
-          essential: true
-        });
-      }
-    }
-  }, [selectedSpotId, spots]);
-
-  useEffect(() => {
-    if (!mapContainer.current) return;
+    if (!mapContainer.current || map.current) return;
 
     // 地図を初期化（日本語化）
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/streets-v12',
       center: [139.7454, 35.6586], // 東京タワー
-      zoom: 15, // ズームレベルを大きく（12→15）
-      language: 'ja' // 日本語化
+      zoom: 15,
+      language: 'ja'
     });
-
-    // 地図のロード完了を監視
-    map.current.on('load', () => {
-      console.log('✅ 地図ロード完了');
-      setMapLoaded(true);
-    });
-
-    // スタイルが既にロードされている場合の対処
-    map.current.on('style.load', () => {
-      console.log('✅ スタイルロード完了');
-      setMapLoaded(true);
-    });
-
-    // idleイベントでも確認（フォールバック）
-    const checkMapReady = () => {
-      if (map.current && map.current.isStyleLoaded()) {
-        console.log('✅ 地図準備完了（idle）');
-        setMapLoaded(true);
-      }
-    };
-    map.current.on('idle', checkMapReady);
 
     // ナビゲーションコントロール（ズームボタン）を追加
     map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
@@ -80,58 +44,11 @@ export default function MapView({ user, spots, selectedSpotId }: MapViewProps) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
-          setUserLocation([longitude, latitude]);
+          const newLocation: [number, number] = [longitude, latitude];
+          setUserLocation(newLocation);
 
           if (map.current) {
-            map.current.setCenter([longitude, latitude]);
-
-            // 矢印型のマーカーを作成
-            const el = document.createElement('div');
-            el.className = 'user-location-marker';
-            el.innerHTML = `
-              <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                  <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-                    <feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity="0.3"/>
-                  </filter>
-                </defs>
-                <circle cx="20" cy="20" r="18" fill="#3b82f6" opacity="0.2"/>
-                <circle cx="20" cy="20" r="12" fill="#3b82f6" filter="url(#shadow)"/>
-                <path d="M 20 8 L 24 18 L 20 16 L 16 18 Z" fill="white" filter="url(#shadow)"/>
-              </svg>
-            `;
-
-            // ユーザー位置マーカーを作成
-            userMarker.current = new mapboxgl.Marker({
-              element: el,
-              anchor: 'center',
-              rotationAlignment: 'map',
-              pitchAlignment: 'map'
-            })
-              .setLngLat([longitude, latitude])
-              .addTo(map.current);
-
-            // 方角の更新を監視
-            if ('ondeviceorientationabsolute' in window) {
-              window.addEventListener('deviceorientationabsolute', handleOrientation);
-            } else if ('ondeviceorientation' in window) {
-              window.addEventListener('deviceorientation', handleOrientation);
-            }
-
-            // 位置情報の継続的な更新
-            navigator.geolocation.watchPosition(
-              (position) => {
-                const { latitude, longitude } = position.coords;
-                const newLocation: [number, number] = [longitude, latitude];
-                setUserLocation(newLocation);
-                
-                if (userMarker.current) {
-                  userMarker.current.setLngLat(newLocation);
-                }
-              },
-              (error) => console.error('位置情報更新エラー:', error),
-              { enableHighAccuracy: true, maximumAge: 0 }
-            );
+            map.current.setCenter(newLocation);
           }
         },
         (error) => {
@@ -139,49 +56,95 @@ export default function MapView({ user, spots, selectedSpotId }: MapViewProps) {
         },
         { enableHighAccuracy: true }
       );
+
+      // 位置情報の継続的な更新
+      const watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          const newLocation: [number, number] = [longitude, latitude];
+          setUserLocation(newLocation);
+        },
+        (error) => console.error('位置情報更新エラー:', error),
+        { enableHighAccuracy: true, maximumAge: 0 }
+      );
+
+      return () => {
+        navigator.geolocation.clearWatch(watchId);
+      };
+    }
+  }, []);
+
+  // ユーザー位置マーカーの作成・更新
+  useEffect(() => {
+    if (!map.current || !userLocation) return;
+
+    if (!userMarker.current) {
+      // マーカーを新規作成
+      const el = document.createElement('div');
+      el.className = 'user-location-marker';
+      el.innerHTML = `
+        <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+              <feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity="0.3"/>
+            </filter>
+          </defs>
+          <circle cx="20" cy="20" r="18" fill="#3b82f6" opacity="0.2"/>
+          <circle cx="20" cy="20" r="12" fill="#3b82f6" filter="url(#shadow)"/>
+          <path d="M 20 8 L 24 18 L 20 16 L 16 18 Z" fill="white" filter="url(#shadow)"/>
+        </svg>
+      `;
+
+      userMarker.current = new mapboxgl.Marker({
+        element: el,
+        anchor: 'center',
+        rotationAlignment: 'map',
+        pitchAlignment: 'map'
+      })
+        .setLngLat(userLocation)
+        .addTo(map.current);
+    } else {
+      // 既存のマーカーの位置を更新
+      userMarker.current.setLngLat(userLocation);
+    }
+
+    // 方角の更新を監視
+    if ('ondeviceorientationabsolute' in window) {
+      window.addEventListener('deviceorientationabsolute', handleOrientation);
+    } else if ('ondeviceorientation' in window) {
+      window.addEventListener('deviceorientation', handleOrientation);
     }
 
     return () => {
       window.removeEventListener('deviceorientationabsolute', handleOrientation);
       window.removeEventListener('deviceorientation', handleOrientation);
-      map.current?.remove();
     };
-  }, []);
+  }, [userLocation]);
 
-  // 方角が変わったときに矢印を回転
+  // マーカーの回転を更新
   useEffect(() => {
     if (userMarker.current) {
-      const el = userMarker.current.getElement();
-      // rotation プロパティを使用してマーカー自体を回転
       userMarker.current.setRotation(userHeading);
     }
   }, [userHeading]);
 
   const handleOrientation = (event: DeviceOrientationEvent) => {
     if (event.alpha !== null) {
-      // デバイスの向きを取得
       let heading = event.webkitCompassHeading || (360 - event.alpha);
       setUserHeading(heading);
     }
   };
 
+  // スポットマーカーの作成・更新
   useEffect(() => {
-    if (!map.current || !mapLoaded) {
-      console.log('❌ マーカー追加スキップ:', { mapCurrent: !!map.current, mapLoaded });
-      return;
-    }
-
-    console.log('🗺️ スポットマーカー更新開始:', { spotsCount: spots.length });
+    if (!map.current) return;
 
     // 既存のマーカーをクリア
-    console.log('🧹 既存マーカー削除:', spotMarkers.current.length);
     spotMarkers.current.forEach(marker => marker.remove());
     spotMarkers.current = [];
 
     // スポットマーカーを追加
-    spots.forEach((spot, index) => {
-      console.log(`📍 マーカー追加 [${index}]:`, spot.spot_name, `(${spot.latitude}, ${spot.longitude})`);
-      
+    spots.forEach((spot) => {
       const el = document.createElement('div');
       el.className = 'spot-marker';
       el.style.backgroundColor = '#ef4444';
@@ -192,21 +155,9 @@ export default function MapView({ user, spots, selectedSpotId }: MapViewProps) {
       el.style.border = '3px solid white';
       el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
 
-      if (!map.current) {
-        console.error('❌ map.current is null');
-        return;
-      }
-
-      const marker = new mapboxgl.Marker({
-        element: el,
-        anchor: 'center'
-      })
+      const marker = new mapboxgl.Marker(el)
         .setLngLat([spot.longitude, spot.latitude])
-        .addTo(map.current);
-
-      console.log(`✓ マーカー[${index}]追加完了:`, marker.getLngLat());
-      console.log(`  - マーカー要素の親:`, marker.getElement().parentElement?.className);
-      console.log(`  - マーカー要素のスタイル:`, marker.getElement().style.transform);
+        .addTo(map.current!);
 
       spotMarkers.current.push(marker);
 
@@ -222,94 +173,39 @@ export default function MapView({ user, spots, selectedSpotId }: MapViewProps) {
       marker.setPopup(popup);
     });
 
-    console.log('✅ マーカー追加完了:', spotMarkers.current.length);
-    console.log('🗺️ 地図コンテナ情報:');
-    console.log('  - 地図の中心:', map.current.getCenter());
-    console.log('  - 地図のズーム:', map.current.getZoom());
-    console.log('  - 地図インスタンス:', map.current);
-    if (mapContainer.current) {
-      const markers = mapContainer.current.querySelectorAll('.spot-marker');
-      console.log('  - DOM内のスポットマーカー数:', markers.length);
-      markers.forEach((m, i) => {
-        console.log(`    [${i}] transform:`, (m as HTMLElement).style.transform);
-      });
-    }
-
-    // 地図の各種イベントを監視
-    let moveCount = 0;
-    const handleMapMove = () => {
-      moveCount++;
-      if (moveCount % 10 === 1) { // 10回に1回ログ出力
-        console.log('🔄 地図移動検知:', moveCount, '回目');
-        if (spotMarkers.current.length > 0) {
-          const firstMarker = spotMarkers.current[0];
-          const el = firstMarker.getElement();
-          console.log('  - マーカーtransform:', el.style.transform);
-        }
-      }
-    };
-    
-    const handleMapMoveStart = () => {
-      console.log('🚀 地図移動開始');
-    };
-    
-    const handleMapMoveEnd = () => {
-      console.log('🏁 地図移動終了 - 中心:', map.current?.getCenter());
-    };
-
-    map.current.on('movestart', handleMapMoveStart);
-    map.current.on('move', handleMapMove);
-    map.current.on('moveend', handleMapMoveEnd);
-
-    // クリーンアップ
+    // クリーンアップ関数
     return () => {
-      console.log('🧹 クリーンアップ: マーカー削除');
-      if (map.current) {
-        map.current.off('movestart', handleMapMoveStart);
-        map.current.off('move', handleMapMove);
-        map.current.off('moveend', handleMapMoveEnd);
-      }
       spotMarkers.current.forEach(marker => marker.remove());
       spotMarkers.current = [];
     };
-  }, [spots, mapLoaded]);
+  }, [spots]);
+
+  // 地図のクリーンアップ
+  useEffect(() => {
+    return () => {
+      if (userMarker.current) {
+        userMarker.current.remove();
+      }
+      if (map.current) {
+        map.current.remove();
+      }
+    };
+  }, []);
 
   const handleSpotClick = async (spot: Spot) => {
     setSelectedSpot(spot);
 
-    // 位置情報を再取得を試みる
     if (!userLocation) {
-      if (navigator.geolocation) {
-        try {
-          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true });
-          });
-          const newLocation: [number, number] = [position.coords.longitude, position.coords.latitude];
-          setUserLocation(newLocation);
-          
-          // 位置情報取得後にチェックイン処理
-          await performCheckin(spot, newLocation);
-          return;
-        } catch (error) {
-          alert('位置情報を取得できません。位置情報の使用を許可してください。');
-          return;
-        }
-      } else {
-        alert('このデバイスでは位置情報を取得できません。');
-        return;
-      }
+      alert('位置情報を取得できません');
+      return;
     }
 
-    await performCheckin(spot, userLocation);
-  };
-
-  const performCheckin = async (spot: Spot, location: [number, number]) => {
     try {
       const response = await checkinApi.checkin(
         user.user_id,
         spot.spot_id,
-        location[1],
-        location[0]
+        userLocation[1],
+        userLocation[0]
       );
 
       if (response.quiz_available && response.quiz) {
