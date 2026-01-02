@@ -137,96 +137,75 @@ export default function MapView({ user, spots }: MapViewProps) {
 
   // スポットマーカーの作成・更新
   useEffect(() => {
-    if (!map.current) {
-      console.log('Map not initialized');
-      return;
-    }
+    if (!map.current) return;
 
-    // 地図が完全に読み込まれるまで待つ
     const addMarkers = () => {
-      console.log('Adding markers for spots:', spots.length);
-      
       // 既存のマーカーをクリア
       spotMarkers.current.forEach(marker => marker.remove());
       spotMarkers.current = [];
 
       // スポットマーカーを追加
       spots.forEach((spot) => {
-        console.log('Adding marker for spot:', spot.spot_name, 'at', [spot.longitude, spot.latitude]);
-        
+        // SVG要素として作成
         const el = document.createElement('div');
-        el.className = 'spot-marker';
+        el.style.width = '40px';
+        el.style.height = '40px';
+        el.style.cursor = 'pointer';
         el.innerHTML = `
-          <div style="
-            background-color: #ef4444;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            cursor: pointer;
-            border: 3px solid white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-            transition: transform 0.2s;
-          "></div>
+          <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <filter id="shadow-spot-${spot.spot_id}" x="-50%" y="-50%" width="200%" height="200%">
+                <feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity="0.3"/>
+              </filter>
+            </defs>
+            <circle cx="20" cy="20" r="15" fill="#ef4444" filter="url(#shadow-spot-${spot.spot_id})"/>
+            <circle cx="20" cy="20" r="10" fill="white"/>
+            <circle cx="20" cy="20" r="6" fill="#ef4444"/>
+          </svg>
         `;
 
-        try {
-          // Mapboxのマーカーを作成（rotationAlignmentとpitchAlignmentを追加）
-          const marker = new mapboxgl.Marker({
-            element: el,
-            anchor: 'center',
-            rotationAlignment: 'map',
-            pitchAlignment: 'map'
-          })
-            .setLngLat([spot.longitude, spot.latitude])
-            .addTo(map.current!);
+        // Mapboxのマーカーを作成
+        const marker = new mapboxgl.Marker({
+          element: el,
+          anchor: 'center',
+          rotationAlignment: 'map',
+          pitchAlignment: 'map'
+        })
+          .setLngLat([spot.longitude, spot.latitude])
+          .addTo(map.current!);
 
-          console.log('Marker added successfully');
-          spotMarkers.current.push(marker);
+        spotMarkers.current.push(marker);
 
-          // クリックイベント
-          el.addEventListener('click', () => {
-            handleSpotClick(spot);
-          });
+        // クリックイベント
+        el.addEventListener('click', () => {
+          handleSpotClick(spot);
+        });
 
-          // ホバーエフェクト
-          const innerDiv = el.querySelector('div') as HTMLElement;
-          if (innerDiv) {
-            el.addEventListener('mouseenter', () => {
-              innerDiv.style.transform = 'scale(1.2)';
-            });
-            el.addEventListener('mouseleave', () => {
-              innerDiv.style.transform = 'scale(1)';
-            });
-          }
+        // ホバーエフェクト（transform以外のプロパティを使用）
+        el.addEventListener('mouseenter', () => {
+          el.style.filter = 'brightness(1.2)';
+        });
+        el.addEventListener('mouseleave', () => {
+          el.style.filter = 'brightness(1)';
+        });
 
-          // ポップアップを追加
-          const popup = new mapboxgl.Popup({ offset: 25 })
-            .setHTML(`<div style="padding: 4px 8px;"><strong>${spot.spot_name}</strong></div>`);
-          
-          marker.setPopup(popup);
-        } catch (error) {
-          console.error('Error adding marker:', error);
-        }
+        // ポップアップを追加
+        const popup = new mapboxgl.Popup({ offset: 25 })
+          .setHTML(`<div style="padding: 4px 8px;"><strong>${spot.spot_name}</strong></div>`);
+        
+        marker.setPopup(popup);
       });
-      
-      console.log('Total markers added:', spotMarkers.current.length);
     };
 
     // 地図が読み込まれているか確認
     if (map.current.loaded()) {
-      console.log('Map already loaded, adding markers');
       addMarkers();
     } else {
-      console.log('Waiting for map to load');
-      map.current.once('load', () => {
-        console.log('Map loaded, adding markers');
-        addMarkers();
-      });
+      map.current.once('load', addMarkers);
     }
 
     // クリーンアップ関数
     return () => {
-      console.log('Cleaning up markers');
       spotMarkers.current.forEach(marker => marker.remove());
       spotMarkers.current = [];
     };
@@ -285,24 +264,6 @@ export default function MapView({ user, spots }: MapViewProps) {
     <div style={{ position: 'relative', width: '100%', height: '100vh' }}>
       <div ref={mapContainer} style={{ width: '100%', height: '100%' }} />
       
-      {/* デバッグ情報 */}
-      <div style={{
-        position: 'absolute',
-        top: '10px',
-        left: '10px',
-        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-        padding: '10px',
-        borderRadius: '5px',
-        fontSize: '12px',
-        zIndex: 1000
-      }}>
-        <div>スポット数: {spots.length}</div>
-        <div>マーカー数: {spotMarkers.current.length}</div>
-        {userLocation && (
-          <div>現在地: {userLocation[1].toFixed(4)}, {userLocation[0].toFixed(4)}</div>
-        )}
-      </div>
-      
       {showQuiz && quizData && selectedSpot && (
         <QuizModal
           user={user}
@@ -322,23 +283,13 @@ export default function MapView({ user, spots }: MapViewProps) {
           display: block;
         }
 
-        .spot-marker {
-          /* transitionを削除してパフォーマンス向上 */
-        }
-
         /* Mapboxのマーカーが正しく配置されるように */
         .mapboxgl-marker {
           position: absolute !important;
-          will-change: transform;
         }
 
         .mapboxgl-canvas-container {
           position: relative !important;
-        }
-        
-        /* ハードウェアアクセラレーションを有効化 */
-        .mapboxgl-map {
-          transform: translateZ(0);
         }
       `}</style>
     </div>
