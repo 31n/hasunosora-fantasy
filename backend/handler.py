@@ -280,8 +280,8 @@ def admin_upload_image(event):
         check_admin_auth(event)
         
         # multipart/form-dataの処理
-        from multipart import MultipartParser
-        from io import BytesIO
+        from email import message_from_bytes
+        from email.policy import default
         
         content_type_header = event.get('headers', {}).get('content-type') or event.get('headers', {}).get('Content-Type', '')
         
@@ -297,30 +297,19 @@ def admin_upload_image(event):
         else:
             body_bytes = body.encode('utf-8')
         
-        # boundaryを取得
-        boundary = None
-        for part in content_type_header.split(';'):
-            if 'boundary=' in part:
-                boundary = part.split('boundary=')[1].strip()
-                break
-        
-        if not boundary:
-            return error_response('INVALID_REQUEST', 'No boundary in content type', 400)
-        
-        # multipartパース
-        parser = MultipartParser(
-            BytesIO(body_bytes),
-            boundary.encode('utf-8'),
-            len(body_bytes)
-        )
+        # HTTPヘッダーを構築してメッセージとしてパース
+        message_bytes = f"Content-Type: {content_type_header}\r\n\r\n".encode('utf-8') + body_bytes
+        msg = message_from_bytes(message_bytes, policy=default)
         
         file_data = None
         file_content_type = None
         
-        for part in parser:
-            if part.name == 'file':
-                file_data = part.file.read()
-                file_content_type = part.content_type or 'image/jpeg'
+        # マルチパートの各パートを処理
+        for part in msg.iter_parts():
+            content_disposition = part.get('Content-Disposition', '')
+            if 'name="file"' in content_disposition:
+                file_data = part.get_payload(decode=True)
+                file_content_type = part.get_content_type() or 'image/jpeg'
                 break
         
         if not file_data:
