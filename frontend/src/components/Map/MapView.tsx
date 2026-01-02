@@ -278,6 +278,24 @@ export default function MapView({ user, spots }: MapViewProps) {
     <div style={{ position: 'relative', width: '100%', height: '100vh' }}>
       <div ref={mapContainer} style={{ width: '100%', height: '100%' }} />
       
+      {/* デバッグ情報 */}
+      <div style={{
+        position: 'absolute',
+        top: '10px',
+        left: '10px',
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        padding: '10px',
+        borderRadius: '5px',
+        fontSize: '12px',
+        zIndex: 1000
+      }}>
+        <div>スポット数: {spots.length}</div>
+        <div>マーカー数: {spotMarkers.current.length}</div>
+        {userLocation && (
+          <div>現在地: {userLocation[1].toFixed(4)}, {userLocation[0].toFixed(4)}</div>
+        )}
+      </div>
+      
       {showQuiz && quizData && selectedSpot && (
         <QuizModal
           user={user}
@@ -299,6 +317,15 @@ export default function MapView({ user, spots }: MapViewProps) {
 
         .spot-marker {
           will-change: transform;
+        }
+
+        /* Mapboxのマーカーが正しく配置されるように */
+        .mapboxgl-marker {
+          position: absolute !important;
+        }
+
+        .mapboxgl-canvas-container {
+          position: relative !important;
         }
       `}</style>
     </div>
