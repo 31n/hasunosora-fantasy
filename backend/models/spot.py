@@ -87,7 +87,7 @@ class Spot:
         self.version = datetime.utcnow().strftime('%Y%m%d')
         
         table = get_table(config.SPOTS_TABLE)
-        table.put_item(Item=self.to_dict())
+        table.put_item(Item=self.to_dict(for_dynamodb=True))
         
         # マスターバージョンを更新
         self._update_master_version()
