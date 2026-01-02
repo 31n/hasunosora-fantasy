@@ -156,22 +156,26 @@ export default function MapView({ user, spots }: MapViewProps) {
         
         const el = document.createElement('div');
         el.className = 'spot-marker';
-        el.style.cssText = `
-          background-color: #ef4444;
-          width: 30px;
-          height: 30px;
-          border-radius: 50%;
-          cursor: pointer;
-          border: 3px solid white;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-          transition: transform 0.2s;
+        el.innerHTML = `
+          <div style="
+            background-color: #ef4444;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            transition: transform 0.2s;
+          "></div>
         `;
 
         try {
-          // Mapboxのマーカーを作成
+          // Mapboxのマーカーを作成（rotationAlignmentとpitchAlignmentを追加）
           const marker = new mapboxgl.Marker({
             element: el,
-            anchor: 'center'
+            anchor: 'center',
+            rotationAlignment: 'map',
+            pitchAlignment: 'map'
           })
             .setLngLat([spot.longitude, spot.latitude])
             .addTo(map.current!);
@@ -185,12 +189,15 @@ export default function MapView({ user, spots }: MapViewProps) {
           });
 
           // ホバーエフェクト
-          el.addEventListener('mouseenter', () => {
-            el.style.transform = 'scale(1.2)';
-          });
-          el.addEventListener('mouseleave', () => {
-            el.style.transform = 'scale(1)';
-          });
+          const innerDiv = el.querySelector('div') as HTMLElement;
+          if (innerDiv) {
+            el.addEventListener('mouseenter', () => {
+              innerDiv.style.transform = 'scale(1.2)';
+            });
+            el.addEventListener('mouseleave', () => {
+              innerDiv.style.transform = 'scale(1)';
+            });
+          }
 
           // ポップアップを追加
           const popup = new mapboxgl.Popup({ offset: 25 })
@@ -316,16 +323,22 @@ export default function MapView({ user, spots }: MapViewProps) {
         }
 
         .spot-marker {
-          will-change: transform;
+          /* transitionを削除してパフォーマンス向上 */
         }
 
         /* Mapboxのマーカーが正しく配置されるように */
         .mapboxgl-marker {
           position: absolute !important;
+          will-change: transform;
         }
 
         .mapboxgl-canvas-container {
           position: relative !important;
+        }
+        
+        /* ハードウェアアクセラレーションを有効化 */
+        .mapboxgl-map {
+          transform: translateZ(0);
         }
       `}</style>
     </div>
