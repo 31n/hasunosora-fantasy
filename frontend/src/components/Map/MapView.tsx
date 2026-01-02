@@ -23,6 +23,7 @@ export default function MapView({ user, spots, selectedSpotId }: MapViewProps) {
   const [selectedSpot, setSelectedSpot] = useState<Spot | null>(null);
   const [quizData, setQuizData] = useState<CheckInResponse | null>(null);
   const [showQuiz, setShowQuiz] = useState(false);
+  const [mapLoaded, setMapLoaded] = useState(false);
 
   // selectedSpotIdが変更されたときにスポットの位置に移動
   useEffect(() => {
@@ -48,6 +49,11 @@ export default function MapView({ user, spots, selectedSpotId }: MapViewProps) {
       center: [139.7454, 35.6586], // 東京タワー
       zoom: 15, // ズームレベルを大きく（12→15）
       language: 'ja' // 日本語化
+    });
+
+    // 地図のロード完了を監視
+    map.current.on('load', () => {
+      setMapLoaded(true);
     });
 
     // ナビゲーションコントロール（ズームボタン）を追加
@@ -144,7 +150,7 @@ export default function MapView({ user, spots, selectedSpotId }: MapViewProps) {
   };
 
   useEffect(() => {
-    if (!map.current) return;
+    if (!map.current || !mapLoaded) return;
 
     // 既存のマーカーをクリア
     spotMarkers.current.forEach(marker => marker.remove());
@@ -185,7 +191,7 @@ export default function MapView({ user, spots, selectedSpotId }: MapViewProps) {
       spotMarkers.current.forEach(marker => marker.remove());
       spotMarkers.current = [];
     };
-  }, [spots]);
+  }, [spots, mapLoaded]);
 
   const handleSpotClick = async (spot: Spot) => {
     setSelectedSpot(spot);
