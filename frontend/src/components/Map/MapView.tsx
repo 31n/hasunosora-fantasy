@@ -231,9 +231,22 @@ export default function MapView({ user, spots, selectedSpotId }: MapViewProps) {
       console.log('  - DOM内のスポットマーカー数:', markers.length);
     }
 
+    // 地図の動きを監視してマーカーの状態を確認
+    const handleMapMove = () => {
+      if (spotMarkers.current.length > 0) {
+        const firstMarker = spotMarkers.current[0];
+        const el = firstMarker.getElement();
+        console.log('🔄 地図移動中 - マーカー位置:', el.style.transform);
+      }
+    };
+    map.current.on('move', handleMapMove);
+
     // クリーンアップ
     return () => {
       console.log('🧹 クリーンアップ: マーカー削除');
+      if (map.current) {
+        map.current.off('move', handleMapMove);
+      }
       spotMarkers.current.forEach(marker => marker.remove());
       spotMarkers.current = [];
     };
