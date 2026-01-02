@@ -150,14 +150,22 @@ export default function MapView({ user, spots, selectedSpotId }: MapViewProps) {
   };
 
   useEffect(() => {
-    if (!map.current || !mapLoaded) return;
+    if (!map.current || !mapLoaded) {
+      console.log('❌ マーカー追加スキップ:', { mapCurrent: !!map.current, mapLoaded });
+      return;
+    }
+
+    console.log('🗺️ スポットマーカー更新開始:', { spotsCount: spots.length });
 
     // 既存のマーカーをクリア
+    console.log('🧹 既存マーカー削除:', spotMarkers.current.length);
     spotMarkers.current.forEach(marker => marker.remove());
     spotMarkers.current = [];
 
     // スポットマーカーを追加
-    spots.forEach((spot) => {
+    spots.forEach((spot, index) => {
+      console.log(`📍 マーカー追加 [${index}]:`, spot.spot_name, `(${spot.latitude}, ${spot.longitude})`);
+      
       const el = document.createElement('div');
       el.className = 'spot-marker';
       el.style.backgroundColor = '#ef4444';
@@ -186,8 +194,11 @@ export default function MapView({ user, spots, selectedSpotId }: MapViewProps) {
       marker.setPopup(popup);
     });
 
+    console.log('✅ マーカー追加完了:', spotMarkers.current.length);
+
     // クリーンアップ
     return () => {
+      console.log('🧹 クリーンアップ: マーカー削除');
       spotMarkers.current.forEach(marker => marker.remove());
       spotMarkers.current = [];
     };
