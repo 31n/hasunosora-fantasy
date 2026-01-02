@@ -53,8 +53,24 @@ export default function MapView({ user, spots, selectedSpotId }: MapViewProps) {
 
     // 地図のロード完了を監視
     map.current.on('load', () => {
+      console.log('✅ 地図ロード完了');
       setMapLoaded(true);
     });
+
+    // スタイルが既にロードされている場合の対処
+    map.current.on('style.load', () => {
+      console.log('✅ スタイルロード完了');
+      setMapLoaded(true);
+    });
+
+    // idleイベントでも確認（フォールバック）
+    const checkMapReady = () => {
+      if (map.current && map.current.isStyleLoaded()) {
+        console.log('✅ 地図準備完了（idle）');
+        setMapLoaded(true);
+      }
+    };
+    map.current.on('idle', checkMapReady);
 
     // ナビゲーションコントロール（ズームボタン）を追加
     map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
