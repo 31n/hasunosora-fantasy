@@ -139,39 +139,62 @@ export default function MapView({ user, spots }: MapViewProps) {
   useEffect(() => {
     if (!map.current) return;
 
-    // 既存のマーカーをクリア
-    spotMarkers.current.forEach(marker => marker.remove());
-    spotMarkers.current = [];
+    // 地図が完全に読み込まれるまで待つ
+    const addMarkers = () => {
+      // 既存のマーカーをクリア
+      spotMarkers.current.forEach(marker => marker.remove());
+      spotMarkers.current = [];
 
-    // スポットマーカーを追加
-    spots.forEach((spot) => {
-      const el = document.createElement('div');
-      el.className = 'spot-marker';
-      el.style.backgroundColor = '#ef4444';
-      el.style.width = '30px';
-      el.style.height = '30px';
-      el.style.borderRadius = '50%';
-      el.style.cursor = 'pointer';
-      el.style.border = '3px solid white';
-      el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+      // スポットマーカーを追加
+      spots.forEach((spot) => {
+        const el = document.createElement('div');
+        el.className = 'spot-marker';
+        el.style.backgroundColor = '#ef4444';
+        el.style.width = '30px';
+        el.style.height = '30px';
+        el.style.borderRadius = '50%';
+        el.style.cursor = 'pointer';
+        el.style.border = '3px solid white';
+        el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+        el.style.transition = 'transform 0.2s';
 
-      const marker = new mapboxgl.Marker(el)
-        .setLngLat([spot.longitude, spot.latitude])
-        .addTo(map.current!);
+        // Mapboxのマーカーを作成（anchor: 'center'を追加）
+        const marker = new mapboxgl.Marker({
+          element: el,
+          anchor: 'center'
+        })
+          .setLngLat([spot.longitude, spot.latitude])
+          .addTo(map.current!);
 
-      spotMarkers.current.push(marker);
+        spotMarkers.current.push(marker);
 
-      // クリックイベント
-      el.addEventListener('click', () => {
-        handleSpotClick(spot);
+        // クリックイベント
+        el.addEventListener('click', () => {
+          handleSpotClick(spot);
+        });
+
+        // ホバーエフェクト
+        el.addEventListener('mouseenter', () => {
+          el.style.transform = 'scale(1.2)';
+        });
+        el.addEventListener('mouseleave', () => {
+          el.style.transform = 'scale(1)';
+        });
+
+        // ポップアップを追加
+        const popup = new mapboxgl.Popup({ offset: 25 })
+          .setHTML(`<div style="padding: 4px 8px;"><strong>${spot.spot_name}</strong></div>`);
+        
+        marker.setPopup(popup);
       });
+    };
 
-      // ポップアップを追加
-      const popup = new mapboxgl.Popup({ offset: 25 })
-        .setHTML(`<div style="padding: 4px 8px;"><strong>${spot.spot_name}</strong></div>`);
-      
-      marker.setPopup(popup);
-    });
+    // 地図が読み込まれているか確認
+    if (map.current.loaded()) {
+      addMarkers();
+    } else {
+      map.current.on('load', addMarkers);
+    }
 
     // クリーンアップ関数
     return () => {
@@ -250,6 +273,10 @@ export default function MapView({ user, spots }: MapViewProps) {
         
         .user-location-marker svg {
           display: block;
+        }
+
+        .spot-marker {
+          will-change: transform;
         }
       `}</style>
     </div>
