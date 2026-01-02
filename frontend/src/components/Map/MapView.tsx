@@ -190,14 +190,17 @@ export default function MapView({ user, spots }: MapViewProps) {
   const handleSpotClick = async (spot: Spot) => {
     setSelectedSpot(spot);
 
-    // 位置情報の状態チェック
-    if (locationStatus === 'loading') {
-      alert('位置情報を取得中です。しばらくお待ちください。');
-      return;
-    }
+    // デバッグ情報
+    console.log('locationStatus:', locationStatus);
+    console.log('userLocation:', userLocation);
 
-    if (locationStatus === 'error' || !userLocation) {
-      alert('位置情報を取得できません。ブラウザの設定を確認してください。');
+    // userLocationの存在を最優先でチェック
+    if (!userLocation) {
+      if (locationStatus === 'loading') {
+        alert('位置情報を取得中です。しばらくお待ちください。');
+      } else {
+        alert('位置情報を取得できません。ブラウザの設定を確認してください。');
+      }
       return;
     }
 
