@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { storage } from './services/storage';
 import { userApi, masterApi } from './services/api';
@@ -18,6 +18,14 @@ import Header from './components/Common/Header';
 import Loading from './components/Common/Loading';
 
 import type { User, Spot } from './types';
+
+function MapRoute({ user, spots }: { user: User; spots: Spot[] }) {
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const selectedSpotId = searchParams.get('spot') || undefined;
+  
+  return <MapView user={user} spots={spots} selectedSpotId={selectedSpotId} />;
+}
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -108,7 +116,7 @@ function App() {
           ) : (
             <>
               {/* メイン画面 */}
-              <Route path="/" element={<MapView user={user} spots={spots} />} />
+              <Route path="/" element={<MapRoute user={user} spots={spots} />} />
               <Route path="/spots" element={<SpotList spots={spots} />} />
               <Route path="/spots/:spotId" element={<SpotDetail user={user} />} />
               <Route path="/mypage" element={<MyPage user={user} setUser={setUser} />} />

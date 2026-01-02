@@ -10,9 +10,10 @@ mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN || '';
 interface MapViewProps {
   user: User;
   spots: Spot[];
+  selectedSpotId?: string;
 }
 
-export default function MapView({ user, spots }: MapViewProps) {
+export default function MapView({ user, spots, selectedSpotId }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const userMarker = useRef<mapboxgl.Marker | null>(null);
@@ -21,6 +22,20 @@ export default function MapView({ user, spots }: MapViewProps) {
   const [selectedSpot, setSelectedSpot] = useState<Spot | null>(null);
   const [quizData, setQuizData] = useState<CheckInResponse | null>(null);
   const [showQuiz, setShowQuiz] = useState(false);
+
+  // selectedSpotIdが変更されたときにスポットの位置に移動
+  useEffect(() => {
+    if (selectedSpotId && map.current) {
+      const spot = spots.find(s => s.spot_id === selectedSpotId);
+      if (spot) {
+        map.current.flyTo({
+          center: [spot.longitude, spot.latitude],
+          zoom: 17,
+          essential: true
+        });
+      }
+    }
+  }, [selectedSpotId, spots]);
 
   useEffect(() => {
     if (!mapContainer.current) return;
@@ -167,22 +182,44 @@ export default function MapView({ user, spots }: MapViewProps) {
     return () => {
       markers.forEach(marker => marker.remove());
     };
-  }, [spots]);
+  }, [spots, map.current]);
 
   const handleSpotClick = async (spot: Spot) => {
     setSelectedSpot(spot);
 
+    // 位置情報を再取得を試みる
     if (!userLocation) {
-      alert('位置情報を取得できません');
-      return;
+      if (navigator.geolocation) {
+        try {
+          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true });
+          });
+          const newLocation: [number, number] = [position.coords.longitude, position.coords.latitude];
+          setUserLocation(newLocation);
+          
+          // 位置情報取得後にチェックイン処理
+          await performCheckin(spot, newLocation);
+          return;
+        } catch (error) {
+          alert('位置情報を取得できません。位置情報の使用を許可してください。');
+          return;
+        }
+      } else {
+        alert('このデバイスでは位置情報を取得できません。');
+        return;
+      }
     }
 
+    await performCheckin(spot, userLocation);
+  };
+
+  const performCheckin = async (spot: Spot, location: [number, number]) => {
     try {
       const response = await checkinApi.checkin(
         user.user_id,
         spot.spot_id,
-        userLocation[1],
-        userLocation[0]
+        location[1],
+        location[0]
       );
 
       if (response.quiz_available && response.quiz) {

@@ -181,6 +181,25 @@ export default function SpotList({ spots }: SpotListProps) {
                       📍 {formatDistance(spot.distance)}
                     </span>
                   )}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/?spot=${spot.spot_id}`);
+                    }}
+                    style={{
+                      marginTop: '8px',
+                      padding: '8px 16px',
+                      backgroundColor: '#3b82f6',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      cursor: 'pointer',
+                      fontWeight: '500'
+                    }}
+                  >
+                    🗺️ 地図を表示
+                  </button>
                 </div>
 
                 <div style={{ 

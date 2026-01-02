@@ -164,7 +164,7 @@ export default function SpotDetail({ user }: SpotDetailProps) {
 
         {/* 地図で表示ボタン */}
         <button
-          onClick={() => navigate('/')}
+          onClick={() => navigate(`/?spot=${spot.spot_id}`)}
           style={{
             width: '100%',
             marginTop: '16px',
