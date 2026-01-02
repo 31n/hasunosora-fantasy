@@ -226,26 +226,48 @@ export default function MapView({ user, spots, selectedSpotId }: MapViewProps) {
     console.log('🗺️ 地図コンテナ情報:');
     console.log('  - 地図の中心:', map.current.getCenter());
     console.log('  - 地図のズーム:', map.current.getZoom());
+    console.log('  - 地図インスタンス:', map.current);
     if (mapContainer.current) {
       const markers = mapContainer.current.querySelectorAll('.spot-marker');
       console.log('  - DOM内のスポットマーカー数:', markers.length);
+      markers.forEach((m, i) => {
+        console.log(`    [${i}] transform:`, (m as HTMLElement).style.transform);
+      });
     }
 
-    // 地図の動きを監視してマーカーの状態を確認
+    // 地図の各種イベントを監視
+    let moveCount = 0;
     const handleMapMove = () => {
-      if (spotMarkers.current.length > 0) {
-        const firstMarker = spotMarkers.current[0];
-        const el = firstMarker.getElement();
-        console.log('🔄 地図移動中 - マーカー位置:', el.style.transform);
+      moveCount++;
+      if (moveCount % 10 === 1) { // 10回に1回ログ出力
+        console.log('🔄 地図移動検知:', moveCount, '回目');
+        if (spotMarkers.current.length > 0) {
+          const firstMarker = spotMarkers.current[0];
+          const el = firstMarker.getElement();
+          console.log('  - マーカーtransform:', el.style.transform);
+        }
       }
     };
+    
+    const handleMapMoveStart = () => {
+      console.log('🚀 地図移動開始');
+    };
+    
+    const handleMapMoveEnd = () => {
+      console.log('🏁 地図移動終了 - 中心:', map.current?.getCenter());
+    };
+
+    map.current.on('movestart', handleMapMoveStart);
     map.current.on('move', handleMapMove);
+    map.current.on('moveend', handleMapMoveEnd);
 
     // クリーンアップ
     return () => {
       console.log('🧹 クリーンアップ: マーカー削除');
       if (map.current) {
+        map.current.off('movestart', handleMapMoveStart);
         map.current.off('move', handleMapMove);
+        map.current.off('moveend', handleMapMoveEnd);
       }
       spotMarkers.current.forEach(marker => marker.remove());
       spotMarkers.current = [];
