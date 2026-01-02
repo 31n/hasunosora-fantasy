@@ -16,24 +16,23 @@ export default function MapView({ user, spots }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const userMarker = useRef<mapboxgl.Marker | null>(null);
-  const spotMarkers = useRef<mapboxgl.Marker[]>([]);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+  const [locationStatus, setLocationStatus] = useState<'loading' | 'available' | 'error'>('loading');
   const [userHeading, setUserHeading] = useState<number>(0);
   const [selectedSpot, setSelectedSpot] = useState<Spot | null>(null);
   const [quizData, setQuizData] = useState<CheckInResponse | null>(null);
   const [showQuiz, setShowQuiz] = useState(false);
 
-  // 地図の初期化
   useEffect(() => {
-    if (!mapContainer.current || map.current) return;
+    if (!mapContainer.current) return;
 
     // 地図を初期化（日本語化）
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/streets-v12',
       center: [139.7454, 35.6586], // 東京タワー
-      zoom: 15,
-      language: 'ja'
+      zoom: 15, // ズームレベルを大きく（12→15）
+      language: 'ja' // 日本語化
     });
 
     // ナビゲーションコントロール（ズームボタン）を追加
@@ -44,190 +43,161 @@ export default function MapView({ user, spots }: MapViewProps) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
-          const newLocation: [number, number] = [longitude, latitude];
-          setUserLocation(newLocation);
+          setUserLocation([longitude, latitude]);
+          setLocationStatus('available');
 
           if (map.current) {
-            map.current.setCenter(newLocation);
+            map.current.setCenter([longitude, latitude]);
+
+            // 矢印型のマーカーを作成
+            const el = document.createElement('div');
+            el.className = 'user-location-marker';
+            el.innerHTML = `
+              <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity="0.3"/>
+                  </filter>
+                </defs>
+                <circle cx="20" cy="20" r="18" fill="#3b82f6" opacity="0.2"/>
+                <circle cx="20" cy="20" r="12" fill="#3b82f6" filter="url(#shadow)"/>
+                <path d="M 20 8 L 24 18 L 20 16 L 16 18 Z" fill="white" filter="url(#shadow)"/>
+              </svg>
+            `;
+
+            // ユーザー位置マーカーを作成
+            userMarker.current = new mapboxgl.Marker({
+              element: el,
+              anchor: 'center',
+              rotationAlignment: 'map',
+              pitchAlignment: 'map'
+            })
+              .setLngLat([longitude, latitude])
+              .addTo(map.current);
+
+            // 方角の更新を監視
+            if ('ondeviceorientationabsolute' in window) {
+              window.addEventListener('deviceorientationabsolute', handleOrientation);
+            } else if ('ondeviceorientation' in window) {
+              window.addEventListener('deviceorientation', handleOrientation);
+            }
+
+            // 位置情報の継続的な更新
+            navigator.geolocation.watchPosition(
+              (position) => {
+                const { latitude, longitude } = position.coords;
+                const newLocation: [number, number] = [longitude, latitude];
+                setUserLocation(newLocation);
+                
+                if (userMarker.current) {
+                  userMarker.current.setLngLat(newLocation);
+                }
+              },
+              (error) => {
+                console.error('位置情報更新エラー:', error);
+                // エラーでもuserLocationはnullにしない（既存の位置情報を保持）
+              },
+              { enableHighAccuracy: true, maximumAge: 0 }
+            );
           }
         },
         (error) => {
           console.error('Geolocation error:', error);
+          setLocationStatus('error');
+          
+          // エラーメッセージを表示
+          if (error.code === error.PERMISSION_DENIED) {
+            alert('位置情報の使用が拒否されています。ブラウザの設定を確認してください。');
+          } else if (error.code === error.POSITION_UNAVAILABLE) {
+            alert('位置情報を取得できませんでした。');
+          } else if (error.code === error.TIMEOUT) {
+            alert('位置情報の取得がタイムアウトしました。');
+          }
         },
-        { enableHighAccuracy: true }
+        { enableHighAccuracy: true, timeout: 10000 }
       );
-
-      // 位置情報の継続的な更新
-      const watchId = navigator.geolocation.watchPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          const newLocation: [number, number] = [longitude, latitude];
-          setUserLocation(newLocation);
-        },
-        (error) => console.error('位置情報更新エラー:', error),
-        { enableHighAccuracy: true, maximumAge: 0 }
-      );
-
-      return () => {
-        navigator.geolocation.clearWatch(watchId);
-      };
-    }
-  }, []);
-
-  // ユーザー位置マーカーの作成・更新
-  useEffect(() => {
-    if (!map.current || !userLocation) return;
-
-    if (!userMarker.current) {
-      // マーカーを新規作成
-      const el = document.createElement('div');
-      el.className = 'user-location-marker';
-      el.innerHTML = `
-        <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-              <feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity="0.3"/>
-            </filter>
-          </defs>
-          <circle cx="20" cy="20" r="18" fill="#3b82f6" opacity="0.2"/>
-          <circle cx="20" cy="20" r="12" fill="#3b82f6" filter="url(#shadow)"/>
-          <path d="M 20 8 L 24 18 L 20 16 L 16 18 Z" fill="white" filter="url(#shadow)"/>
-        </svg>
-      `;
-
-      userMarker.current = new mapboxgl.Marker({
-        element: el,
-        anchor: 'center',
-        rotationAlignment: 'map',
-        pitchAlignment: 'map'
-      })
-        .setLngLat(userLocation)
-        .addTo(map.current);
     } else {
-      // 既存のマーカーの位置を更新
-      userMarker.current.setLngLat(userLocation);
-    }
-
-    // 方角の更新を監視
-    if ('ondeviceorientationabsolute' in window) {
-      window.addEventListener('deviceorientationabsolute', handleOrientation);
-    } else if ('ondeviceorientation' in window) {
-      window.addEventListener('deviceorientation', handleOrientation);
+      setLocationStatus('error');
+      alert('このブラウザは位置情報に対応していません。');
     }
 
     return () => {
       window.removeEventListener('deviceorientationabsolute', handleOrientation);
       window.removeEventListener('deviceorientation', handleOrientation);
+      map.current?.remove();
     };
-  }, [userLocation]);
+  }, []);
 
-  // マーカーの回転を更新
+  // 方角が変わったときに矢印を回転
   useEffect(() => {
     if (userMarker.current) {
+      const el = userMarker.current.getElement();
+      // rotation プロパティを使用してマーカー自体を回転
       userMarker.current.setRotation(userHeading);
     }
   }, [userHeading]);
 
   const handleOrientation = (event: DeviceOrientationEvent) => {
     if (event.alpha !== null) {
+      // デバイスの向きを取得
       let heading = event.webkitCompassHeading || (360 - event.alpha);
       setUserHeading(heading);
     }
   };
 
-  // スポットマーカーの作成・更新
   useEffect(() => {
     if (!map.current) return;
 
-    const addMarkers = () => {
-      // 既存のマーカーをクリア
-      spotMarkers.current.forEach(marker => marker.remove());
-      spotMarkers.current = [];
+    // 既存のマーカーをクリア
+    const markers: mapboxgl.Marker[] = [];
 
-      // スポットマーカーを追加
-      spots.forEach((spot) => {
-        // SVG要素として作成
-        const el = document.createElement('div');
-        el.style.width = '40px';
-        el.style.height = '40px';
-        el.style.cursor = 'pointer';
-        el.innerHTML = `
-          <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <filter id="shadow-spot-${spot.spot_id}" x="-50%" y="-50%" width="200%" height="200%">
-                <feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity="0.3"/>
-              </filter>
-            </defs>
-            <circle cx="20" cy="20" r="15" fill="#ef4444" filter="url(#shadow-spot-${spot.spot_id})"/>
-            <circle cx="20" cy="20" r="10" fill="white"/>
-            <circle cx="20" cy="20" r="6" fill="#ef4444"/>
-          </svg>
-        `;
+    // スポットマーカーを追加
+    spots.forEach((spot) => {
+      const el = document.createElement('div');
+      el.className = 'spot-marker';
+      el.style.backgroundColor = '#ef4444';
+      el.style.width = '30px';
+      el.style.height = '30px';
+      el.style.borderRadius = '50%';
+      el.style.cursor = 'pointer';
+      el.style.border = '3px solid white';
+      el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
 
-        // Mapboxのマーカーを作成
-        const marker = new mapboxgl.Marker({
-          element: el,
-          anchor: 'center',
-          rotationAlignment: 'map',
-          pitchAlignment: 'map'
-        })
-          .setLngLat([spot.longitude, spot.latitude])
-          .addTo(map.current!);
+      const marker = new mapboxgl.Marker(el)
+        .setLngLat([spot.longitude, spot.latitude])
+        .addTo(map.current!);
 
-        spotMarkers.current.push(marker);
+      markers.push(marker);
 
-        // クリックイベント
-        el.addEventListener('click', () => {
-          handleSpotClick(spot);
-        });
-
-        // ホバーエフェクト（transform以外のプロパティを使用）
-        el.addEventListener('mouseenter', () => {
-          el.style.filter = 'brightness(1.2)';
-        });
-        el.addEventListener('mouseleave', () => {
-          el.style.filter = 'brightness(1)';
-        });
-
-        // ポップアップを追加
-        const popup = new mapboxgl.Popup({ offset: 25 })
-          .setHTML(`<div style="padding: 4px 8px;"><strong>${spot.spot_name}</strong></div>`);
-        
-        marker.setPopup(popup);
+      // クリックイベント
+      el.addEventListener('click', () => {
+        handleSpotClick(spot);
       });
-    };
 
-    // 地図が読み込まれているか確認
-    if (map.current.loaded()) {
-      addMarkers();
-    } else {
-      map.current.once('load', addMarkers);
-    }
+      // ポップアップを追加
+      const popup = new mapboxgl.Popup({ offset: 25 })
+        .setHTML(`<div style="padding: 4px 8px;"><strong>${spot.spot_name}</strong></div>`);
+      
+      marker.setPopup(popup);
+    });
 
-    // クリーンアップ関数
+    // クリーンアップ
     return () => {
-      spotMarkers.current.forEach(marker => marker.remove());
-      spotMarkers.current = [];
+      markers.forEach(marker => marker.remove());
     };
   }, [spots]);
-
-  // 地図のクリーンアップ
-  useEffect(() => {
-    return () => {
-      if (userMarker.current) {
-        userMarker.current.remove();
-      }
-      if (map.current) {
-        map.current.remove();
-      }
-    };
-  }, []);
 
   const handleSpotClick = async (spot: Spot) => {
     setSelectedSpot(spot);
 
-    if (!userLocation) {
-      alert('位置情報を取得できません');
+    // 位置情報の状態チェック
+    if (locationStatus === 'loading') {
+      alert('位置情報を取得中です。しばらくお待ちください。');
+      return;
+    }
+
+    if (locationStatus === 'error' || !userLocation) {
+      alert('位置情報を取得できません。ブラウザの設定を確認してください。');
       return;
     }
 
@@ -247,7 +217,7 @@ export default function MapView({ user, spots }: MapViewProps) {
       }
     } catch (error: any) {
       if (error.message.includes('OUT_OF_RANGE')) {
-        alert('スポットに近づいてください');
+        alert('スポットから離れすぎています。スポットに近づいてください。');
       } else {
         alert('エラーが発生しました: ' + error.message);
       }
@@ -263,6 +233,45 @@ export default function MapView({ user, spots }: MapViewProps) {
   return (
     <div style={{ position: 'relative', width: '100%', height: '100vh' }}>
       <div ref={mapContainer} style={{ width: '100%', height: '100%' }} />
+      
+      {/* 位置情報ステータス表示 */}
+      {locationStatus === 'loading' && (
+        <div style={{
+          position: 'absolute',
+          top: '80px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          padding: '12px 24px',
+          backgroundColor: 'rgba(59, 130, 246, 0.9)',
+          color: 'white',
+          borderRadius: '8px',
+          fontSize: '14px',
+          fontWeight: '600',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
+          zIndex: 10
+        }}>
+          📍 位置情報を取得中...
+        </div>
+      )}
+
+      {locationStatus === 'error' && (
+        <div style={{
+          position: 'absolute',
+          top: '80px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          padding: '12px 24px',
+          backgroundColor: 'rgba(239, 68, 68, 0.9)',
+          color: 'white',
+          borderRadius: '8px',
+          fontSize: '14px',
+          fontWeight: '600',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
+          zIndex: 10
+        }}>
+          ⚠️ 位置情報を取得できません
+        </div>
+      )}
       
       {showQuiz && quizData && selectedSpot && (
         <QuizModal
@@ -281,15 +290,6 @@ export default function MapView({ user, spots }: MapViewProps) {
         
         .user-location-marker svg {
           display: block;
-        }
-
-        /* Mapboxのマーカーが正しく配置されるように */
-        .mapboxgl-marker {
-          position: absolute !important;
-        }
-
-        .mapboxgl-canvas-container {
-          position: relative !important;
         }
       `}</style>
     </div>
