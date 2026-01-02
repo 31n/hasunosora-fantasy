@@ -192,9 +192,19 @@ export default function MapView({ user, spots, selectedSpotId }: MapViewProps) {
       el.style.border = '3px solid white';
       el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
 
-      const marker = new mapboxgl.Marker(el)
+      if (!map.current) {
+        console.error('❌ map.current is null');
+        return;
+      }
+
+      const marker = new mapboxgl.Marker({
+        element: el,
+        anchor: 'center'
+      })
         .setLngLat([spot.longitude, spot.latitude])
-        .addTo(map.current!);
+        .addTo(map.current);
+
+      console.log(`✓ マーカー[${index}]追加完了:`, marker.getLngLat());
 
       spotMarkers.current.push(marker);
 
