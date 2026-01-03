@@ -56,210 +56,69 @@ functions:
       - http:
           path: /users/create
           method: post
-          cors:
-            origin: '*'
-            headers:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-              - X-Api-Key
-              - X-Amz-Security-Token
-              - X-Amz-User-Agent
-            allowCredentials: false
+          cors: true
       - http:
           path: /users/login
           method: post
-          cors:
-            origin: '*'
-            headers:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-              - X-Api-Key
-              - X-Amz-Security-Token
-              - X-Amz-User-Agent
-            allowCredentials: false
+          cors: true
       - http:
           path: /users/{user_id}/nickname
           method: put
-          cors:
-            origin: '*'
-            headers:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-              - X-Api-Key
-              - X-Amz-Security-Token
-              - X-Amz-User-Agent
-            allowCredentials: false
+          cors: true
       - http:
           path: /users/{user_id}/history
           method: get
-          cors:
-            origin: '*'
-            headers:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-              - X-Api-Key
-              - X-Amz-Security-Token
-              - X-Amz-User-Agent
-            allowCredentials: false
+          cors: true
       
       # マスタ関連
       - http:
           path: /master/version
           method: get
-          cors:
-            origin: '*'
-            headers:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-              - X-Api-Key
-              - X-Amz-Security-Token
-              - X-Amz-User-Agent
-            allowCredentials: false
+          cors: true
       - http:
           path: /master/spots
           method: get
-          cors:
-            origin: '*'
-            headers:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-              - X-Api-Key
-              - X-Amz-Security-Token
-              - X-Amz-User-Agent
-            allowCredentials: false
+          cors: true
       
       # チェックイン・クイズ
       - http:
           path: /checkins
           method: post
-          cors:
-            origin: '*'
-            headers:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-              - X-Api-Key
-              - X-Amz-Security-Token
-              - X-Amz-User-Agent
-            allowCredentials: false
+          cors: true
       - http:
           path: /quiz/answer
           method: post
-          cors:
-            origin: '*'
-            headers:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-              - X-Api-Key
-              - X-Amz-Security-Token
-              - X-Amz-User-Agent
-            allowCredentials: false
+          cors: true
       - http:
           path: /quiz/cooldown/{user_id}/{spot_id}
           method: get
-          cors:
-            origin: '*'
-            headers:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-              - X-Api-Key
-              - X-Amz-Security-Token
-              - X-Amz-User-Agent
-            allowCredentials: false
+          cors: true
       
       # 管理画面
       - http:
           path: /admin/login
           method: post
-          cors:
-            origin: '*'
-            headers:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-              - X-Api-Key
-              - X-Amz-Security-Token
-              - X-Amz-User-Agent
-              - x-admin-password
-            allowCredentials: false
+          cors: true
       - http:
           path: /admin/spots
           method: get
-          cors:
-            origin: '*'
-            headers:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-              - X-Api-Key
-              - X-Amz-Security-Token
-              - X-Amz-User-Agent
-              - x-admin-password
-            allowCredentials: false
+          cors: true
       - http:
           path: /admin/spots
           method: post
-          cors:
-            origin: '*'
-            headers:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-              - X-Api-Key
-              - X-Amz-Security-Token
-              - X-Amz-User-Agent
-              - x-admin-password
-            allowCredentials: false
+          cors: true
       - http:
           path: /admin/spots/{spot_id}
           method: put
-          cors:
-            origin: '*'
-            headers:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-              - X-Api-Key
-              - X-Amz-Security-Token
-              - X-Amz-User-Agent
-              - x-admin-password
-            allowCredentials: false
+          cors: true
       - http:
           path: /admin/spots/{spot_id}
           method: delete
-          cors:
-            origin: '*'
-            headers:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-              - X-Api-Key
-              - X-Amz-Security-Token
-              - X-Amz-User-Agent
-              - x-admin-password
-            allowCredentials: false
+          cors: true
       - http:
           path: /admin/images/upload
           method: post
-          cors:
-            origin: '*'
-            headers:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-              - X-Api-Key
-              - X-Amz-Security-Token
-              - X-Amz-User-Agent
-              - x-admin-password
-            allowCredentials: false
+          cors: true
 
 resources:
   Resources:
