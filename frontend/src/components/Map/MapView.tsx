@@ -16,6 +16,7 @@ export default function MapView({ user, spots }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const userMarker = useRef<mapboxgl.Marker | null>(null);
+  const userLocationRef = useRef<[number, number] | null>(null); // refを追加
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [locationStatus, setLocationStatus] = useState<'loading' | 'available' | 'error'>('loading');
   const [userHeading, setUserHeading] = useState<number>(0);
@@ -46,7 +47,11 @@ export default function MapView({ user, spots }: MapViewProps) {
         (position) => {
           console.log('位置情報の取得に成功:', position.coords);
           const { latitude, longitude } = position.coords;
-          setUserLocation([longitude, latitude]);
+          const location: [number, number] = [longitude, latitude];
+          
+          // refと状態の両方を更新
+          userLocationRef.current = location;
+          setUserLocation(location);
           setLocationStatus('available');
 
           if (map.current) {
@@ -90,6 +95,9 @@ export default function MapView({ user, spots }: MapViewProps) {
               (position) => {
                 const { latitude, longitude } = position.coords;
                 const newLocation: [number, number] = [longitude, latitude];
+                
+                // refと状態の両方を更新
+                userLocationRef.current = newLocation;
                 setUserLocation(newLocation);
                 
                 if (userMarker.current) {
@@ -199,12 +207,16 @@ export default function MapView({ user, spots }: MapViewProps) {
   const handleSpotClick = async (spot: Spot) => {
     setSelectedSpot(spot);
 
+    // refから最新の位置情報を取得
+    const currentLocation = userLocationRef.current;
+
     // デバッグ情報
     console.log('locationStatus:', locationStatus);
-    console.log('userLocation:', userLocation);
+    console.log('userLocation (state):', userLocation);
+    console.log('userLocation (ref):', currentLocation);
 
-    // userLocationの存在を最優先でチェック
-    if (!userLocation) {
+    // refの値を優先的にチェック
+    if (!currentLocation) {
       if (locationStatus === 'loading') {
         alert('位置情報を取得中です。しばらくお待ちください。');
       } else {
@@ -217,8 +229,8 @@ export default function MapView({ user, spots }: MapViewProps) {
       const response = await checkinApi.checkin(
         user.user_id,
         spot.spot_id,
-        userLocation[1],
-        userLocation[0]
+        currentLocation[1], // latitude
+        currentLocation[0]  // longitude
       );
 
       if (response.quiz_available && response.quiz) {
