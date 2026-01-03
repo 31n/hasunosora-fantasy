@@ -7,7 +7,7 @@ class SpotService:
         """マスターバージョンを取得"""
         return Spot.get_master_version()
     
-@staticmethod
+    @staticmethod
     def get_all_spots(client_version: str = None) -> Dict:
         """全スポット情報を取得"""
         current_version_info = Spot.get_master_version()

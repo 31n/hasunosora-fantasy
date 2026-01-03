@@ -56,69 +56,141 @@ functions:
       - http:
           path: /users/create
           method: post
-          cors: true
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: false
       - http:
           path: /users/login
           method: post
-          cors: true
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: false
       - http:
           path: /users/{user_id}/nickname
           method: put
-          cors: true
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: false
       - http:
           path: /users/{user_id}/history
           method: get
-          cors: true
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: false
       
       # マスタ関連
       - http:
           path: /master/version
           method: get
-          cors: true
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+            allowCredentials: false
       - http:
           path: /master/spots
           method: get
-          cors: true
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+            allowCredentials: false
       
       # チェックイン・クイズ
       - http:
           path: /checkins
           method: post
-          cors: true
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: false
       - http:
           path: /quiz/answer
           method: post
-          cors: true
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: false
       - http:
           path: /quiz/cooldown/{user_id}/{spot_id}
           method: get
-          cors: true
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+            allowCredentials: false
       
       # 管理画面
       - http:
           path: /admin/login
           method: post
-          cors: true
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - x-admin-password
+            allowCredentials: false
       - http:
           path: /admin/spots
           method: get
-          cors: true
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - x-admin-password
+            allowCredentials: false
       - http:
           path: /admin/spots
           method: post
-          cors: true
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - x-admin-password
+            allowCredentials: false
       - http:
           path: /admin/spots/{spot_id}
           method: put
-          cors: true
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - x-admin-password
+            allowCredentials: false
       - http:
           path: /admin/spots/{spot_id}
           method: delete
-          cors: true
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - x-admin-password
+            allowCredentials: false
       - http:
           path: /admin/images/upload
           method: post
-          cors: true
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - x-admin-password
+            allowCredentials: false
 
 resources:
   Resources:
