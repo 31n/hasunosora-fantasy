@@ -25,38 +25,78 @@ class Spot:
         self.created_at = created_at or datetime.utcnow().isoformat()
         self.updated_at = updated_at or datetime.utcnow().isoformat()
     
-    def to_dict(self) -> Dict:
-        """辞書形式に変換"""
-        result = {
-            'spot_id': self.spot_id,
-            'spot_name': self.spot_name,
-            'description': self.description,
-            'latitude': float(self.latitude),
-            'longitude': float(self.longitude),
-            'detection_radius': float(self.detection_radius),
-            'images': self.images,
-            'genre': self.genre,
-            'version': self.version,
-            'created_at': self.created_at,
-            'updated_at': self.updated_at
-        }
+    def to_dict(self, for_dynamodb: bool = False) -> Dict:
+        """
+        辞書形式に変換
         
-        # クイズがある場合のみ追加
-        if self.quiz:
-            result['quiz'] = self._convert_quiz_decimals(self.quiz)
+        Args:
+            for_dynamodb: TrueならDynamoDB用にDecimalに変換、FalseならAPI用にfloat/intに変換
+        """
+        if for_dynamodb:
+            # DynamoDB保存用（floatをDecimalに変換）
+            result = {
+                'spot_id': self.spot_id,
+                'spot_name': self.spot_name,
+                'description': self.description,
+                'latitude': Decimal(str(self.latitude)),
+                'longitude': Decimal(str(self.longitude)),
+                'detection_radius': Decimal(str(self.detection_radius)),
+                'images': self.images,
+                'genre': self.genre,
+                'version': self.version,
+                'created_at': self.created_at,
+                'updated_at': self.updated_at
+            }
+            
+            # クイズがある場合のみ追加（Decimalに変換）
+            if self.quiz:
+                result['quiz'] = self._convert_quiz_to_decimals(self.quiz)
+        else:
+            # API応答用（すべてfloat/intに変換）
+            result = {
+                'spot_id': self.spot_id,
+                'spot_name': self.spot_name,
+                'description': self.description,
+                'latitude': float(self.latitude),
+                'longitude': float(self.longitude),
+                'detection_radius': float(self.detection_radius),
+                'images': self.images,
+                'genre': self.genre,
+                'version': self.version,
+                'created_at': self.created_at,
+                'updated_at': self.updated_at
+            }
+            
+            # クイズがある場合のみ追加（int/floatに変換）
+            if self.quiz:
+                result['quiz'] = self._convert_quiz_to_primitives(self.quiz)
         
         return result
     
-    def _convert_quiz_decimals(self, quiz: Dict) -> Dict:
-        """QuizのDecimal型をintに変換"""
+    def _convert_quiz_to_decimals(self, quiz: Dict) -> Dict:
+        """QuizのintをDecimal型に変換（DynamoDB保存用）"""
         if not quiz:
             return {}
         
         converted = quiz.copy()
-        if 'score' in converted and isinstance(converted['score'], Decimal):
-            converted['score'] = int(converted['score'])
-        if 'correct_answer' in converted and isinstance(converted['correct_answer'], Decimal):
-            converted['correct_answer'] = int(converted['correct_answer'])
+        if 'score' in converted:
+            converted['score'] = Decimal(str(converted['score']))
+        if 'correct_answer' in converted:
+            converted['correct_answer'] = Decimal(str(converted['correct_answer']))
+        return converted
+    
+    def _convert_quiz_to_primitives(self, quiz: Dict) -> Dict:
+        """QuizのDecimal型をint/floatに変換（API応答用）"""
+        if not quiz:
+            return {}
+        
+        converted = quiz.copy()
+        if 'score' in converted:
+            if isinstance(converted['score'], Decimal):
+                converted['score'] = int(converted['score'])
+        if 'correct_answer' in converted:
+            if isinstance(converted['correct_answer'], Decimal):
+                converted['correct_answer'] = int(converted['correct_answer'])
         return converted
     
     def save(self):
@@ -65,7 +105,8 @@ class Spot:
         self.version = datetime.utcnow().strftime('%Y%m%d')
         
         table = get_table(config.SPOTS_TABLE)
-        table.put_item(Item=self.to_dict())
+        # DynamoDB用に変換して保存
+        table.put_item(Item=self.to_dict(for_dynamodb=True))
         
         # マスターバージョンを更新
         self._update_master_version()
@@ -88,6 +129,17 @@ class Spot:
             return None
         
         item = response['Item']
+        
+        # クイズがある場合はDecimalをintに変換
+        quiz = item.get('quiz')
+        if quiz:
+            quiz = {
+                'question': quiz.get('question'),
+                'choices': quiz.get('choices'),
+                'correct_answer': int(quiz.get('correct_answer', 0)) if isinstance(quiz.get('correct_answer'), Decimal) else quiz.get('correct_answer', 0),
+                'score': int(quiz.get('score', 0)) if isinstance(quiz.get('score'), Decimal) else quiz.get('score', 0)
+            }
+        
         return Spot(
             spot_id=item['spot_id'],
             spot_name=item['spot_name'],
@@ -97,7 +149,7 @@ class Spot:
             detection_radius=float(item['detection_radius']),
             images=item.get('images', []),
             genre=item.get('genre', ''),
-            quiz=item.get('quiz'),  # Noneの場合もあり
+            quiz=quiz,
             version=item.get('version', ''),
             created_at=item.get('created_at'),
             updated_at=item.get('updated_at')
@@ -111,6 +163,16 @@ class Spot:
         
         spots = []
         for item in response.get('Items', []):
+            # クイズがある場合はDecimalをintに変換
+            quiz = item.get('quiz')
+            if quiz:
+                quiz = {
+                    'question': quiz.get('question'),
+                    'choices': quiz.get('choices'),
+                    'correct_answer': int(quiz.get('correct_answer', 0)) if isinstance(quiz.get('correct_answer'), Decimal) else quiz.get('correct_answer', 0),
+                    'score': int(quiz.get('score', 0)) if isinstance(quiz.get('score'), Decimal) else quiz.get('score', 0)
+                }
+            
             spots.append(Spot(
                 spot_id=item['spot_id'],
                 spot_name=item['spot_name'],
@@ -120,7 +182,7 @@ class Spot:
                 detection_radius=float(item['detection_radius']),
                 images=item.get('images', []),
                 genre=item.get('genre', ''),
-                quiz=item.get('quiz'),
+                quiz=quiz,
                 version=item.get('version', ''),
                 created_at=item.get('created_at'),
                 updated_at=item.get('updated_at')

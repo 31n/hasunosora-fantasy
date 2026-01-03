@@ -7,7 +7,7 @@ class SpotService:
         """マスターバージョンを取得"""
         return Spot.get_master_version()
     
-    @staticmethod
+@staticmethod
     def get_all_spots(client_version: str = None) -> Dict:
         """全スポット情報を取得"""
         current_version_info = Spot.get_master_version()
@@ -20,9 +20,9 @@ class SpotService:
                 'spots': []
             }
         
-        # 全スポットを取得
+        # 全スポットを取得（API用に変換）
         spots = Spot.get_all()
-        spots_data = [spot.to_dict() for spot in spots]
+        spots_data = [spot.to_dict(for_dynamodb=False) for spot in spots]
         
         return {
             'version': current_version,

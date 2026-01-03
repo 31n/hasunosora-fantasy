@@ -15,7 +15,7 @@ class AdminService:
         """全スポットを取得（管理用）"""
         spots = Spot.get_all()
         return {
-            'spots': [spot.to_dict() for spot in spots]
+            'spots': [spot.to_dict(for_dynamodb=False) for spot in spots]
         }
     
     @staticmethod
@@ -32,6 +32,7 @@ class AdminService:
             spot_data.get('longitude')
         )
         
+        # float値をDecimalに変換してからSpotを作成
         spot = Spot(
             spot_name=spot_data['spot_name'],
             description=spot_data.get('description', ''),
