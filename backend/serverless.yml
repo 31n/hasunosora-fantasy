@@ -337,9 +337,9 @@ resources:
       Properties:
         BucketName: ${self:provider.environment.S3_BUCKET_NAME}
         PublicAccessBlockConfiguration:
-          BlockPublicAcls: true
+          BlockPublicAcls: false
           BlockPublicPolicy: false
-          IgnorePublicAcls: true
+          IgnorePublicAcls: false
           RestrictPublicBuckets: false
         CorsConfiguration:
           CorsRules:
