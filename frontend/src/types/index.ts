@@ -22,7 +22,8 @@ export interface Spot {
   longitude: number;
   detection_radius: number;
   images: string[];
-  quiz: Quiz;
+  genre: string; // ジャンル追加
+  quiz?: Quiz; // クイズは任意
   version: string;
   created_at: string;
   updated_at: string;

@@ -133,7 +133,23 @@ export default function SpotDetail({ user }: SpotDetailProps) {
         marginBottom: '24px',
         boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
       }}>
-        <h1 style={{ marginBottom: '16px' }}>{spot.spot_name}</h1>
+        <h1 style={{ marginBottom: '12px' }}>{spot.spot_name}</h1>
+        
+        {spot.genre && (
+          <span style={{
+            display: 'inline-block',
+            padding: '6px 16px',
+            backgroundColor: '#fef3c7',
+            color: '#92400e',
+            borderRadius: '12px',
+            fontSize: '14px',
+            fontWeight: '600',
+            marginBottom: '16px'
+          }}>
+            {spot.genre}
+          </span>
+        )}
+        
         <p style={{ color: '#6b7280', lineHeight: '1.6', marginBottom: '16px' }}>
           {spot.description}
         </p>
@@ -141,7 +157,7 @@ export default function SpotDetail({ user }: SpotDetailProps) {
         {/* スポット詳細 */}
         <div style={{ 
           display: 'grid',
-          gridTemplateColumns: 'repeat(2, 1fr)',
+          gridTemplateColumns: spot.quiz ? 'repeat(2, 1fr)' : '1fr',
           gap: '12px',
           marginTop: '16px',
           padding: '16px',
@@ -154,17 +170,26 @@ export default function SpotDetail({ user }: SpotDetailProps) {
             </p>
             <p style={{ fontWeight: '600' }}>{spot.detection_radius}m</p>
           </div>
-          <div>
-            <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
-              クイズ得点
-            </p>
-            <p style={{ fontWeight: '600' }}>{spot.quiz.score}点</p>
-          </div>
+          {spot.quiz ? (
+            <div>
+              <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
+                クイズ得点
+              </p>
+              <p style={{ fontWeight: '600' }}>{spot.quiz.score}点</p>
+            </div>
+          ) : (
+            <div>
+              <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
+                クイズ
+              </p>
+              <p style={{ fontWeight: '600', color: '#9ca3af' }}>なし</p>
+            </div>
+          )}
         </div>
 
         {/* 地図で表示ボタン */}
         <button
-          onClick={() => navigate(`/?spot=${spot.spot_id}`)}
+          onClick={() => navigate('/')}
           style={{
             width: '100%',
             marginTop: '16px',
@@ -213,13 +238,17 @@ export default function SpotDetail({ user }: SpotDetailProps) {
                   <p style={{ fontWeight: '600', marginBottom: '4px' }}>
                     {formatDate(item.checked_in_at)}
                   </p>
-                  {item.quiz_answered && (
+                  {item.quiz_answered ? (
                     <p style={{ 
                       fontSize: '14px',
                       color: item.quiz_correct ? '#059669' : '#dc2626'
                     }}>
                       {item.quiz_correct ? '✓ 正解' : '✗ 不正解'}
                       {item.quiz_correct && ` (+${item.score_earned}点)`}
+                    </p>
+                  ) : (
+                    <p style={{ fontSize: '14px', color: '#9ca3af' }}>
+                      クイズ未回答
                     </p>
                   )}
                 </div>

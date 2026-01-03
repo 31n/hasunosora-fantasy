@@ -14,8 +14,11 @@ export default function SpotList({ spots }: SpotListProps) {
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [spotsWithDistance, setSpotsWithDistance] = useState<SpotWithDistance[]>([]);
   const [sortBy, setSortBy] = useState<'distance' | 'name'>('distance');
-  const [filterVisited, setFilterVisited] = useState<'all' | 'visited' | 'unvisited'>('all');
+  const [selectedGenre, setSelectedGenre] = useState<string>('all');
   const navigate = useNavigate();
+
+  // ジャンル一覧を取得
+  const genres = ['all', ...new Set(spots.map(s => s.genre).filter(g => g))];
 
   useEffect(() => {
     // 位置情報を取得
@@ -69,19 +72,23 @@ export default function SpotList({ spots }: SpotListProps) {
     return `${(distance / 1000).toFixed(1)}km`;
   };
 
-  const getSortedSpots = () => {
-    let sorted = [...spotsWithDistance];
+  const getFilteredAndSortedSpots = () => {
+    // ジャンルでフィルタ
+    let filtered = selectedGenre === 'all' 
+      ? [...spotsWithDistance]
+      : spotsWithDistance.filter(s => s.genre === selectedGenre);
     
+    // ソート
     if (sortBy === 'distance' && userLocation) {
-      sorted.sort((a, b) => (a.distance || 0) - (b.distance || 0));
+      filtered.sort((a, b) => (a.distance || 0) - (b.distance || 0));
     } else if (sortBy === 'name') {
-      sorted.sort((a, b) => a.spot_name.localeCompare(b.spot_name));
+      filtered.sort((a, b) => a.spot_name.localeCompare(b.spot_name));
     }
 
-    return sorted;
+    return filtered;
   };
 
-  const sortedSpots = getSortedSpots();
+  const filteredSpots = getFilteredAndSortedSpots();
 
   return (
     <div style={{ padding: '16px', maxWidth: '800px', margin: '0 auto' }}>
@@ -108,16 +115,42 @@ export default function SpotList({ spots }: SpotListProps) {
           <option value="distance">距離順</option>
           <option value="name">名前順</option>
         </select>
+
+        <select
+          value={selectedGenre}
+          onChange={(e) => setSelectedGenre(e.target.value)}
+          style={{
+            padding: '8px 12px',
+            border: '2px solid #e5e7eb',
+            borderRadius: '8px',
+            fontSize: '14px',
+            cursor: 'pointer'
+          }}
+        >
+          <option value="all">すべてのジャンル</option>
+          {genres.filter(g => g !== 'all').map(genre => (
+            <option key={genre} value={genre}>{genre}</option>
+          ))}
+        </select>
       </div>
+
+      {/* スポットカウント */}
+      <p style={{ 
+        marginBottom: '16px', 
+        color: '#6b7280', 
+        fontSize: '14px' 
+      }}>
+        {filteredSpots.length}件のスポット
+      </p>
 
       {/* スポットリスト */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        {sortedSpots.length === 0 ? (
+        {filteredSpots.length === 0 ? (
           <p style={{ textAlign: 'center', color: '#6b7280', padding: '48px 0' }}>
             スポットが見つかりません
           </p>
         ) : (
-          sortedSpots.map((spot) => (
+          filteredSpots.map((spot) => (
             <div
               key={spot.spot_id}
               onClick={() => navigate(`/spots/${spot.spot_id}`)}
@@ -168,38 +201,47 @@ export default function SpotList({ spots }: SpotListProps) {
                   }}>
                     {spot.description}
                   </p>
-                  {spot.distance !== undefined && (
-                    <span style={{
-                      display: 'inline-block',
-                      padding: '4px 12px',
-                      backgroundColor: '#dbeafe',
-                      color: '#1e40af',
-                      borderRadius: '12px',
-                      fontSize: '12px',
-                      fontWeight: '600'
-                    }}>
-                      📍 {formatDistance(spot.distance)}
-                    </span>
-                  )}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate(`/?spot=${spot.spot_id}`);
-                    }}
-                    style={{
-                      marginTop: '8px',
-                      padding: '8px 16px',
-                      backgroundColor: '#3b82f6',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      cursor: 'pointer',
-                      fontWeight: '500'
-                    }}
-                  >
-                    🗺️ 地図を表示
-                  </button>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {spot.genre && (
+                      <span style={{
+                        display: 'inline-block',
+                        padding: '4px 12px',
+                        backgroundColor: '#fef3c7',
+                        color: '#92400e',
+                        borderRadius: '12px',
+                        fontSize: '12px',
+                        fontWeight: '600'
+                      }}>
+                        {spot.genre}
+                      </span>
+                    )}
+                    {spot.distance !== undefined && (
+                      <span style={{
+                        display: 'inline-block',
+                        padding: '4px 12px',
+                        backgroundColor: '#dbeafe',
+                        color: '#1e40af',
+                        borderRadius: '12px',
+                        fontSize: '12px',
+                        fontWeight: '600'
+                      }}>
+                        📍 {formatDistance(spot.distance)}
+                      </span>
+                    )}
+                    {!spot.quiz && (
+                      <span style={{
+                        display: 'inline-block',
+                        padding: '4px 12px',
+                        backgroundColor: '#e5e7eb',
+                        color: '#6b7280',
+                        borderRadius: '12px',
+                        fontSize: '12px',
+                        fontWeight: '600'
+                      }}>
+                        クイズなし
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <div style={{ 

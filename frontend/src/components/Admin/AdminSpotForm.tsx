@@ -9,6 +9,7 @@ export default function AdminSpotForm() {
   const { spotId } = useParams<{ spotId?: string }>();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [hasQuiz, setHasQuiz] = useState(true);
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -18,6 +19,7 @@ export default function AdminSpotForm() {
     longitude: '',
     detection_radius: '100',
     images: [] as string[],
+    genre: '',
     quiz: {
       question: '',
       choices: ['', '', '', ''],
@@ -50,8 +52,15 @@ export default function AdminSpotForm() {
           longitude: spot.longitude.toString(),
           detection_radius: spot.detection_radius.toString(),
           images: spot.images,
-          quiz: spot.quiz
+          genre: spot.genre || '',
+          quiz: spot.quiz || {
+            question: '',
+            choices: ['', '', '', ''],
+            correct_answer: 0,
+            score: 10
+          }
         });
+        setHasQuiz(!!spot.quiz);
       }
     } catch (error) {
       console.error('スポット取得エラー:', error);
@@ -116,15 +125,18 @@ export default function AdminSpotForm() {
       return;
     }
 
-    if (!formData.quiz.question.trim()) {
-      alert('クイズの問題文を入力してください');
-      return;
-    }
+    // クイズのバリデーション（クイズありの場合のみ）
+    if (hasQuiz) {
+      if (!formData.quiz.question.trim()) {
+        alert('クイズの問題文を入力してください');
+        return;
+      }
 
-    const validChoices = formData.quiz.choices.filter(c => c.trim());
-    if (validChoices.length < 2) {
-      alert('選択肢を2つ以上入力してください');
-      return;
+      const validChoices = formData.quiz.choices.filter(c => c.trim());
+      if (validChoices.length < 2) {
+        alert('選択肢を2つ以上入力してください');
+        return;
+      }
     }
 
     const password = storage.getAdminPassword();
@@ -133,20 +145,28 @@ export default function AdminSpotForm() {
     setLoading(true);
 
     try {
-      const spotData = {
+      const spotData: any = {
         spot_name: formData.spot_name,
         description: formData.description,
         latitude: parseFloat(formData.latitude),
         longitude: parseFloat(formData.longitude),
         detection_radius: parseFloat(formData.detection_radius),
         images: formData.images,
-        quiz: {
+        genre: formData.genre
+      };
+
+      // クイズがある場合のみ追加
+      if (hasQuiz) {
+        const validChoices = formData.quiz.choices.filter(c => c.trim());
+        spotData.quiz = {
           question: formData.quiz.question,
           choices: validChoices,
           correct_answer: formData.quiz.correct_answer,
           score: formData.quiz.score
-        }
-      };
+        };
+      } else {
+        spotData.quiz = null;
+      }
 
       if (spotId) {
         await adminApi.updateSpot(password, spotId, spotData);
@@ -228,6 +248,25 @@ export default function AdminSpotForm() {
                 borderRadius: '8px',
                 fontSize: '16px',
                 resize: 'vertical'
+              }}
+            />
+          </div>
+
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+              ジャンル
+            </label>
+            <input
+              type="text"
+              value={formData.genre}
+              onChange={(e) => setFormData({ ...formData, genre: e.target.value })}
+              placeholder="例: 歴史、自然、グルメ"
+              style={{
+                width: '100%',
+                padding: '12px',
+                border: '2px solid #e5e7eb',
+                borderRadius: '8px',
+                fontSize: '16px'
               }}
             />
           </div>
@@ -365,51 +404,34 @@ export default function AdminSpotForm() {
           marginBottom: '16px',
           boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
         }}>
-          <h2 style={{ marginBottom: '16px', fontSize: '18px' }}>クイズ</h2>
-
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
-              問題文 *
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <h2 style={{ fontSize: '18px' }}>クイズ（任意）</h2>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={hasQuiz}
+                onChange={(e) => setHasQuiz(e.target.checked)}
+                style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+              />
+              <span style={{ fontSize: '14px', fontWeight: '600' }}>クイズを設定する</span>
             </label>
-            <input
-              type="text"
-              value={formData.quiz.question}
-              onChange={(e) => setFormData({
-                ...formData,
-                quiz: { ...formData.quiz, question: e.target.value }
-              })}
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '2px solid #e5e7eb',
-                borderRadius: '8px',
-                fontSize: '16px'
-              }}
-            />
           </div>
 
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
-              選択肢（2〜4個）*
-            </label>
-            {formData.quiz.choices.map((choice, index) => (
-              <div key={index} style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-                <input
-                  type="radio"
-                  name="correct_answer"
-                  checked={formData.quiz.correct_answer === index}
-                  onChange={() => setFormData({
-                    ...formData,
-                    quiz: { ...formData.quiz, correct_answer: index }
-                  })}
-                />
+          {hasQuiz && (
+            <>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                  問題文 *
+                </label>
                 <input
                   type="text"
-                  value={choice}
-                  onChange={(e) => handleChoiceChange(index, e.target.value)}
-                  placeholder={`選択肢 ${index + 1}`}
+                  value={formData.quiz.question}
+                  onChange={(e) => setFormData({
+                    ...formData,
+                    quiz: { ...formData.quiz, question: e.target.value }
+                  })}
                   style={{
-                    flex: 1,
+                    width: '100%',
                     padding: '12px',
                     border: '2px solid #e5e7eb',
                     borderRadius: '8px',
@@ -417,33 +439,65 @@ export default function AdminSpotForm() {
                   }}
                 />
               </div>
-            ))}
-            <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '8px' }}>
-              ラジオボタンで正解を選択してください
-            </p>
-          </div>
 
-          <div>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
-              得点
-            </label>
-            <input
-              type="number"
-              min="1"
-              value={formData.quiz.score}
-              onChange={(e) => setFormData({
-                ...formData,
-                quiz: { ...formData.quiz, score: parseInt(e.target.value) || 1 }
-              })}
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '2px solid #e5e7eb',
-                borderRadius: '8px',
-                fontSize: '16px'
-              }}
-            />
-          </div>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                  選択肢（2〜4個）*
+                </label>
+                {formData.quiz.choices.map((choice, index) => (
+                  <div key={index} style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                    <input
+                      type="radio"
+                      name="correct_answer"
+                      checked={formData.quiz.correct_answer === index}
+                      onChange={() => setFormData({
+                        ...formData,
+                        quiz: { ...formData.quiz, correct_answer: index }
+                      })}
+                    />
+                    <input
+                      type="text"
+                      value={choice}
+                      onChange={(e) => handleChoiceChange(index, e.target.value)}
+                      placeholder={`選択肢 ${index + 1}`}
+                      style={{
+                        flex: 1,
+                        padding: '12px',
+                        border: '2px solid #e5e7eb',
+                        borderRadius: '8px',
+                        fontSize: '16px'
+                      }}
+                    />
+                  </div>
+                ))}
+                <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '8px' }}>
+                  ラジオボタンで正解を選択してください
+                </p>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                  得点
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  value={formData.quiz.score}
+                  onChange={(e) => setFormData({
+                    ...formData,
+                    quiz: { ...formData.quiz, score: parseInt(e.target.value) || 1 }
+                  })}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: '2px solid #e5e7eb',
+                    borderRadius: '8px',
+                    fontSize: '16px'
+                  }}
+                />
+              </div>
+            </>
+          )}
         </div>
 
         {/* 保存ボタン */}

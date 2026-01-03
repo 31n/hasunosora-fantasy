@@ -36,8 +36,8 @@ class CheckInService:
         )
         checkin.save()
         
-        # 初回訪問ならクイズを返す
-        if is_first_visit:
+        # 初回訪問かつクイズが設定されている場合のみクイズを返す
+        if is_first_visit and spot.quiz:
             return {
                 'is_first_visit': True,
                 'quiz_available': True,
@@ -48,8 +48,15 @@ class CheckInService:
                 }
             }
         else:
+            # クイズがない、または既に訪問済み
+            message = 'チェックイン完了！'
+            if not is_first_visit:
+                message = 'チェックイン完了！このスポットは訪問済みです。'
+            elif not spot.quiz:
+                message = 'チェックイン完了！このスポットにはクイズがありません。'
+            
             return {
-                'is_first_visit': False,
+                'is_first_visit': is_first_visit,
                 'quiz_available': False,
-                'message': 'チェックイン完了！このスポットは訪問済みです。'
+                'message': message
             }

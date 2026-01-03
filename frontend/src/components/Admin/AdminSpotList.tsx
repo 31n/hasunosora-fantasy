@@ -180,6 +180,22 @@ export default function AdminSpotList() {
                 {spot.spot_name}
               </h3>
               
+              {spot.genre && (
+                <span style={{
+                  display: 'inline-block',
+                  padding: '4px 12px',
+                  backgroundColor: '#fef3c7',
+                  color: '#92400e',
+                  borderRadius: '12px',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  marginBottom: '8px',
+                  width: 'fit-content'
+                }}>
+                  {spot.genre}
+                </span>
+              )}
+              
               <p style={{ 
                 color: '#6b7280', 
                 fontSize: '14px',
@@ -198,11 +214,15 @@ export default function AdminSpotList() {
                 gap: '8px',
                 marginBottom: '12px',
                 fontSize: '12px',
-                color: '#6b7280'
+                color: '#6b7280',
+                flexWrap: 'wrap'
               }}>
                 <span>📍 {spot.detection_radius}m</span>
-                <span>•</span>
-                <span>🎯 {spot.quiz.score}点</span>
+                {spot.quiz ? (
+                  <span>🎯 {spot.quiz.score}点</span>
+                ) : (
+                  <span>❌ クイズなし</span>
+                )}
               </div>
 
               <div style={{ display: 'flex', gap: '8px' }}>

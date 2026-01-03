@@ -21,8 +21,10 @@ class AdminService:
     @staticmethod
     def create_spot(spot_data: Dict) -> Dict:
         """スポットを作成"""
-        # クイズのバリデーション
-        AdminService._validate_quiz(spot_data.get('quiz', {}))
+        # クイズが指定されている場合のみバリデーション
+        quiz = spot_data.get('quiz')
+        if quiz:
+            AdminService._validate_quiz(quiz)
         
         # 座標のバリデーション
         AdminService._validate_coordinates(
@@ -37,7 +39,8 @@ class AdminService:
             longitude=float(spot_data['longitude']),
             detection_radius=float(spot_data.get('detection_radius', 100)),
             images=spot_data.get('images', []),
-            quiz=spot_data.get('quiz', {})
+            genre=spot_data.get('genre', ''),
+            quiz=quiz  # Noneでも可
         )
         
         spot.save()
@@ -57,9 +60,11 @@ class AdminService:
         if not spot:
             raise ValueError('SPOT_NOT_FOUND')
         
-        # クイズのバリデーション
+        # クイズが指定されている場合のみバリデーション
         if 'quiz' in spot_data:
-            AdminService._validate_quiz(spot_data['quiz'])
+            quiz = spot_data['quiz']
+            if quiz:  # Noneまたは空でない場合のみバリデーション
+                AdminService._validate_quiz(quiz)
         
         # 座標のバリデーション
         if 'latitude' in spot_data or 'longitude' in spot_data:
@@ -75,7 +80,11 @@ class AdminService:
         spot.longitude = float(spot_data.get('longitude', spot.longitude))
         spot.detection_radius = float(spot_data.get('detection_radius', spot.detection_radius))
         spot.images = spot_data.get('images', spot.images)
-        spot.quiz = spot_data.get('quiz', spot.quiz)
+        spot.genre = spot_data.get('genre', spot.genre)
+        
+        # クイズの更新（Noneも許可）
+        if 'quiz' in spot_data:
+            spot.quiz = spot_data['quiz']
         
         spot.save()
         

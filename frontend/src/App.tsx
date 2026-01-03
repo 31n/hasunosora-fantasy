@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { storage } from './services/storage';
 import { userApi, masterApi } from './services/api';
@@ -19,18 +19,11 @@ import Loading from './components/Common/Loading';
 
 import type { User, Spot } from './types';
 
-function MapRoute({ user, spots }: { user: User; spots: Spot[] }) {
-  const location = useLocation();
-  const searchParams = new URLSearchParams(location.search);
-  const selectedSpotId = searchParams.get('spot') || undefined;
-  
-  return <MapView user={user} spots={spots} selectedSpotId={selectedSpotId} />;
-}
-
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const [spots, setSpots] = useState<Spot[]>([]);
   const [loading, setLoading] = useState(true);
+  const [reloading, setReloading] = useState(false);
 
   useEffect(() => {
     initializeApp();
@@ -86,6 +79,30 @@ function App() {
     }
   };
 
+  const handleReload = async () => {
+    if (reloading) return;
+    
+    setReloading(true);
+    try {
+      // 強制的にサーバーから最新データを取得
+      storage.setMasterVersion(''); // バージョンをクリア
+      await fetchMasterData();
+      
+      // ユーザー情報も更新
+      if (user) {
+        const userData = await userApi.login(user.user_id);
+        setUser(userData);
+      }
+      
+      alert('データを更新しました');
+    } catch (error) {
+      console.error('Reload error:', error);
+      alert('更新に失敗しました');
+    } finally {
+      setReloading(false);
+    }
+  };
+
   const handleLogin = (userData: User) => {
     setUser(userData);
     storage.setUserId(userData.user_id);
@@ -103,7 +120,48 @@ function App() {
   return (
     <BrowserRouter>
       <div className="app">
-        {user && <Header user={user} onLogout={handleLogout} />}
+        {user && (
+          <>
+            <Header user={user} onLogout={handleLogout} />
+            {/* 再読み込みボタン */}
+            <button
+              onClick={handleReload}
+              disabled={reloading}
+              style={{
+                position: 'fixed',
+                bottom: '20px',
+                right: '20px',
+                padding: '12px 16px',
+                backgroundColor: reloading ? '#9ca3af' : '#3b82f6',
+                color: 'white',
+                border: 'none',
+                borderRadius: '50px',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: reloading ? 'not-allowed' : 'pointer',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                zIndex: 999,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                if (!reloading) {
+                  e.currentTarget.style.transform = 'scale(1.05)';
+                  e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.2)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+              }}
+            >
+              <span style={{ fontSize: '16px' }}>🔄</span>
+              {reloading ? '更新中...' : '再読み込み'}
+            </button>
+          </>
+        )}
         
         <Routes>
           {/* ユーザー未ログイン時 */}
@@ -116,7 +174,7 @@ function App() {
           ) : (
             <>
               {/* メイン画面 */}
-              <Route path="/" element={<MapRoute user={user} spots={spots} />} />
+              <Route path="/" element={<MapView user={user} spots={spots} />} />
               <Route path="/spots" element={<SpotList spots={spots} />} />
               <Route path="/spots/:spotId" element={<SpotDetail user={user} />} />
               <Route path="/mypage" element={<MyPage user={user} setUser={setUser} />} />
