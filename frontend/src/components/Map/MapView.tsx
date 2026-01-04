@@ -27,6 +27,51 @@ export default function MapView({ user, spots }: MapViewProps) {
   const [quizData, setQuizData] = useState<CheckInResponse | null>(null);
   const [showQuiz, setShowQuiz] = useState(false);
 
+  // スポットクリック処理（useEffectの前に定義）
+  const handleSpotClick = async (spot: Spot) => {
+    setSelectedSpot(spot);
+
+    // refから最新の位置情報を取得
+    const currentLocation = userLocationRef.current;
+
+    // デバッグ情報
+    console.log('locationStatus:', locationStatus);
+    console.log('userLocation (state):', userLocation);
+    console.log('userLocation (ref):', currentLocation);
+
+    // refの値を優先的にチェック
+    if (!currentLocation) {
+      if (locationStatus === 'loading') {
+        alert('位置情報を取得中です。しばらくお待ちください。');
+      } else {
+        alert('位置情報を取得できません。ブラウザの設定を確認してください。');
+      }
+      return;
+    }
+
+    try {
+      const response = await checkinApi.checkin(
+        user.user_id,
+        spot.spot_id,
+        currentLocation[1], // latitude
+        currentLocation[0]  // longitude
+      );
+
+      if (response.quiz_available && response.quiz) {
+        setQuizData(response);
+        setShowQuiz(true);
+      } else {
+        alert(response.message || 'チェックイン完了！');
+      }
+    } catch (error: any) {
+      if (error.message.includes('OUT_OF_RANGE')) {
+        alert('スポットから離れすぎています。スポットに近づいてください。');
+      } else {
+        alert('エラーが発生しました: ' + error.message);
+      }
+    }
+  };
+
   useEffect(() => {
     if (!mapContainer.current) return;
 
@@ -310,51 +355,7 @@ export default function MapView({ user, spots }: MapViewProps) {
     return () => {
       markers.forEach(marker => marker.remove());
     };
-  }, [spots, userLocation]); // userLocationを依存配列に追加
-
-  const handleSpotClick = async (spot: Spot) => {
-    setSelectedSpot(spot);
-
-    // refから最新の位置情報を取得
-    const currentLocation = userLocationRef.current;
-
-    // デバッグ情報
-    console.log('locationStatus:', locationStatus);
-    console.log('userLocation (state):', userLocation);
-    console.log('userLocation (ref):', currentLocation);
-
-    // refの値を優先的にチェック
-    if (!currentLocation) {
-      if (locationStatus === 'loading') {
-        alert('位置情報を取得中です。しばらくお待ちください。');
-      } else {
-        alert('位置情報を取得できません。ブラウザの設定を確認してください。');
-      }
-      return;
-    }
-
-    try {
-      const response = await checkinApi.checkin(
-        user.user_id,
-        spot.spot_id,
-        currentLocation[1], // latitude
-        currentLocation[0]  // longitude
-      );
-
-      if (response.quiz_available && response.quiz) {
-        setQuizData(response);
-        setShowQuiz(true);
-      } else {
-        alert(response.message || 'チェックイン完了！');
-      }
-    } catch (error: any) {
-      if (error.message.includes('OUT_OF_RANGE')) {
-        alert('スポットから離れすぎています。スポットに近づいてください。');
-      } else {
-        alert('エラーが発生しました: ' + error.message);
-      }
-    }
-  };
+  }, [spots]); // userLocationを依存配列から削除（マーカー作成はspotsの変更時のみ）
 
   const handleQuizClose = () => {
     setShowQuiz(false);
