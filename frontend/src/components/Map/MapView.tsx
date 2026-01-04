@@ -17,6 +17,8 @@ export default function MapView({ user, spots }: MapViewProps) {
   const map = useRef<mapboxgl.Map | null>(null);
   const userMarker = useRef<mapboxgl.Marker | null>(null);
   const userLocationRef = useRef<[number, number] | null>(null); // refを追加
+  const watchPositionId = useRef<number | null>(null); // watchPositionのIDを保存
+  const orientationEventType = useRef<'deviceorientationabsolute' | 'deviceorientation' | null>(null); // 登録されたイベントタイプ
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [locationStatus, setLocationStatus] = useState<'loading' | 'available' | 'error'>('loading');
   const [userHeading, setUserHeading] = useState<number>(0);
@@ -85,13 +87,15 @@ export default function MapView({ user, spots }: MapViewProps) {
 
             // 方角の更新を監視
             if ('ondeviceorientationabsolute' in window) {
+              orientationEventType.current = 'deviceorientationabsolute';
               window.addEventListener('deviceorientationabsolute', handleOrientation);
             } else if ('ondeviceorientation' in window) {
+              orientationEventType.current = 'deviceorientation';
               window.addEventListener('deviceorientation', handleOrientation);
             }
 
             // 位置情報の継続的な更新
-            navigator.geolocation.watchPosition(
+            const watchId = navigator.geolocation.watchPosition(
               (position) => {
                 const { latitude, longitude } = position.coords;
                 const newLocation: [number, number] = [longitude, latitude];
@@ -110,6 +114,7 @@ export default function MapView({ user, spots }: MapViewProps) {
               },
               { enableHighAccuracy: true, maximumAge: 0 }
             );
+            watchPositionId.current = watchId;
           }
         },
         (error) => {
@@ -139,8 +144,18 @@ export default function MapView({ user, spots }: MapViewProps) {
     }
 
     return () => {
-      window.removeEventListener('deviceorientationabsolute', handleOrientation);
-      window.removeEventListener('deviceorientation', handleOrientation);
+      // watchPositionを停止
+      if (watchPositionId.current !== null) {
+        navigator.geolocation.clearWatch(watchPositionId.current);
+        watchPositionId.current = null;
+      }
+      
+      // 登録されたイベントリスナーのみを削除
+      if (orientationEventType.current) {
+        window.removeEventListener(orientationEventType.current, handleOrientation);
+        orientationEventType.current = null;
+      }
+      
       map.current?.remove();
     };
   }, []);
