@@ -324,6 +324,7 @@ export default function MapView({ user, spots }: MapViewProps) {
 
       // ボタンクリック時の処理
       checkinButton.onclick = (e) => {
+        console.log('Checkin button clicked:', spot.spot_name);
         e.stopPropagation();
         handleSpotClick(spot);
         popup.remove();
@@ -340,13 +341,16 @@ export default function MapView({ user, spots }: MapViewProps) {
 
       // ポップアップが開かれたときに状態を更新
       popup.on('open', () => {
+        console.log('Popup opened for:', spot.spot_name);
         updateButtonState();
       });
       
       marker.setPopup(popup);
 
       // マーカークリック時にポップアップを開く
-      el.addEventListener('click', () => {
+      el.addEventListener('click', (e) => {
+        console.log('Marker clicked:', spot.spot_name);
+        e.stopPropagation();
         marker.togglePopup();
       });
     });
