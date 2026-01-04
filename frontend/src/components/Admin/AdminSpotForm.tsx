@@ -4,12 +4,16 @@ import { adminApi } from '../../services/api';
 import { storage } from '../../services/storage';
 import { indexedDB } from '../../services/indexedDB';
 import type { Spot } from '../../types';
+import { OpenLocationCode } from 'open-location-code';
 
 export default function AdminSpotForm() {
   const { spotId } = useParams<{ spotId?: string }>();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [hasQuiz, setHasQuiz] = useState(true);
+  const [inputMethod, setInputMethod] = useState<'latlong' | 'pluscode'>('latlong');
+  const [plusCode, setPlusCode] = useState('');
+  const [plusCodeError, setPlusCodeError] = useState('');
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -109,6 +113,33 @@ export default function AdminSpotForm() {
       ...prev,
       quiz: { ...prev.quiz, choices: newChoices }
     }));
+  };
+
+  const handlePlusCodeInput = (value: string) => {
+    setPlusCode(value);
+    setPlusCodeError('');
+
+    if (!value.trim()) {
+      return;
+    }
+
+    try {
+      if (OpenLocationCode.isValid(value)) {
+        const decoded = OpenLocationCode.decode(value);
+        const latitude = decoded.latitudeCenter;
+        const longitude = decoded.longitudeCenter;
+        
+        setFormData(prev => ({
+          ...prev,
+          latitude: latitude.toFixed(8),
+          longitude: longitude.toFixed(8)
+        }));
+      } else {
+        setPlusCodeError('無効なPlus Codeです');
+      }
+    } catch (error) {
+      setPlusCodeError('Plus Codeの変換に失敗しました');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -271,6 +302,65 @@ export default function AdminSpotForm() {
             />
           </div>
 
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+              位置情報入力方法 *
+            </label>
+            <div style={{ display: 'flex', gap: '16px', marginBottom: '12px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  value="latlong"
+                  checked={inputMethod === 'latlong'}
+                  onChange={(e) => setInputMethod(e.target.value as 'latlong')}
+                  style={{ cursor: 'pointer' }}
+                />
+                <span>緯度経度</span>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  value="pluscode"
+                  checked={inputMethod === 'pluscode'}
+                  onChange={(e) => setInputMethod(e.target.value as 'pluscode')}
+                  style={{ cursor: 'pointer' }}
+                />
+                <span>Plus Code</span>
+              </label>
+            </div>
+          </div>
+
+          {inputMethod === 'pluscode' && (
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                Plus Code *
+              </label>
+              <input
+                type="text"
+                value={plusCode}
+                onChange={(e) => handlePlusCodeInput(e.target.value)}
+                placeholder="例: 8Q7XRW6G+QQ"
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: plusCodeError ? '2px solid #ef4444' : '2px solid #e5e7eb',
+                  borderRadius: '8px',
+                  fontSize: '16px'
+                }}
+              />
+              {plusCodeError && (
+                <p style={{ color: '#ef4444', fontSize: '14px', marginTop: '4px' }}>
+                  {plusCodeError}
+                </p>
+              )}
+              {plusCode && !plusCodeError && formData.latitude && formData.longitude && (
+                <p style={{ color: '#10b981', fontSize: '14px', marginTop: '4px' }}>
+                  ✓ 緯度: {formData.latitude}, 経度: {formData.longitude}
+                </p>
+              )}
+            </div>
+          )}
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
             <div>
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
@@ -281,12 +371,15 @@ export default function AdminSpotForm() {
                 step="any"
                 value={formData.latitude}
                 onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
+                disabled={inputMethod === 'pluscode'}
                 style={{
                   width: '100%',
                   padding: '12px',
                   border: '2px solid #e5e7eb',
                   borderRadius: '8px',
-                  fontSize: '16px'
+                  fontSize: '16px',
+                  backgroundColor: inputMethod === 'pluscode' ? '#f3f4f6' : 'white',
+                  cursor: inputMethod === 'pluscode' ? 'not-allowed' : 'text'
                 }}
               />
             </div>
@@ -299,12 +392,15 @@ export default function AdminSpotForm() {
                 step="any"
                 value={formData.longitude}
                 onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
+                disabled={inputMethod === 'pluscode'}
                 style={{
                   width: '100%',
                   padding: '12px',
                   border: '2px solid #e5e7eb',
                   borderRadius: '8px',
-                  fontSize: '16px'
+                  fontSize: '16px',
+                  backgroundColor: inputMethod === 'pluscode' ? '#f3f4f6' : 'white',
+                  cursor: inputMethod === 'pluscode' ? 'not-allowed' : 'text'
                 }}
               />
             </div>
