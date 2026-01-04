@@ -4,7 +4,7 @@ import { adminApi } from '../../services/api';
 import { storage } from '../../services/storage';
 import { indexedDB } from '../../services/indexedDB';
 import type { Spot } from '../../types';
-const { OpenLocationCode } = require('open-location-code');
+import { OpenLocationCode } from 'open-location-code';
 
 export default function AdminSpotForm() {
   const { spotId } = useParams<{ spotId?: string }>();
@@ -124,7 +124,7 @@ export default function AdminSpotForm() {
     }
 
     try {
-      const olc = new OpenLocationCode();
+      const olc = new (OpenLocationCode as any)();
       if (olc.isValid(value)) {
         const decoded = olc.decode(value);
         const latitude = decoded.latitudeCenter;
@@ -139,6 +139,7 @@ export default function AdminSpotForm() {
         setPlusCodeError('無効なPlus Codeです');
       }
     } catch (error) {
+      console.error('Plus Code conversion error:', error);
       setPlusCodeError('Plus Codeの変換に失敗しました');
     }
   };
