@@ -4,7 +4,7 @@ import { adminApi } from '../../services/api';
 import { storage } from '../../services/storage';
 import { indexedDB } from '../../services/indexedDB';
 import type { Spot } from '../../types';
-import { OpenLocationCode } from 'open-location-code';
+const { OpenLocationCode } = require('open-location-code');
 
 export default function AdminSpotForm() {
   const { spotId } = useParams<{ spotId?: string }>();
@@ -124,8 +124,9 @@ export default function AdminSpotForm() {
     }
 
     try {
-      if (OpenLocationCode.isValid(value)) {
-        const decoded = OpenLocationCode.decode(value);
+      const olc = new OpenLocationCode();
+      if (olc.isValid(value)) {
+        const decoded = olc.decode(value);
         const latitude = decoded.latitudeCenter;
         const longitude = decoded.longitudeCenter;
         
