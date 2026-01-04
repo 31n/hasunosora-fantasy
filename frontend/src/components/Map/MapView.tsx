@@ -4,6 +4,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { checkinApi } from '../../services/api';
 import QuizModal from '../Quiz/QuizModal';
 import type { User, Spot, CheckInResponse } from '../../types';
+import { calculateDistance, formatDistance } from '../../utils/distance';
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN || '';
 
@@ -201,23 +202,115 @@ export default function MapView({ user, spots }: MapViewProps) {
 
       markers.push(marker);
 
-      // クリックイベント
-      el.addEventListener('click', () => {
-        handleSpotClick(spot);
-      });
+      // ポップアップを作成（ボタン付き）
+      const popupContent = document.createElement('div');
+      popupContent.style.padding = '8px';
+      popupContent.style.minWidth = '200px';
+      
+      const title = document.createElement('div');
+      title.style.fontWeight = 'bold';
+      title.style.marginBottom = '8px';
+      title.textContent = spot.spot_name;
+      popupContent.appendChild(title);
 
-      // ポップアップを追加
-      const popup = new mapboxgl.Popup({ offset: 25 })
-        .setHTML(`<div style="padding: 4px 8px;"><strong>${spot.spot_name}</strong></div>`);
+      // 距離表示用のdiv
+      const distanceDiv = document.createElement('div');
+      distanceDiv.style.fontSize = '12px';
+      distanceDiv.style.color = '#666';
+      distanceDiv.style.marginBottom = '8px';
+      popupContent.appendChild(distanceDiv);
+
+      // チェックインボタン
+      const checkinButton = document.createElement('button');
+      checkinButton.textContent = 'チェックイン';
+      checkinButton.style.width = '100%';
+      checkinButton.style.padding = '8px 16px';
+      checkinButton.style.borderRadius = '6px';
+      checkinButton.style.border = 'none';
+      checkinButton.style.fontWeight = '600';
+      checkinButton.style.cursor = 'pointer';
+      checkinButton.style.transition = 'background-color 0.2s';
+      
+      // 距離チェックとボタンスタイルの更新
+      const updateButtonState = () => {
+        const currentLocation = userLocationRef.current;
+        if (!currentLocation) {
+          checkinButton.disabled = true;
+          checkinButton.style.backgroundColor = '#d1d5db';
+          checkinButton.style.color = '#9ca3af';
+          distanceDiv.textContent = '位置情報を取得中...';
+          return;
+        }
+
+        const distance = calculateDistance(
+          currentLocation[1], // latitude
+          currentLocation[0], // longitude
+          spot.latitude,
+          spot.longitude
+        );
+
+        distanceDiv.textContent = `距離: ${formatDistance(distance)}`;
+
+        if (distance <= spot.detection_radius) {
+          checkinButton.disabled = false;
+          checkinButton.style.backgroundColor = '#3b82f6';
+          checkinButton.style.color = 'white';
+          checkinButton.onmouseover = () => {
+            if (!checkinButton.disabled) {
+              checkinButton.style.backgroundColor = '#2563eb';
+            }
+          };
+          checkinButton.onmouseout = () => {
+            if (!checkinButton.disabled) {
+              checkinButton.style.backgroundColor = '#3b82f6';
+            }
+          };
+        } else {
+          checkinButton.disabled = true;
+          checkinButton.style.backgroundColor = '#d1d5db';
+          checkinButton.style.color = '#9ca3af';
+          checkinButton.style.cursor = 'not-allowed';
+          distanceDiv.textContent += ' (範囲外)';
+        }
+      };
+
+      // 初期状態を設定
+      updateButtonState();
+
+      // ボタンクリック時の処理
+      checkinButton.onclick = (e) => {
+        e.stopPropagation();
+        handleSpotClick(spot);
+        popup.remove();
+      };
+
+      popupContent.appendChild(checkinButton);
+
+      const popup = new mapboxgl.Popup({ 
+        offset: 25,
+        closeButton: true,
+        closeOnClick: false
+      })
+        .setDOMContent(popupContent);
+
+      // ポップアップが開かれたときに状態を更新
+      popup.on('open', () => {
+        updateButtonState();
+      });
       
       marker.setPopup(popup);
+
+      // マーカークリック時にポップアップを開く
+      el.addEventListener('click', () => {
+        marker.togglePopup();
+      });
     });
 
     // クリーンアップ
     return () => {
       markers.forEach(marker => marker.remove());
     };
-  }, [spots]);
+  }, [spots, userLocation]); // userLocationを依存配列に追加
 
   const handleSpotClick = async (spot: Spot) => {
     setSelectedSpot(spot);
