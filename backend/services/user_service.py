@@ -52,7 +52,20 @@ class UserService:
         if not user:
             raise ValueError('USER_NOT_FOUND')
         
-        # チェックイン履歴を取得
+        # 全チェックイン履歴を取得（統計計算用）
+        all_checkins = CheckIn.get_user_history(user_id, limit=1000, offset=0)
+        
+        # 統計情報を計算
+        unique_spots = set()
+        total_visits = len(all_checkins)
+        total_correct = 0
+        
+        for item in all_checkins:
+            unique_spots.add(item['spot_id'])
+            if item.get('quiz_correct', False):
+                total_correct += 1
+        
+        # 指定範囲のチェックイン履歴を取得
         checkins_raw = CheckIn.get_user_history(user_id, limit, offset)
         
         # スポット情報を付加
@@ -70,6 +83,9 @@ class UserService:
         
         return {
             'user_id': user_id,
+            'unique_spots_count': len(unique_spots),
+            'total_visits': total_visits,
+            'total_correct': total_correct,
             'total_count': len(checkins),
             'checkins': checkins
         }
