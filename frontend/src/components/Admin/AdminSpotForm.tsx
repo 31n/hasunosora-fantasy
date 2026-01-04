@@ -14,6 +14,8 @@ export default function AdminSpotForm() {
   const [inputMethod, setInputMethod] = useState<'latlong' | 'pluscode'>('latlong');
   const [plusCode, setPlusCode] = useState('');
   const [plusCodeError, setPlusCodeError] = useState('');
+  const [referenceLocation, setReferenceLocation] = useState({ lat: '', lng: '' });
+  const [isShortCode, setIsShortCode] = useState(false);
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -120,12 +122,26 @@ export default function AdminSpotForm() {
     setPlusCodeError('');
 
     if (!value.trim()) {
+      setIsShortCode(false);
       return;
     }
 
     try {
       const olc = new (OpenLocationCode as any)();
-      if (olc.isValid(value)) {
+      
+      // 短縮コードかどうかをチェック
+      if (olc.isShort(value)) {
+        setIsShortCode(true);
+        setPlusCodeError('');
+        // 参照位置が入力されている場合は変換を試みる
+        if (referenceLocation.lat && referenceLocation.lng) {
+          convertShortCode(value, parseFloat(referenceLocation.lat), parseFloat(referenceLocation.lng));
+        }
+        return;
+      }
+      
+      setIsShortCode(false);
+      if (olc.isValid(value) && olc.isFull(value)) {
         const decoded = olc.decode(value);
         const latitude = decoded.latitudeCenter;
         const longitude = decoded.longitudeCenter;
@@ -138,9 +154,39 @@ export default function AdminSpotForm() {
       } else {
         setPlusCodeError('無効なPlus Codeです');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Plus Code conversion error:', error);
       setPlusCodeError('Plus Codeの変換に失敗しました');
+    }
+  };
+
+  const convertShortCode = (shortCode: string, refLat: number, refLng: number) => {
+    try {
+      const olc = new (OpenLocationCode as any)();
+      const fullCode = olc.recoverNearest(shortCode, refLat, refLng);
+      const decoded = olc.decode(fullCode);
+      const latitude = decoded.latitudeCenter;
+      const longitude = decoded.longitudeCenter;
+      
+      setFormData(prev => ({
+        ...prev,
+        latitude: latitude.toFixed(8),
+        longitude: longitude.toFixed(8)
+      }));
+      setPlusCodeError('');
+    } catch (error: any) {
+      console.error('Short code conversion error:', error);
+      setPlusCodeError('短縮コードの変換に失敗しました');
+    }
+  };
+
+  const handleReferenceLocationChange = (field: 'lat' | 'lng', value: string) => {
+    const newRef = { ...referenceLocation, [field]: value };
+    setReferenceLocation(newRef);
+    
+    // 両方の値が入力されていて、短縮コードが入力されている場合は変換
+    if (newRef.lat && newRef.lng && plusCode && isShortCode) {
+      convertShortCode(plusCode, parseFloat(newRef.lat), parseFloat(newRef.lng));
     }
   };
 
@@ -333,34 +379,93 @@ export default function AdminSpotForm() {
           </div>
 
           {inputMethod === 'pluscode' && (
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
-                Plus Code *
-              </label>
-              <input
-                type="text"
-                value={plusCode}
-                onChange={(e) => handlePlusCodeInput(e.target.value)}
-                placeholder="例: 8Q7XRW6G+QQ"
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: plusCodeError ? '2px solid #ef4444' : '2px solid #e5e7eb',
+            <>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                  Plus Code *
+                </label>
+                <input
+                  type="text"
+                  value={plusCode}
+                  onChange={(e) => handlePlusCodeInput(e.target.value)}
+                  placeholder="完全: 8Q7XRW6G+QQ または 短縮: HM97+QH"
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: plusCodeError ? '2px solid #ef4444' : '2px solid #e5e7eb',
+                    borderRadius: '8px',
+                    fontSize: '16px'
+                  }}
+                />
+                {plusCodeError && (
+                  <p style={{ color: '#ef4444', fontSize: '14px', marginTop: '4px' }}>
+                    {plusCodeError}
+                  </p>
+                )}
+                {plusCode && !plusCodeError && formData.latitude && formData.longitude && (
+                  <p style={{ color: '#10b981', fontSize: '14px', marginTop: '4px' }}>
+                    ✓ 緯度: {formData.latitude}, 経度: {formData.longitude}
+                  </p>
+                )}
+              </div>
+
+              {isShortCode && (
+                <div style={{ 
+                  marginBottom: '16px', 
+                  padding: '16px', 
+                  backgroundColor: '#fef3c7', 
                   borderRadius: '8px',
-                  fontSize: '16px'
-                }}
-              />
-              {plusCodeError && (
-                <p style={{ color: '#ef4444', fontSize: '14px', marginTop: '4px' }}>
-                  {plusCodeError}
-                </p>
+                  border: '1px solid #fbbf24'
+                }}>
+                  <p style={{ fontSize: '14px', marginBottom: '12px', fontWeight: '600' }}>
+                    短縮形式のPlus Codeです。参照位置の緯度経度を入力してください
+                  </p>
+                  <p style={{ fontSize: '12px', color: '#92400e', marginBottom: '12px' }}>
+                    Google Mapsで該当地域を表示し、地図上の任意の場所をクリックすると緯度経度が表示されます
+                  </p>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px', fontWeight: '600' }}>
+                        参照位置 緯度 *
+                      </label>
+                      <input
+                        type="number"
+                        step="any"
+                        value={referenceLocation.lat}
+                        onChange={(e) => handleReferenceLocationChange('lat', e.target.value)}
+                        placeholder="例: 36.5"
+                        style={{
+                          width: '100%',
+                          padding: '8px',
+                          border: '2px solid #d97706',
+                          borderRadius: '6px',
+                          fontSize: '14px'
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px', fontWeight: '600' }}>
+                        参照位置 経度 *
+                      </label>
+                      <input
+                        type="number"
+                        step="any"
+                        value={referenceLocation.lng}
+                        onChange={(e) => handleReferenceLocationChange('lng', e.target.value)}
+                        placeholder="例: 136.6"
+                        style={{
+                          width: '100%',
+                          padding: '8px',
+                          border: '2px solid #d97706',
+                          borderRadius: '6px',
+                          fontSize: '14px'
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
               )}
-              {plusCode && !plusCodeError && formData.latitude && formData.longitude && (
-                <p style={{ color: '#10b981', fontSize: '14px', marginTop: '4px' }}>
-                  ✓ 緯度: {formData.latitude}, 経度: {formData.longitude}
-                </p>
-              )}
-            </div>
+            </>
           )}
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
