@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { adminApi } from '../../services/api';
 import { storage } from '../../services/storage';
 import type { Spot } from '../../types';
@@ -8,11 +8,12 @@ export default function AdminSpotList() {
   const [spots, setSpots] = useState<Spot[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     checkAuth();
     loadSpots();
-  }, []);
+  }, [location.pathname]);
 
   const checkAuth = () => {
     const password = storage.getAdminPassword();
