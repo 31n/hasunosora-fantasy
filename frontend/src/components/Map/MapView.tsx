@@ -28,6 +28,7 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
   const [selectedSpot, setSelectedSpot] = useState<Spot | null>(null);
   const [quizData, setQuizData] = useState<CheckInResponse | null>(null);
   const [showQuiz, setShowQuiz] = useState(false);
+  const [orientationPermissionNeeded, setOrientationPermissionNeeded] = useState(false);
 
   // スポットクリック処理（useEffectの前に定義）
   const handleSpotClick = async (spot: Spot) => {
@@ -152,13 +153,38 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
               .addTo(map.current);
 
             // 方角の更新を監視
-            if ('ondeviceorientationabsolute' in window) {
-              orientationEventType.current = 'deviceorientationabsolute';
-              window.addEventListener('deviceorientationabsolute', handleOrientation);
-            } else if ('ondeviceorientation' in window) {
-              orientationEventType.current = 'deviceorientation';
-              window.addEventListener('deviceorientation', handleOrientation);
-            }
+            const startOrientationTracking = async () => {
+              // iOS 13+ の場合、許可が必要
+              if (typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
+                try {
+                  const permission = await (DeviceOrientationEvent as any).requestPermission();
+                  if (permission === 'granted') {
+                    setupOrientationListeners();
+                  } else {
+                    console.log('端末の向き取得が許可されませんでした');
+                    setOrientationPermissionNeeded(true);
+                  }
+                } catch (error) {
+                  console.error('向き許可リクエストエラー:', error);
+                  setOrientationPermissionNeeded(true);
+                }
+              } else {
+                // iOS 13未満または他のブラウザ
+                setupOrientationListeners();
+              }
+            };
+
+            const setupOrientationListeners = () => {
+              if ('ondeviceorientationabsolute' in window) {
+                orientationEventType.current = 'deviceorientationabsolute';
+                window.addEventListener('deviceorientationabsolute', handleOrientation);
+              } else if ('ondeviceorientation' in window) {
+                orientationEventType.current = 'deviceorientation';
+                window.addEventListener('deviceorientation', handleOrientation);
+              }
+            };
+
+            startOrientationTracking();
 
             // 位置情報の継続的な更新
             const watchId = navigator.geolocation.watchPosition(
@@ -398,6 +424,27 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
     setSelectedSpot(null);
   };
 
+  const requestOrientationPermission = async () => {
+    if (typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
+      try {
+        const permission = await (DeviceOrientationEvent as any).requestPermission();
+        if (permission === 'granted') {
+          if ('ondeviceorientationabsolute' in window) {
+            orientationEventType.current = 'deviceorientationabsolute';
+            window.addEventListener('deviceorientationabsolute', handleOrientation);
+          } else if ('ondeviceorientation' in window) {
+            orientationEventType.current = 'deviceorientation';
+            window.addEventListener('deviceorientation', handleOrientation);
+          }
+          setOrientationPermissionNeeded(false);
+        }
+      } catch (error) {
+        console.error('向き許可リクエストエラー:', error);
+        alert('端末の向き取得の許可に失敗しました');
+      }
+    }
+  };
+
   return (
     <div style={{ position: 'relative', width: '100%', height: '100vh' }}>
       <div ref={mapContainer} style={{ width: '100%', height: '100%' }} />
@@ -442,6 +489,47 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
           zIndex: 10
         }}>
           ⚠️ 位置情報を取得できません
+        </div>
+      )}
+
+      {orientationPermissionNeeded && (
+        <div style={{
+          position: 'absolute',
+          bottom: '100px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          padding: '16px',
+          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+          borderRadius: '12px',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+          zIndex: 10,
+          textAlign: 'center',
+          maxWidth: '320px'
+        }}>
+          <p style={{ 
+            fontSize: '14px', 
+            color: '#374151',
+            marginBottom: '12px',
+            lineHeight: '1.5'
+          }}>
+            矢印の向きを端末の向きと合わせるには、センサーへのアクセスを許可してください
+          </p>
+          <button
+            onClick={requestOrientationPermission}
+            style={{
+              padding: '10px 20px',
+              backgroundColor: '#3b82f6',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              width: '100%'
+            }}
+          >
+            端末の向きを有効にする
+          </button>
         </div>
       )}
       
