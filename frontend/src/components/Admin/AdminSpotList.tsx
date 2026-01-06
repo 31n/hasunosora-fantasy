@@ -88,6 +88,21 @@ export default function AdminSpotList() {
         <h1>スポット管理</h1>
         <div style={{ display: 'flex', gap: '12px' }}>
           <button
+            onClick={() => navigate('/admin/areas')}
+            style={{
+              padding: '12px 24px',
+              backgroundColor: '#10b981',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '16px',
+              fontWeight: 'bold',
+              cursor: 'pointer'
+            }}
+          >
+            エリア管理
+          </button>
+          <button
             onClick={() => navigate('/admin/spots/new')}
             style={{
               padding: '12px 24px',
