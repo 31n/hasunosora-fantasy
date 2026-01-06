@@ -84,13 +84,11 @@ export default function MyPage({ user, setUser, spots, areas }: MyPageProps) {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleString('ja-JP', {
-      month: 'numeric',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    });
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${month}/${day} ${hours}:${minutes}`;
   };
 
   // エリア別統計計算
@@ -102,14 +100,9 @@ export default function MyPage({ user, setUser, spots, areas }: MyPageProps) {
           return spot?.area === selectedStatArea;
         });
 
-    const totalSpotsInArea = selectedStatArea === 'all'
-      ? spots.filter(s => s.is_active).length
-      : spots.filter(s => s.is_active && s.area === selectedStatArea).length;
-
     return {
       totalVisits: filteredHistory.length,
       uniqueSpots: new Set(filteredHistory.map(h => h.spot_id)).size,
-      totalSpotsInArea,
       correctAnswers: filteredHistory.filter(h => h.quiz_correct).length,
       totalScore: filteredHistory.reduce((sum, h) => sum + h.score_earned, 0)
     };
@@ -355,7 +348,7 @@ export default function MyPage({ user, setUser, spots, areas }: MyPageProps) {
             textAlign: 'center'
           }}>
             <p style={{ fontSize: '32px', fontWeight: 'bold', color: '#10b981', marginBottom: '4px' }}>
-              {stats.uniqueSpots}/{stats.totalSpotsInArea}
+              {stats.uniqueSpots}
             </p>
             <p style={{ fontSize: '14px', color: '#6b7280' }}>訪問スポット数</p>
           </div>
