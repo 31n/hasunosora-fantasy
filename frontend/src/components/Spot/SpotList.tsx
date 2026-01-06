@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Spot } from '../../types';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
 
 interface SpotListProps {
   spots: Spot[];
@@ -217,7 +218,9 @@ export default function SpotList({ spots }: SpotListProps) {
                     )}
                     {spot.distance !== undefined && (
                       <span style={{
-                        display: 'inline-block',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
                         padding: '4px 12px',
                         backgroundColor: '#dbeafe',
                         color: '#1e40af',
@@ -225,7 +228,8 @@ export default function SpotList({ spots }: SpotListProps) {
                         fontSize: '12px',
                         fontWeight: '600'
                       }}>
-                        📍 {formatDistance(spot.distance)}
+                        <LocationOnIcon style={{ fontSize: '14px' }} />
+                        {formatDistance(spot.distance)}
                       </span>
                     )}
                     {!spot.quiz && (

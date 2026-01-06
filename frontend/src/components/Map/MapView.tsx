@@ -5,6 +5,7 @@ import { checkinApi } from '../../services/api';
 import QuizModal from '../Quiz/QuizModal';
 import type { User, Spot, Area, CheckInResponse } from '../../types';
 import { calculateDistance, formatDistance } from '../../utils/distance';
+import MyLocationIcon from '@mui/icons-material/MyLocation';
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN || '';
 
@@ -415,9 +416,13 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
           fontSize: '14px',
           fontWeight: '600',
           boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
-          zIndex: 10
+          zIndex: 10,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '4px'
         }}>
-          📍 位置情報を取得中...
+          <MyLocationIcon style={{ fontSize: '16px' }} />
+          位置情報を取得中...
         </div>
       )}
 

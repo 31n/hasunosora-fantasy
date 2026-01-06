@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { checkinApi } from '../../services/api';
 import type { User, Spot, CheckInResponse } from '../../types';
+import CelebrationIcon from '@mui/icons-material/Celebration';
+import CloseIcon from '@mui/icons-material/Close';
 
 interface QuizModalProps {
   user: User;
@@ -154,8 +156,12 @@ export default function QuizModal({ user, spot, quizData, onClose }: QuizModalPr
                 marginBottom: '24px',
               }}
             >
-              <p style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '8px' }}>
-                {result.correct ? '🎉 正解！' : '❌ 不正解'}
+              <p style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                {result.correct ? (
+                  <><CelebrationIcon style={{ fontSize: '28px' }} /> 正解！</>
+                ) : (
+                  <><CloseIcon style={{ fontSize: '28px' }} /> 不正解</>
+                )}
               </p>
               <p style={{ fontSize: '16px' }}>{result.message}</p>
               {result.correct && (

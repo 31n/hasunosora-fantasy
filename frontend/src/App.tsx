@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { storage } from './services/storage';
 import { userApi, masterApi } from './services/api';
 import { indexedDB } from './services/indexedDB';
+import RefreshIcon from '@mui/icons-material/Refresh';
 
 // Components
 import CreateUser from './components/User/CreateUser';
@@ -164,7 +165,7 @@ function App() {
                 e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
               }}
             >
-              <span style={{ fontSize: '16px' }}>🔄</span>
+              <RefreshIcon style={{ fontSize: '18px', marginRight: '4px' }} />
               {reloading ? '更新中...' : '再読み込み'}
             </button>
           </>

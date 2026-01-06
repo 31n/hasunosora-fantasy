@@ -3,6 +3,9 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { adminApi } from '../../services/api';
 import { storage } from '../../services/storage';
 import type { Spot } from '../../types';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+import CloseIcon from '@mui/icons-material/Close';
 
 export default function AdminSpotList() {
   const [spots, setSpots] = useState<Spot[]>([]);
@@ -218,11 +221,20 @@ export default function AdminSpotList() {
                 color: '#6b7280',
                 flexWrap: 'wrap'
               }}>
-                <span>📍 {spot.detection_radius}m</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <LocationOnIcon style={{ fontSize: '14px' }} />
+                  {spot.detection_radius}m
+                </span>
                 {spot.quiz ? (
-                  <span>🎯 {spot.quiz.score}点</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <EmojiEventsIcon style={{ fontSize: '14px' }} />
+                    {spot.quiz.score}点
+                  </span>
                 ) : (
-                  <span>❌ クイズなし</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <CloseIcon style={{ fontSize: '14px' }} />
+                    クイズなし
+                  </span>
                 )}
               </div>
 
