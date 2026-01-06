@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { adminApi } from '../../services/api';
 import { storage } from '../../services/storage';
 import { indexedDB } from '../../services/indexedDB';
-import type { Spot } from '../../types';
+import type { Spot, Area } from '../../types';
 import { OpenLocationCode } from 'open-location-code';
 
 export default function AdminSpotForm() {
@@ -16,6 +16,7 @@ export default function AdminSpotForm() {
   const [plusCodeError, setPlusCodeError] = useState('');
   const [referenceLocation, setReferenceLocation] = useState({ lat: '', lng: '' });
   const [isShortCode, setIsShortCode] = useState(false);
+  const [areas, setAreas] = useState<Area[]>([]);
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -26,6 +27,7 @@ export default function AdminSpotForm() {
     detection_radius: '100',
     images: [] as string[],
     genre: '',
+    area: '',
     quiz: {
       question: '',
       choices: ['', '', '', ''],
@@ -40,10 +42,21 @@ export default function AdminSpotForm() {
       return;
     }
 
+    loadAreas();
+
     if (spotId) {
       loadSpot();
     }
   }, [spotId]);
+
+  const loadAreas = async () => {
+    try {
+      const cachedAreas = await indexedDB.getAllAreas();
+      setAreas(cachedAreas);
+    } catch (error) {
+      console.error('エリア取得エラー:', error);
+    }
+  };
 
   const loadSpot = async () => {
     if (!spotId) return;
@@ -59,6 +72,7 @@ export default function AdminSpotForm() {
           detection_radius: spot.detection_radius.toString(),
           images: spot.images,
           genre: spot.genre || '',
+          area: spot.area || '',
           quiz: spot.quiz || {
             question: '',
             choices: ['', '', '', ''],
@@ -348,6 +362,31 @@ export default function AdminSpotForm() {
                 fontSize: '16px'
               }}
             />
+          </div>
+
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+              エリア
+            </label>
+            <select
+              value={formData.area}
+              onChange={(e) => setFormData({ ...formData, area: e.target.value })}
+              style={{
+                width: '100%',
+                padding: '12px',
+                border: '2px solid #e5e7eb',
+                borderRadius: '8px',
+                fontSize: '16px',
+                backgroundColor: 'white'
+              }}
+            >
+              <option value="">エリア未設定</option>
+              {areas.filter(a => a.is_active).map(area => (
+                <option key={area.area_id} value={area.area_id}>
+                  {area.area_name}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div style={{ marginBottom: '16px' }}>

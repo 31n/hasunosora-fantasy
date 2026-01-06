@@ -6,8 +6,10 @@ import type {
   QuizAnswerResponse,
   CooldownResponse,
   MasterVersionResponse,
+  MasterDataResponse,
   SpotsResponse,
-  Spot
+  Spot,
+  Area
 } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://your-api-gateway-url';
@@ -53,6 +55,13 @@ export const userApi = {
     });
   },
 
+  setSelectedArea: async (userId: string, selectedArea: string | null): Promise<User> => {
+    return fetchApi<User>(`/users/${userId}/area`, {
+      method: 'PUT',
+      body: JSON.stringify({ selected_area: selectedArea }),
+    });
+  },
+
   getHistory: async (
     userId: string,
     limit = 50,
@@ -68,6 +77,11 @@ export const userApi = {
 export const masterApi = {
   getVersion: async (): Promise<MasterVersionResponse> => {
     return fetchApi<MasterVersionResponse>('/master/version');
+  },
+
+  getMasterData: async (version?: string): Promise<MasterDataResponse> => {
+    const url = version ? `/master/data?version=${version}` : '/master/data';
+    return fetchApi<MasterDataResponse>(url);
   },
 
   getSpots: async (version?: string): Promise<SpotsResponse> => {
@@ -115,6 +129,37 @@ export const adminApi = {
     });
   },
 
+  // エリア管理
+  getAreas: async (password: string): Promise<Area[]> => {
+    return fetchApi<Area[]>('/admin/areas', {
+      headers: { 'X-Admin-Password': password },
+    });
+  },
+
+  createArea: async (password: string, areaData: Partial<Area>): Promise<Area> => {
+    return fetchApi<Area>('/admin/areas', {
+      method: 'POST',
+      headers: { 'X-Admin-Password': password },
+      body: JSON.stringify(areaData),
+    });
+  },
+
+  updateArea: async (password: string, areaId: string, areaData: Partial<Area>): Promise<Area> => {
+    return fetchApi<Area>(`/admin/areas/${areaId}`, {
+      method: 'PUT',
+      headers: { 'X-Admin-Password': password },
+      body: JSON.stringify(areaData),
+    });
+  },
+
+  deleteArea: async (password: string, areaId: string): Promise<any> => {
+    return fetchApi(`/admin/areas/${areaId}`, {
+      method: 'DELETE',
+      headers: { 'X-Admin-Password': password },
+    });
+  },
+
+  // スポット管理
   getSpots: async (password: string): Promise<{ spots: Spot[] }> => {
     return fetchApi<{ spots: Spot[] }>('/admin/spots', {
       headers: { 'X-Admin-Password': password },

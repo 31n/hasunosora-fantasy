@@ -1,20 +1,23 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { userApi } from '../../services/api';
 import { storage } from '../../services/storage';
-import type { User, CheckInHistory } from '../../types';
+import type { User, CheckInHistory, Spot, Area } from '../../types';
 
 interface MyPageProps {
   user: User;
   setUser: (user: User) => void;
+  spots: Spot[];
+  areas: Area[];
 }
 
-export default function MyPage({ user, setUser }: MyPageProps) {
+export default function MyPage({ user, setUser, spots, areas }: MyPageProps) {
   const [nickname, setNickname] = useState('');
   const [isEditingNickname, setIsEditingNickname] = useState(false);
   const [history, setHistory] = useState<CheckInHistory[]>([]);
   const [loading, setLoading] = useState(false);
   const [showUserId, setShowUserId] = useState(false);
+  const [selectedStatArea, setSelectedStatArea] = useState<string>('all'); // 統計表示用エリア
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -61,6 +64,19 @@ export default function MyPage({ user, setUser }: MyPageProps) {
     }
   };
 
+  const handleAreaChange = async (areaId: string) => {
+    setLoading(true);
+    try {
+      const updatedUser = await userApi.setSelectedArea(user.user_id, areaId || null);
+      setUser(updatedUser);
+      alert('エリアを変更しました');
+    } catch (error: any) {
+      alert('エラーが発生しました: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const copyUserId = () => {
     navigator.clipboard.writeText(user.user_id);
     alert('ユーザーIDをコピーしました');
@@ -76,12 +92,22 @@ export default function MyPage({ user, setUser }: MyPageProps) {
     });
   };
 
-  const stats = {
-    totalVisits: history.length,
-    uniqueSpots: new Set(history.map(h => h.spot_id)).size,
-    correctAnswers: history.filter(h => h.quiz_correct).length,
-    totalScore: user.total_score
-  };
+  // エリア別統計計算
+  const stats = useMemo(() => {
+    const filteredHistory = selectedStatArea === 'all' 
+      ? history 
+      : history.filter(h => {
+          const spot = spots.find(s => s.spot_id === h.spot_id);
+          return spot?.area === selectedStatArea;
+        });
+
+    return {
+      totalVisits: filteredHistory.length,
+      uniqueSpots: new Set(filteredHistory.map(h => h.spot_id)).size,
+      correctAnswers: filteredHistory.filter(h => h.quiz_correct).length,
+      totalScore: filteredHistory.reduce((sum, h) => sum + h.score_earned, 0)
+    };
+  }, [history, spots, selectedStatArea]);
 
   return (
     <div style={{ padding: '16px', maxWidth: '800px', margin: '0 auto' }}>
@@ -216,6 +242,38 @@ export default function MyPage({ user, setUser }: MyPageProps) {
               </button>
             </div>
           </div>
+
+          {/* エリア選択 */}
+          <div style={{ marginTop: '16px' }}>
+            <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '8px' }}>
+              選択中のエリア
+            </p>
+            <select
+              value={user.selected_area || ''}
+              onChange={(e) => handleAreaChange(e.target.value)}
+              disabled={loading}
+              style={{
+                width: '100%',
+                padding: '12px',
+                border: '2px solid #e5e7eb',
+                borderRadius: '8px',
+                fontSize: '16px',
+                backgroundColor: 'white',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                opacity: loading ? 0.5 : 1
+              }}
+            >
+              <option value="">全エリア</option>
+              {areas.filter(a => a.is_active).map(area => (
+                <option key={area.area_id} value={area.area_id}>
+                  {area.area_name}
+                </option>
+              ))}
+            </select>
+            <p style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>
+              選択したエリアのスポットのみが地図に表示されます
+            </p>
+          </div>
         </div>
 
         {/* ログアウトボタン */}
@@ -246,7 +304,28 @@ export default function MyPage({ user, setUser }: MyPageProps) {
         marginBottom: '24px',
         boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
       }}>
-        <h2 style={{ fontSize: '20px', marginBottom: '16px' }}>統計</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <h2 style={{ fontSize: '20px' }}>統計</h2>
+          <select
+            value={selectedStatArea}
+            onChange={(e) => setSelectedStatArea(e.target.value)}
+            style={{
+              padding: '8px 12px',
+              border: '2px solid #e5e7eb',
+              borderRadius: '6px',
+              fontSize: '14px',
+              backgroundColor: 'white',
+              cursor: 'pointer'
+            }}
+          >
+            <option value="all">全エリア</option>
+            {areas.filter(a => a.is_active).map(area => (
+              <option key={area.area_id} value={area.area_id}>
+                {area.area_name}
+              </option>
+            ))}
+          </select>
+        </div>
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(2, 1fr)',

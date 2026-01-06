@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { checkinApi } from '../../services/api';
 import QuizModal from '../Quiz/QuizModal';
-import type { User, Spot, CheckInResponse } from '../../types';
+import type { User, Spot, Area, CheckInResponse } from '../../types';
 import { calculateDistance, formatDistance } from '../../utils/distance';
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN || '';
@@ -11,9 +11,10 @@ mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN || '';
 interface MapViewProps {
   user: User;
   spots: Spot[];
+  areas: Area[];
 }
 
-export default function MapView({ user, spots }: MapViewProps) {
+export default function MapView({ user, spots, areas }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const userMarker = useRef<mapboxgl.Marker | null>(null);
@@ -72,14 +73,32 @@ export default function MapView({ user, spots }: MapViewProps) {
     }
   };
 
+  // エリアでフィルタリングされたスポット
+  const filteredSpots = useMemo(() => {
+    if (!user.selected_area) {
+      return spots; // 全エリア表示
+    }
+    return spots.filter(spot => spot.area === user.selected_area);
+  }, [spots, user.selected_area]);
+
+  // 選択されたエリアの中心座標を取得
+  const selectedAreaCenter = useMemo(() => {
+    if (!user.selected_area) return null;
+    const area = areas.find(a => a.area_id === user.selected_area);
+    return area ? [area.center_longitude, area.center_latitude] as [number, number] : null;
+  }, [user.selected_area, areas]);
+
   useEffect(() => {
     if (!mapContainer.current) return;
+
+    // 地図の初期中心座標を決定
+    const initialCenter = selectedAreaCenter || [139.7454, 35.6586]; // エリア中心 or 東京タワー
 
     // 地図を初期化（日本語化）
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/streets-v12',
-      center: [139.7454, 35.6586], // 東京タワー
+      center: initialCenter,
       zoom: 15, // ズームレベルを大きく（12→15）
       language: 'ja' // 日本語化
     });
@@ -229,8 +248,8 @@ export default function MapView({ user, spots }: MapViewProps) {
     // 既存のマーカーをクリア
     const markers: mapboxgl.Marker[] = [];
 
-    // スポットマーカーを追加
-    spots.forEach((spot) => {
+    // フィルタリングされたスポットにマーカーを追加
+    filteredSpots.forEach((spot) => {
       const el = document.createElement('div');
       el.className = 'spot-marker';
       el.style.backgroundColor = '#ef4444';
@@ -359,7 +378,18 @@ export default function MapView({ user, spots }: MapViewProps) {
     return () => {
       markers.forEach(marker => marker.remove());
     };
-  }, [spots]); // userLocationを依存配列から削除（マーカー作成はspotsの変更時のみ）
+  }, [filteredSpots]); // filteredSpotsに変更
+
+  // エリア変更時に地図の中心を移動
+  useEffect(() => {
+    if (!map.current || !selectedAreaCenter) return;
+    
+    map.current.flyTo({
+      center: selectedAreaCenter,
+      zoom: 15,
+      duration: 1500
+    });
+  }, [selectedAreaCenter]);
 
   const handleQuizClose = () => {
     setShowQuiz(false);

@@ -3,7 +3,20 @@ export interface User {
   user_id: string;
   nickname?: string;
   total_score: number;
+  selected_area?: string;
   created_at: string;
+}
+
+// area.ts
+export interface Area {
+  area_id: string;
+  area_name: string;
+  center_latitude: number;
+  center_longitude: number;
+  display_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 // spot.ts
@@ -23,6 +36,7 @@ export interface Spot {
   detection_radius: number;
   images: string[];
   genre: string; // ジャンル追加
+  area?: string; // エリアID
   quiz?: Quiz; // クイズは任意
   version: string;
   created_at: string;
@@ -78,6 +92,12 @@ export interface CooldownResponse {
 export interface MasterVersionResponse {
   version: string;
   updated_at: string;
+}
+
+export interface MasterDataResponse {
+  version: string;
+  areas: Area[];
+  spots: Spot[];
 }
 
 export interface SpotsResponse {

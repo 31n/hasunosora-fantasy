@@ -1,8 +1,9 @@
 from models.user import User
 from models.checkin import CheckIn
 from models.spot import Spot
+from models.area import Area
 from utils.user_id_generator import generate_user_id
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 class UserService:
     @staticmethod
@@ -41,6 +42,26 @@ class UserService:
             raise ValueError('NICKNAME_ALREADY_SET')
         
         user.update_nickname(nickname)
+        
+        return user.to_dict()
+    
+    @staticmethod
+    def set_selected_area(user_id: str, selected_area: Optional[str]) -> Dict:
+        """選択中のエリアを設定"""
+        user = User.get(user_id)
+        
+        if not user:
+            raise ValueError('USER_NOT_FOUND')
+        
+        # エリアIDが指定されている場合は存在チェック
+        if selected_area is not None and selected_area != '':
+            area = Area.get(selected_area)
+            if not area:
+                raise ValueError('AREA_NOT_FOUND')
+            if not area.is_active:
+                raise ValueError('AREA_INACTIVE')
+        
+        user.update_selected_area(selected_area)
         
         return user.to_dict()
     

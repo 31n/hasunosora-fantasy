@@ -14,14 +14,16 @@ import MyPage from './components/User/MyPage';
 import AdminLogin from './components/Admin/AdminLogin';
 import AdminSpotList from './components/Admin/AdminSpotList';
 import AdminSpotForm from './components/Admin/AdminSpotForm';
+import AdminAreaList from './components/Admin/AdminAreaList';
 import Header from './components/Common/Header';
 import Loading from './components/Common/Loading';
 
-import type { User, Spot } from './types';
+import type { User, Spot, Area } from './types';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const [spots, setSpots] = useState<Spot[]>([]);
+  const [areas, setAreas] = useState<Area[]>([]);
   const [loading, setLoading] = useState(true);
   const [reloading, setReloading] = useState(false);
 
@@ -59,23 +61,28 @@ function App() {
 
       // バージョンが異なる場合、または初回起動の場合
       if (!localVersion || localVersion !== versionData.version) {
-        const spotsData = await masterApi.getSpots(localVersion || undefined);
+        const masterData = await masterApi.getMasterData(localVersion || undefined);
 
-        if (spotsData.spots.length > 0) {
+        if (masterData.spots.length > 0 || masterData.areas.length > 0) {
           // IndexedDBに保存
-          await indexedDB.saveSpots(spotsData.spots);
-          storage.setMasterVersion(spotsData.version);
+          await indexedDB.saveSpots(masterData.spots);
+          await indexedDB.saveAreas(masterData.areas);
+          storage.setMasterVersion(masterData.version);
         }
       }
 
-      // IndexedDBからスポットを読み込み
+      // IndexedDBからデータを読み込み
       const cachedSpots = await indexedDB.getAllSpots();
+      const cachedAreas = await indexedDB.getAllAreas();
       setSpots(cachedSpots);
+      setAreas(cachedAreas);
     } catch (error) {
       console.error('Failed to fetch master data:', error);
       // キャッシュから読み込み
       const cachedSpots = await indexedDB.getAllSpots();
+      const cachedAreas = await indexedDB.getAllAreas();
       setSpots(cachedSpots);
+      setAreas(cachedAreas);
     }
   };
 
@@ -174,16 +181,17 @@ function App() {
           ) : (
             <>
               {/* メイン画面 */}
-              <Route path="/" element={<MapView user={user} spots={spots} />} />
+              <Route path="/" element={<MapView user={user} spots={spots} areas={areas} />} />
               <Route path="/spots" element={<SpotList spots={spots} />} />
               <Route path="/spots/:spotId" element={<SpotDetail user={user} />} />
-              <Route path="/mypage" element={<MyPage user={user} setUser={setUser} />} />
+              <Route path="/mypage" element={<MyPage user={user} setUser={setUser} spots={spots} areas={areas} />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </>
           )}
 
           {/* 管理画面 */}
           <Route path="/admin" element={<AdminLogin />} />
+          <Route path="/admin/areas" element={<AdminAreaList />} />
           <Route path="/admin/spots" element={<AdminSpotList />} />
           <Route path="/admin/spots/new" element={<AdminSpotForm />} />
           <Route path="/admin/spots/:spotId/edit" element={<AdminSpotForm />} />

@@ -1,10 +1,14 @@
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
-import type { Spot } from '../types';
+import type { Spot, Area } from '../types';
 
 interface SpotCheckinDB extends DBSchema {
   spots: {
     key: string;
     value: Spot;
+  };
+  areas: {
+    key: string;
+    value: Area;
   };
   metadata: {
     key: string;
@@ -13,7 +17,7 @@ interface SpotCheckinDB extends DBSchema {
 }
 
 const DB_NAME = 'spot-checkin-db';
-const DB_VERSION = 1;
+const DB_VERSION = 2; // バージョンアップ
 
 let dbInstance: IDBPDatabase<SpotCheckinDB> | null = null;
 
@@ -23,10 +27,15 @@ async function getDB(): Promise<IDBPDatabase<SpotCheckinDB>> {
   }
 
   dbInstance = await openDB<SpotCheckinDB>(DB_NAME, DB_VERSION, {
-    upgrade(db) {
+    upgrade(db, oldVersion) {
       // Spotsオブジェクトストア
       if (!db.objectStoreNames.contains('spots')) {
         db.createObjectStore('spots', { keyPath: 'spot_id' });
+      }
+
+      // Areasオブジェクトストア（v2で追加）
+      if (!db.objectStoreNames.contains('areas')) {
+        db.createObjectStore('areas', { keyPath: 'area_id' });
       }
 
       // Metadataオブジェクトストア
@@ -68,6 +77,34 @@ export const indexedDB = {
     return db.get('spots', spotId);
   },
 
+  // エリアを全て保存
+  saveAreas: async (areas: Area[]): Promise<void> => {
+    const db = await getDB();
+    const tx = db.transaction('areas', 'readwrite');
+
+    // 既存データをクリア
+    await tx.store.clear();
+
+    // 新しいデータを保存
+    for (const area of areas) {
+      await tx.store.put(area);
+    }
+
+    await tx.done;
+  },
+
+  // 全エリアを取得
+  getAllAreas: async (): Promise<Area[]> => {
+    const db = await getDB();
+    return db.getAll('areas');
+  },
+
+  // 特定のエリアを取得
+  getArea: async (areaId: string): Promise<Area | undefined> => {
+    const db = await getDB();
+    return db.get('areas', areaId);
+  },
+
   // メタデータを保存
   saveMetadata: async (key: string, value: any): Promise<void> => {
     const db = await getDB();
@@ -84,6 +121,7 @@ export const indexedDB = {
   clearAll: async (): Promise<void> => {
     const db = await getDB();
     await db.clear('spots');
+    await db.clear('areas');
     await db.clear('metadata');
   },
 };

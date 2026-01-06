@@ -6,6 +6,7 @@ from services.spot_service import SpotService
 from services.checkin_service import CheckInService
 from services.quiz_service import QuizService
 from services.admin_service import AdminService
+from services.area_service import AreaService
 
 def handler(event, context):
     """メインハンドラー"""
@@ -28,11 +29,17 @@ def handler(event, context):
         elif path.startswith('/users/') and path.endswith('/nickname') and http_method == 'PUT':
             return set_nickname(event)
         
+        elif path.startswith('/users/') and path.endswith('/area') and http_method == 'PUT':
+            return set_user_area(event)
+        
         elif path.startswith('/users/') and path.endswith('/history') and http_method == 'GET':
             return get_history(event)
         
         elif path == '/master/version' and http_method == 'GET':
             return get_master_version(event)
+        
+        elif path == '/master/data' and http_method == 'GET':
+            return get_master_data(event)
         
         elif path == '/master/spots' and http_method == 'GET':
             return get_spots(event)
@@ -49,6 +56,18 @@ def handler(event, context):
         # 管理画面API
         elif path == '/admin/login' and http_method == 'POST':
             return admin_login(event)
+        
+        elif path == '/admin/areas' and http_method == 'GET':
+            return admin_get_areas(event)
+        
+        elif path == '/admin/areas' and http_method == 'POST':
+            return admin_create_area(event)
+        
+        elif path.startswith('/admin/areas/') and http_method == 'PUT':
+            return admin_update_area(event)
+        
+        elif path.startswith('/admin/areas/') and http_method == 'DELETE':
+            return admin_delete_area(event)
         
         elif path == '/admin/spots' and http_method == 'GET':
             return admin_get_spots(event)
@@ -127,10 +146,37 @@ def get_history(event):
         return error_response('INTERNAL_ERROR', str(e), 500)
 
 
+def set_user_area(event):
+    try:
+        path_parts = event['path'].split('/')
+        user_id = path_parts[2]
+        
+        body = json.loads(event.get('body', '{}'))
+        selected_area = body.get('selected_area')
+        
+        result = UserService.set_selected_area(user_id, selected_area)
+        return success_response(result)
+    except ValueError as e:
+        return error_response(str(e), str(e), 400)
+    except Exception as e:
+        return error_response('INTERNAL_ERROR', str(e), 500)
+
+
 # マスタ関連
 def get_master_version(event):
     try:
         result = SpotService.get_master_version()
+        return success_response(result)
+    except Exception as e:
+        return error_response('INTERNAL_ERROR', str(e), 500)
+
+
+def get_master_data(event):
+    try:
+        query_params = event.get('queryStringParameters') or {}
+        client_version = query_params.get('version')
+        
+        result = SpotService.get_master_data(client_version)
         return success_response(result)
     except Exception as e:
         return error_response('INTERNAL_ERROR', str(e), 500)
@@ -339,4 +385,71 @@ def admin_upload_image(event):
     except Exception as e:
         print(f"Exception: {str(e)}")
         traceback.print_exc()
+        return error_response('INTERNAL_ERROR', str(e), 500)
+
+
+# 管理画面API - エリア関連
+def admin_get_areas(event):
+    try:
+        result = AreaService.get_all_areas(include_inactive=True)
+        return success_response(result)
+    except Exception as e:
+        return error_response('INTERNAL_ERROR', str(e), 500)
+
+
+def admin_create_area(event):
+    try:
+        body = json.loads(event.get('body', '{}'))
+        area_id = body.get('area_id')
+        area_name = body.get('area_name')
+        center_latitude = body.get('center_latitude')
+        center_longitude = body.get('center_longitude')
+        display_order = body.get('display_order', 0)
+        
+        result = AreaService.create_area(
+            area_id=area_id,
+            area_name=area_name,
+            center_latitude=center_latitude,
+            center_longitude=center_longitude,
+            display_order=display_order
+        )
+        return success_response(result, 201)
+    except ValueError as e:
+        return error_response(str(e), str(e), 400)
+    except Exception as e:
+        return error_response('INTERNAL_ERROR', str(e), 500)
+
+
+def admin_update_area(event):
+    try:
+        path_parts = event['path'].split('/')
+        area_id = path_parts[3]
+        
+        body = json.loads(event.get('body', '{}'))
+        
+        result = AreaService.update_area(
+            area_id=area_id,
+            area_name=body.get('area_name'),
+            center_latitude=body.get('center_latitude'),
+            center_longitude=body.get('center_longitude'),
+            display_order=body.get('display_order'),
+            is_active=body.get('is_active')
+        )
+        return success_response(result)
+    except ValueError as e:
+        return error_response(str(e), str(e), 400)
+    except Exception as e:
+        return error_response('INTERNAL_ERROR', str(e), 500)
+
+
+def admin_delete_area(event):
+    try:
+        path_parts = event['path'].split('/')
+        area_id = path_parts[3]
+        
+        result = AreaService.delete_area(area_id)
+        return success_response(result)
+    except ValueError as e:
+        return error_response(str(e), str(e), 400)
+    except Exception as e:
         return error_response('INTERNAL_ERROR', str(e), 500)

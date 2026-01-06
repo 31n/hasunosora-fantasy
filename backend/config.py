@@ -35,5 +35,9 @@ class Config:
     @property
     def MASTER_VERSION_TABLE(self):
         return f"{self.DYNAMODB_TABLE_PREFIX}master_version"
+    
+    @property
+    def AREAS_TABLE(self):
+        return f"{self.DYNAMODB_TABLE_PREFIX}areas"
 
 config = Config()
