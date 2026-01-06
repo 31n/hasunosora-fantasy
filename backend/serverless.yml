@@ -81,6 +81,15 @@ functions:
               - Authorization
             allowCredentials: false
       - http:
+          path: /users/{user_id}/area
+          method: put
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: false
+      - http:
           path: /users/{user_id}/history
           method: get
           cors:
@@ -93,6 +102,14 @@ functions:
       # マスタ関連
       - http:
           path: /master/version
+          method: get
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+            allowCredentials: false
+      - http:
+          path: /master/data
           method: get
           cors:
             origin: '*'
@@ -140,6 +157,42 @@ functions:
       - http:
           path: /admin/login
           method: post
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - x-admin-password
+            allowCredentials: false
+      - http:
+          path: /admin/areas
+          method: get
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - x-admin-password
+            allowCredentials: false
+      - http:
+          path: /admin/areas
+          method: post
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - x-admin-password
+            allowCredentials: false
+      - http:
+          path: /admin/areas/{area_id}
+          method: put
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - x-admin-password
+            allowCredentials: false
+      - http:
+          path: /admin/areas/{area_id}
+          method: delete
           cors:
             origin: '*'
             headers:
@@ -259,6 +312,18 @@ resources:
             AttributeType: S
         KeySchema:
           - AttributeName: id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+    
+    AreasTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.DYNAMODB_TABLE_PREFIX}areas
+        AttributeDefinitions:
+          - AttributeName: area_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: area_id
             KeyType: HASH
         BillingMode: PAY_PER_REQUEST
     
