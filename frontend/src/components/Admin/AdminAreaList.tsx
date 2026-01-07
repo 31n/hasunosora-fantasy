@@ -126,14 +126,16 @@ export default function AdminAreaList() {
             onClick={() => navigate('/admin/spots')}
             style={{
               padding: '12px 24px',
-              backgroundColor: '#6b7280',
+              backgroundColor: '#ba8211',
               color: 'white',
               border: 'none',
               borderRadius: '8px',
+              fontSize: '16px',
+              fontWeight: 'bold',
               cursor: 'pointer'
             }}
           >
-            スポット管理へ
+            スポット管理
           </button>
           {!showForm && (
             <button
@@ -144,6 +146,8 @@ export default function AdminAreaList() {
                 color: 'white',
                 border: 'none',
                 borderRadius: '8px',
+                fontSize: '16px',
+                fontWeight: 'bold',
                 cursor: 'pointer'
               }}
             >

@@ -115,7 +115,7 @@ export default function AdminSpotList() {
               cursor: 'pointer'
             }}
           >
-            ＋ 新規作成
+            ＋ 新規スポット
           </button>
           <button
             onClick={handleLogout}
