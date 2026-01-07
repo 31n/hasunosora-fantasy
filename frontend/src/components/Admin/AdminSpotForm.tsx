@@ -245,7 +245,8 @@ export default function AdminSpotForm() {
         longitude: parseFloat(formData.longitude),
         detection_radius: parseFloat(formData.detection_radius),
         images: formData.images,
-        genre: formData.genre
+        genre: formData.genre,
+        area: formData.area || null
       };
 
       // クイズがある場合のみ追加
