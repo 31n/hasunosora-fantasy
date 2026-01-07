@@ -275,38 +275,118 @@ export default function AdminAreaList() {
 
             <div style={{ marginBottom: '16px' }}>
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
-                利用可能なジャンル（複数選択可）
+                利用可能なジャンル
               </label>
-              <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
-                gap: '12px',
-                padding: '12px',
-                border: '2px solid #e5e7eb',
-                borderRadius: '8px',
-                backgroundColor: '#f9fafb'
-              }}>
-                {['歴史', '自然', 'グルメ', '文化', 'アート', 'スポーツ', 'ショッピング', 'エンターテイメント'].map(g => (
-                  <label key={g} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                    <input
-                      type="checkbox"
-                      checked={formData.available_genres.includes(g)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setFormData({ ...formData, available_genres: [...formData.available_genres, g] });
-                        } else {
-                          setFormData({ ...formData, available_genres: formData.available_genres.filter(item => item !== g) });
-                        }
-                      }}
-                      style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-                    />
-                    <span>{g}</span>
-                  </label>
-                ))}
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                <input
+                  type="text"
+                  placeholder="ジャンル名を入力"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      const input = e.currentTarget;
+                      const value = input.value.trim();
+                      if (value && !formData.available_genres.includes(value)) {
+                        setFormData({ ...formData, available_genres: [...formData.available_genres, value] });
+                        input.value = '';
+                      }
+                    }
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    border: '2px solid #e5e7eb',
+                    borderRadius: '8px',
+                    fontSize: '16px'
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                    const value = input.value.trim();
+                    if (value && !formData.available_genres.includes(value)) {
+                      setFormData({ ...formData, available_genres: [...formData.available_genres, value] });
+                      input.value = '';
+                    }
+                  }}
+                  style={{
+                    padding: '12px 24px',
+                    backgroundColor: '#10b981',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  追加
+                </button>
               </div>
-              {formData.available_genres.length > 0 && (
-                <div style={{ marginTop: '8px', fontSize: '14px', color: '#6b7280' }}>
-                  選択中: {formData.available_genres.join(', ')}
+              <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '12px' }}>
+                Enterキーまたは「追加」ボタンでジャンルを追加できます
+              </p>
+              {formData.available_genres.length > 0 ? (
+                <div style={{ 
+                  display: 'flex', 
+                  gap: '8px', 
+                  flexWrap: 'wrap',
+                  padding: '12px',
+                  border: '2px solid #e5e7eb',
+                  borderRadius: '8px',
+                  backgroundColor: '#f9fafb'
+                }}>
+                  {formData.available_genres.map((genre, idx) => (
+                    <span key={idx} style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '6px 12px',
+                      backgroundColor: '#fef3c7',
+                      color: '#92400e',
+                      borderRadius: '12px',
+                      fontSize: '14px',
+                      fontWeight: '600'
+                    }}>
+                      {genre}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormData({ 
+                            ...formData, 
+                            available_genres: formData.available_genres.filter((_, i) => i !== idx) 
+                          });
+                        }}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#92400e',
+                          cursor: 'pointer',
+                          fontSize: '18px',
+                          lineHeight: '1',
+                          padding: '0',
+                          marginLeft: '4px'
+                        }}
+                        title="削除"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ 
+                  padding: '12px',
+                  border: '2px solid #e5e7eb',
+                  borderRadius: '8px',
+                  backgroundColor: '#f9fafb',
+                  color: '#9ca3af',
+                  fontSize: '14px',
+                  textAlign: 'center'
+                }}>
+                  ジャンルが設定されていません
                 </div>
               )}
             </div>
