@@ -15,7 +15,8 @@ export default function AdminAreaList() {
     center_latitude: 35.6586,
     center_longitude: 139.7454,
     display_order: 0,
-    is_active: true
+    is_active: true,
+    available_genres: [] as string[]
   });
   const navigate = useNavigate();
 
@@ -73,7 +74,8 @@ export default function AdminAreaList() {
       center_latitude: area.center_latitude,
       center_longitude: area.center_longitude,
       display_order: area.display_order,
-      is_active: area.is_active
+      is_active: area.is_active,
+      available_genres: area.available_genres || []
     });
     setShowForm(true);
   };
@@ -103,7 +105,8 @@ export default function AdminAreaList() {
       center_latitude: 35.6586,
       center_longitude: 139.7454,
       display_order: 0,
-      is_active: true
+      is_active: true,
+      available_genres: []
     });
   };
 
@@ -270,6 +273,44 @@ export default function AdminAreaList() {
               />
             </div>
 
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                利用可能なジャンル（複数選択可）
+              </label>
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+                gap: '12px',
+                padding: '12px',
+                border: '2px solid #e5e7eb',
+                borderRadius: '8px',
+                backgroundColor: '#f9fafb'
+              }}>
+                {['歴史', '自然', 'グルメ', '文化', 'アート', 'スポーツ', 'ショッピング', 'エンターテイメント'].map(g => (
+                  <label key={g} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={formData.available_genres.includes(g)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setFormData({ ...formData, available_genres: [...formData.available_genres, g] });
+                        } else {
+                          setFormData({ ...formData, available_genres: formData.available_genres.filter(item => item !== g) });
+                        }
+                      }}
+                      style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                    />
+                    <span>{g}</span>
+                  </label>
+                ))}
+              </div>
+              {formData.available_genres.length > 0 && (
+                <div style={{ marginTop: '8px', fontSize: '14px', color: '#6b7280' }}>
+                  選択中: {formData.available_genres.join(', ')}
+                </div>
+              )}
+            </div>
+
             {editingArea && (
               <div style={{ marginBottom: '16px' }}>
                 <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
@@ -334,6 +375,7 @@ export default function AdminAreaList() {
               <th style={{ padding: '16px', textAlign: 'left' }}>エリアID</th>
               <th style={{ padding: '16px', textAlign: 'left' }}>エリア名</th>
               <th style={{ padding: '16px', textAlign: 'left' }}>中心座標</th>
+              <th style={{ padding: '16px', textAlign: 'left' }}>ジャンル</th>
               <th style={{ padding: '16px', textAlign: 'center' }}>状態</th>
               <th style={{ padding: '16px', textAlign: 'center' }}>操作</th>
             </tr>
@@ -346,6 +388,26 @@ export default function AdminAreaList() {
                 <td style={{ padding: '16px', fontWeight: '600' }}>{area.area_name}</td>
                 <td style={{ padding: '16px', fontSize: '14px', color: '#6b7280' }}>
                   {area.center_latitude.toFixed(6)}, {area.center_longitude.toFixed(6)}
+                </td>
+                <td style={{ padding: '16px' }}>
+                  {area.available_genres && area.available_genres.length > 0 ? (
+                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                      {area.available_genres.map((g, idx) => (
+                        <span key={idx} style={{
+                          padding: '2px 8px',
+                          borderRadius: '8px',
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          backgroundColor: '#fef3c7',
+                          color: '#92400e'
+                        }}>
+                          {g}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <span style={{ fontSize: '14px', color: '#9ca3af' }}>未設定</span>
+                  )}
                 </td>
                 <td style={{ padding: '16px', textAlign: 'center' }}>
                   <span style={{

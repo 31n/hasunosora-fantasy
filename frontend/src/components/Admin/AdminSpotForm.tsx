@@ -350,38 +350,69 @@ export default function AdminSpotForm() {
             <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
               ジャンル（複数選択可）
             </label>
-            <div style={{ 
-              display: 'grid', 
-              gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
-              gap: '12px',
-              padding: '12px',
-              border: '2px solid #e5e7eb',
-              borderRadius: '8px',
-              backgroundColor: '#f9fafb'
-            }}>
-              {['歴史', '自然', 'グルメ', '文化', 'アート', 'スポーツ', 'ショッピング', 'エンターテイメント'].map(g => (
-                <label key={g} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                  <input
-                    type="checkbox"
-                    checked={formData.genre.includes(g)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setFormData({ ...formData, genre: [...formData.genre, g] });
-                      } else {
-                        setFormData({ ...formData, genre: formData.genre.filter(item => item !== g) });
-                      }
-                    }}
-                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-                  />
-                  <span>{g}</span>
-                </label>
-              ))}
-            </div>
-            {formData.genre.length > 0 && (
-              <div style={{ marginTop: '8px', fontSize: '14px', color: '#6b7280' }}>
-                選択中: {formData.genre.join(', ')}
+            {!formData.area ? (
+              <div style={{
+                padding: '12px',
+                border: '2px solid #fbbf24',
+                borderRadius: '8px',
+                backgroundColor: '#fef3c7',
+                color: '#92400e',
+                fontSize: '14px'
+              }}>
+                先にエリアを選択してください
               </div>
-            )}
+            ) : (() => {
+              const selectedArea = areas.find(a => a.area_id === formData.area);
+              const availableGenres = selectedArea?.available_genres || [];
+              
+              return availableGenres.length === 0 ? (
+                <div style={{
+                  padding: '12px',
+                  border: '2px solid #e5e7eb',
+                  borderRadius: '8px',
+                  backgroundColor: '#f9fafb',
+                  color: '#6b7280',
+                  fontSize: '14px'
+                }}>
+                  このエリアにはジャンルが設定されていません
+                </div>
+              ) : (
+                <>
+                  <div style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+                    gap: '12px',
+                    padding: '12px',
+                    border: '2px solid #e5e7eb',
+                    borderRadius: '8px',
+                    backgroundColor: '#f9fafb'
+                  }}>
+                    {availableGenres.map(g => (
+                      <label key={g} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                        <input
+                          type="checkbox"
+                          checked={formData.genre.includes(g)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setFormData({ ...formData, genre: [...formData.genre, g] });
+                            } else {
+                              setFormData({ ...formData, genre: formData.genre.filter(item => item !== g) });
+                            }
+                          }}
+                          style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                        />
+                        <span>{g}</span>
+                      </label>
+                    ))}
+                  </div>
+                  {formData.genre.length > 0 && (
+                    <div style={{ marginTop: '8px', fontSize: '14px', color: '#6b7280' }}>
+                      選択中: {formData.genre.join(', ')}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
 
           <div style={{ marginBottom: '16px' }}>
@@ -390,7 +421,20 @@ export default function AdminSpotForm() {
             </label>
             <select
               value={formData.area}
-              onChange={(e) => setFormData({ ...formData, area: e.target.value })}
+              onChange={(e) => {
+                const newAreaId = e.target.value;
+                const newArea = areas.find(a => a.area_id === newAreaId);
+                const availableGenres = newArea?.available_genres || [];
+                
+                // エリア変更時、新しいエリアで利用できないジャンルを除外
+                const validGenres = formData.genre.filter(g => availableGenres.includes(g));
+                
+                setFormData({ 
+                  ...formData, 
+                  area: newAreaId,
+                  genre: validGenres
+                });
+              }}
               style={{
                 width: '100%',
                 padding: '12px',

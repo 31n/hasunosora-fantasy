@@ -8,6 +8,7 @@ class Area:
     def __init__(self, area_id: str, area_name: str, 
                  center_latitude: float, center_longitude: float,
                  display_order: int = 0, is_active: bool = True,
+                 available_genres: List[str] = None,
                  created_at: Optional[str] = None, updated_at: Optional[str] = None):
         self.area_id = area_id
         self.area_name = area_name
@@ -16,6 +17,7 @@ class Area:
         self.center_longitude = float(center_longitude) if isinstance(center_longitude, Decimal) else center_longitude
         self.display_order = int(display_order) if isinstance(display_order, Decimal) else display_order
         self.is_active = bool(is_active)
+        self.available_genres = available_genres or []
         self.created_at = created_at or datetime.utcnow().isoformat()
         self.updated_at = updated_at or datetime.utcnow().isoformat()
     
@@ -35,6 +37,7 @@ class Area:
                 'center_longitude': Decimal(str(self.center_longitude)),
                 'display_order': self.display_order,
                 'is_active': self.is_active,
+                'available_genres': self.available_genres,
                 'created_at': self.created_at,
                 'updated_at': self.updated_at
             }
@@ -47,6 +50,7 @@ class Area:
                 'center_longitude': self.center_longitude,
                 'display_order': self.display_order,
                 'is_active': self.is_active,
+                'available_genres': self.available_genres,
                 'created_at': self.created_at,
                 'updated_at': self.updated_at
             }
@@ -74,6 +78,7 @@ class Area:
             center_longitude=item['center_longitude'],
             display_order=item.get('display_order', 0),
             is_active=item.get('is_active', True),
+            available_genres=item.get('available_genres', []),
             created_at=item.get('created_at'),
             updated_at=item.get('updated_at')
         )
@@ -93,6 +98,7 @@ class Area:
                 center_longitude=item['center_longitude'],
                 display_order=item.get('display_order', 0),
                 is_active=item.get('is_active', True),
+                available_genres=item.get('available_genres', []),
                 created_at=item.get('created_at'),
                 updated_at=item.get('updated_at')
             )

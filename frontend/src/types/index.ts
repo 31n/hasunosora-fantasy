@@ -15,6 +15,7 @@ export interface Area {
   center_longitude: number;
   display_order: number;
   is_active: boolean;
+  available_genres: string[]; // このエリアで利用可能なジャンル
   created_at: string;
   updated_at: string;
 }
