@@ -41,6 +41,7 @@ class AdminService:
             detection_radius=float(spot_data.get('detection_radius', 100)),
             images=spot_data.get('images', []),
             genre=spot_data.get('genre', ''),
+            area=spot_data.get('area'),
             quiz=quiz  # Noneでも可
         )
         
@@ -82,6 +83,7 @@ class AdminService:
         spot.detection_radius = float(spot_data.get('detection_radius', spot.detection_radius))
         spot.images = spot_data.get('images', spot.images)
         spot.genre = spot_data.get('genre', spot.genre)
+        spot.area = spot_data.get('area', spot.area)
         
         # クイズの更新（Noneも許可）
         if 'quiz' in spot_data:

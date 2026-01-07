@@ -1,25 +1,32 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { Spot } from '../../types';
+import type { Spot, User, Area } from '../../types';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 
 interface SpotListProps {
   spots: Spot[];
+  user: User;
+  areas: Area[];
 }
 
 interface SpotWithDistance extends Spot {
   distance?: number;
 }
 
-export default function SpotList({ spots }: SpotListProps) {
+export default function SpotList({ spots, user, areas }: SpotListProps) {
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [spotsWithDistance, setSpotsWithDistance] = useState<SpotWithDistance[]>([]);
   const [sortBy, setSortBy] = useState<'distance' | 'name'>('distance');
   const [selectedGenre, setSelectedGenre] = useState<string>('all');
   const navigate = useNavigate();
 
+  // ユーザーの選択エリアに基づいてスポットをフィルタリング
+  const filteredByArea = user.selected_area
+    ? spots.filter(spot => spot.area === user.selected_area)
+    : spots;
+
   // ジャンル一覧を取得
-  const genres = ['all', ...new Set(spots.map(s => s.genre).filter(g => g))];
+  const genres = ['all', ...new Set(filteredByArea.map(s => s.genre).filter(g => g))];
 
   useEffect(() => {
     // 位置情報を取得
@@ -38,7 +45,7 @@ export default function SpotList({ spots }: SpotListProps) {
   useEffect(() => {
     if (userLocation) {
       // 距離を計算
-      const withDistance = spots.map(spot => ({
+      const withDistance = filteredByArea.map(spot => ({
         ...spot,
         distance: calculateDistance(
           userLocation[0],
@@ -49,9 +56,9 @@ export default function SpotList({ spots }: SpotListProps) {
       }));
       setSpotsWithDistance(withDistance);
     } else {
-      setSpotsWithDistance(spots);
+      setSpotsWithDistance(filteredByArea);
     }
-  }, [spots, userLocation]);
+  }, [filteredByArea, userLocation]);
 
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
     const R = 6371000; // 地球の半径（メートル）
