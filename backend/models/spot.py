@@ -9,7 +9,7 @@ class Spot:
     def __init__(self, spot_id: Optional[str] = None, spot_name: str = "", 
                  description: str = "", latitude: float = 0.0, longitude: float = 0.0,
                  detection_radius: float = 100.0, images: List[str] = None,
-                 genre: str = "", quiz: Optional[Dict] = None, area: Optional[str] = None,
+                 genre: List[str] = None, quiz: Optional[Dict] = None, area: Optional[str] = None,
                  version: str = "", created_at: Optional[str] = None, updated_at: Optional[str] = None):
         self.spot_id = spot_id or str(uuid.uuid4())
         self.spot_name = spot_name
@@ -19,7 +19,7 @@ class Spot:
         self.longitude = float(longitude) if isinstance(longitude, Decimal) else longitude
         self.detection_radius = float(detection_radius) if isinstance(detection_radius, Decimal) else detection_radius
         self.images = images or []
-        self.genre = genre or ""
+        self.genre = genre or []
         self.quiz = quiz  # Noneも許可
         self.area = area  # エリアID（nullable）
         self.version = version or datetime.utcnow().strftime('%Y%m%d')

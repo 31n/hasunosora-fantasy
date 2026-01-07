@@ -199,20 +199,22 @@ export default function AdminSpotList() {
                 {spot.spot_name}
               </h3>
               
-              {spot.genre && (
-                <span style={{
-                  display: 'inline-block',
-                  padding: '4px 12px',
-                  backgroundColor: '#fef3c7',
-                  color: '#92400e',
-                  borderRadius: '12px',
-                  fontSize: '12px',
-                  fontWeight: '600',
-                  marginBottom: '8px',
-                  width: 'fit-content'
-                }}>
-                  {spot.genre}
-                </span>
+              {spot.genre && spot.genre.length > 0 && (
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                  {spot.genre.map((g, idx) => (
+                    <span key={idx} style={{
+                      display: 'inline-block',
+                      padding: '4px 12px',
+                      backgroundColor: '#fef3c7',
+                      color: '#92400e',
+                      borderRadius: '12px',
+                      fontSize: '12px',
+                      fontWeight: '600'
+                    }}>
+                      {g}
+                    </span>
+                  ))}
+                </div>
               )}
               
               <p style={{ 

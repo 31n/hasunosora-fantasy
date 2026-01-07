@@ -135,19 +135,22 @@ export default function SpotDetail({ user }: SpotDetailProps) {
       }}>
         <h1 style={{ marginBottom: '12px' }}>{spot.spot_name}</h1>
         
-        {spot.genre && (
-          <span style={{
-            display: 'inline-block',
-            padding: '6px 16px',
-            backgroundColor: '#fef3c7',
-            color: '#92400e',
-            borderRadius: '12px',
-            fontSize: '14px',
-            fontWeight: '600',
-            marginBottom: '16px'
-          }}>
-            {spot.genre}
-          </span>
+        {spot.genre && spot.genre.length > 0 && (
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
+            {spot.genre.map((g, idx) => (
+              <span key={idx} style={{
+                display: 'inline-block',
+                padding: '6px 16px',
+                backgroundColor: '#fef3c7',
+                color: '#92400e',
+                borderRadius: '12px',
+                fontSize: '14px',
+                fontWeight: '600'
+              }}>
+                {g}
+              </span>
+            ))}
+          </div>
         )}
         
         <p style={{ color: '#6b7280', lineHeight: '1.6', marginBottom: '16px' }}>

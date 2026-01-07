@@ -40,7 +40,7 @@ class AdminService:
             longitude=float(spot_data['longitude']),
             detection_radius=float(spot_data.get('detection_radius', 100)),
             images=spot_data.get('images', []),
-            genre=spot_data.get('genre', ''),
+            genre=spot_data.get('genre', []),
             area=spot_data.get('area'),
             quiz=quiz  # Noneでも可
         )

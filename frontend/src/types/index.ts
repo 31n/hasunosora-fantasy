@@ -35,7 +35,7 @@ export interface Spot {
   longitude: number;
   detection_radius: number;
   images: string[];
-  genre: string; // ジャンル追加
+  genre: string[]; // ジャンル（複数可）
   area?: string; // エリアID
   quiz?: Quiz; // クイズは任意
   version: string;

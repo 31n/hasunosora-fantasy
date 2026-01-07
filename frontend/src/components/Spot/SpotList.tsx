@@ -25,8 +25,8 @@ export default function SpotList({ spots, user, areas }: SpotListProps) {
     ? spots.filter(spot => spot.area === user.selected_area)
     : spots;
 
-  // ジャンル一覧を取得
-  const genres = ['all', ...new Set(filteredByArea.map(s => s.genre).filter(g => g))];
+  // ジャンル一覧を取得（複数ジャンル対応）
+  const genres = ['all', ...new Set(filteredByArea.flatMap(s => s.genre || []))];
 
   useEffect(() => {
     // 位置情報を取得
@@ -84,7 +84,7 @@ export default function SpotList({ spots, user, areas }: SpotListProps) {
     // ジャンルでフィルタ
     let filtered = selectedGenre === 'all' 
       ? [...spotsWithDistance]
-      : spotsWithDistance.filter(s => s.genre === selectedGenre);
+      : spotsWithDistance.filter(s => s.genre && s.genre.includes(selectedGenre));
     
     // ソート
     if (sortBy === 'distance' && userLocation) {
@@ -210,8 +210,8 @@ export default function SpotList({ spots, user, areas }: SpotListProps) {
                     {spot.description}
                   </p>
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    {spot.genre && (
-                      <span style={{
+                    {spot.genre && spot.genre.length > 0 && spot.genre.map((g, idx) => (
+                      <span key={idx} style={{
                         display: 'inline-block',
                         padding: '4px 12px',
                         backgroundColor: '#fef3c7',
@@ -220,9 +220,9 @@ export default function SpotList({ spots, user, areas }: SpotListProps) {
                         fontSize: '12px',
                         fontWeight: '600'
                       }}>
-                        {spot.genre}
+                        {g}
                       </span>
-                    )}
+                    ))}
                     {spot.distance !== undefined && (
                       <span style={{
                         display: 'inline-flex',

@@ -26,7 +26,7 @@ export default function AdminSpotForm() {
     longitude: '',
     detection_radius: '100',
     images: [] as string[],
-    genre: '',
+    genre: [] as string[],
     area: '',
     quiz: {
       question: '',
@@ -71,7 +71,7 @@ export default function AdminSpotForm() {
           longitude: spot.longitude.toString(),
           detection_radius: spot.detection_radius.toString(),
           images: spot.images,
-          genre: spot.genre || '',
+          genre: spot.genre || [],
           area: spot.area || '',
           quiz: spot.quiz || {
             question: '',
@@ -348,21 +348,40 @@ export default function AdminSpotForm() {
 
           <div style={{ marginBottom: '16px' }}>
             <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
-              ジャンル
+              ジャンル（複数選択可）
             </label>
-            <input
-              type="text"
-              value={formData.genre}
-              onChange={(e) => setFormData({ ...formData, genre: e.target.value })}
-              placeholder="例: 歴史、自然、グルメ"
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '2px solid #e5e7eb',
-                borderRadius: '8px',
-                fontSize: '16px'
-              }}
-            />
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+              gap: '12px',
+              padding: '12px',
+              border: '2px solid #e5e7eb',
+              borderRadius: '8px',
+              backgroundColor: '#f9fafb'
+            }}>
+              {['歴史', '自然', 'グルメ', '文化', 'アート', 'スポーツ', 'ショッピング', 'エンターテイメント'].map(g => (
+                <label key={g} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={formData.genre.includes(g)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setFormData({ ...formData, genre: [...formData.genre, g] });
+                      } else {
+                        setFormData({ ...formData, genre: formData.genre.filter(item => item !== g) });
+                      }
+                    }}
+                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                  />
+                  <span>{g}</span>
+                </label>
+              ))}
+            </div>
+            {formData.genre.length > 0 && (
+              <div style={{ marginTop: '8px', fontSize: '14px', color: '#6b7280' }}>
+                選択中: {formData.genre.join(', ')}
+              </div>
+            )}
           </div>
 
           <div style={{ marginBottom: '16px' }}>
