@@ -505,8 +505,8 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
         aria-label="表示フィルターを開く"
         style={{
           position: 'absolute',
-          bottom: '80px',
-          right: '20px',
+          bottom: '20px',
+          right: '96px',
           width: '56px',
           height: '56px',
           backgroundColor: '#3b82f6',
