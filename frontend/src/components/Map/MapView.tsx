@@ -529,15 +529,8 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
         <>
           {/* バックドロップ */}
           <div
-            role="button"
-            tabIndex={0}
             onClick={() => setShowFilter(false)}
-            onKeyDown={(e) => {
-              if (e.key === 'Escape') {
-                setShowFilter(false);
-              }
-            }}
-            aria-label="フィルターを閉じる"
+            aria-hidden="true"
             style={{
               position: 'fixed',
               top: 0,
@@ -564,18 +557,23 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
             padding: '24px',
             boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
             zIndex: 1001,
-            minWidth: '320px',
-            maxWidth: '90%',
+            width: 'calc(100% - 32px)',
+            maxWidth: '480px',
             maxHeight: '80vh',
             overflowY: 'auto'
-          }}>
+          }}
+          onClick={(e) => e.stopPropagation()}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="filter-dialog-title"
+          >
             <div style={{ 
               display: 'flex', 
               justifyContent: 'space-between', 
               alignItems: 'center',
               marginBottom: '20px'
             }}>
-              <h3 style={{ 
+              <h3 id="filter-dialog-title" style={{ 
                 margin: 0, 
                 fontSize: '18px',
                 fontWeight: '600',
