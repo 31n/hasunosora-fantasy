@@ -6,6 +6,7 @@ import QuizModal from '../Quiz/QuizModal';
 import type { User, Spot, Area, CheckInResponse } from '../../types';
 import { calculateDistance, formatDistance } from '../../utils/distance';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
+import FilterListIcon from '@mui/icons-material/FilterList';
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN || '';
 
@@ -29,6 +30,9 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
   const [quizData, setQuizData] = useState<CheckInResponse | null>(null);
   const [showQuiz, setShowQuiz] = useState(false);
   const [orientationPermissionNeeded, setOrientationPermissionNeeded] = useState(false);
+  
+  // フィルター表示状態
+  const [showFilter, setShowFilter] = useState(false);
   
   // フィルター状態
   const [quizFilter, setQuizFilter] = useState<'all' | 'quiz-only' | 'no-quiz'>('all');
@@ -479,127 +483,206 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
     <div style={{ position: 'relative', width: '100%', height: '100vh' }}>
       <div ref={mapContainer} style={{ width: '100%', height: '100%' }} />
       
-      {/* フィルターコントロール */}
-      <div style={{
-        position: 'absolute',
-        top: '80px',
-        left: '10px',
-        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-        borderRadius: '12px',
-        padding: '16px',
-        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
-        zIndex: 10,
-        minWidth: '200px',
-        maxWidth: '280px'
-      }}>
-        <h3 style={{ 
-          margin: '0 0 12px 0', 
-          fontSize: '14px',
-          fontWeight: '600',
-          color: '#374151'
-        }}>
-          表示フィルター
-        </h3>
-        
-        {/* クイズフィルター */}
-        <div style={{ marginBottom: '12px' }}>
-          <label style={{ 
-            display: 'block',
-            fontSize: '12px',
-            fontWeight: '600',
-            color: '#6b7280',
-            marginBottom: '6px'
-          }}>
-            クイズ有無
-          </label>
-          <select
-            value={quizFilter}
-            onChange={(e) => {
-              const value = e.target.value;
-              if (value === 'all' || value === 'quiz-only' || value === 'no-quiz') {
-                setQuizFilter(value);
-              }
-            }}
+      {/* フィルターボタン */}
+      <button
+        onClick={() => setShowFilter(true)}
+        style={{
+          position: 'absolute',
+          bottom: '80px',
+          right: '20px',
+          width: '56px',
+          height: '56px',
+          backgroundColor: '#3b82f6',
+          color: 'white',
+          border: 'none',
+          borderRadius: '50%',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+          cursor: 'pointer',
+          zIndex: 998,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          transition: 'all 0.2s'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = 'scale(1.05)';
+          e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.2)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = 'scale(1)';
+          e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+        }}
+      >
+        <FilterListIcon style={{ fontSize: '28px' }} />
+      </button>
+      
+      {/* フィルターモーダル */}
+      {showFilter && (
+        <>
+          {/* バックドロップ */}
+          <div
+            onClick={() => setShowFilter(false)}
             style={{
-              width: '100%',
-              padding: '8px 12px',
-              border: '2px solid #e5e7eb',
-              borderRadius: '8px',
-              fontSize: '13px',
-              cursor: 'pointer',
-              backgroundColor: 'white'
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              zIndex: 1000,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
             }}
-          >
-            <option value="all">すべて表示</option>
-            <option value="quiz-only">クイズあり</option>
-            <option value="no-quiz">クイズなし</option>
-          </select>
-        </div>
-        
-        {/* ジャンルフィルター */}
-        <div style={{ marginBottom: '8px' }}>
-          <label style={{ 
-            display: 'block',
-            fontSize: '12px',
-            fontWeight: '600',
-            color: '#6b7280',
-            marginBottom: '6px'
+          />
+          
+          {/* フィルターウィンドウ */}
+          <div style={{
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            backgroundColor: 'white',
+            borderRadius: '16px',
+            padding: '24px',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
+            zIndex: 1001,
+            minWidth: '320px',
+            maxWidth: '90%',
+            maxHeight: '80vh',
+            overflowY: 'auto'
           }}>
-            ジャンル
-          </label>
-          <select
-            value={selectedGenre}
-            onChange={(e) => setSelectedGenre(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '8px 12px',
-              border: '2px solid #e5e7eb',
-              borderRadius: '8px',
-              fontSize: '13px',
-              cursor: 'pointer',
-              backgroundColor: 'white'
-            }}
-          >
-            <option value="all">すべて</option>
-            {availableGenres.filter(g => g !== 'all').map(genre => (
-              <option key={genre} value={genre}>{genre}</option>
-            ))}
-          </select>
-        </div>
-        
-        {/* 凡例 */}
-        <div style={{
-          marginTop: '16px',
-          paddingTop: '12px',
-          borderTop: '1px solid #e5e7eb'
-        }}>
-          <div style={{ fontSize: '12px', fontWeight: '600', color: '#6b7280', marginBottom: '8px' }}>
-            凡例
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center',
+              marginBottom: '20px'
+            }}>
+              <h3 style={{ 
+                margin: 0, 
+                fontSize: '18px',
+                fontWeight: '600',
+                color: '#374151'
+              }}>
+                表示フィルター
+              </h3>
+              <button
+                onClick={() => setShowFilter(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  color: '#6b7280',
+                  padding: '4px',
+                  lineHeight: 1
+                }}
+              >
+                ×
+              </button>
+            </div>
+            
+            {/* クイズフィルター */}
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ 
+                display: 'block',
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#6b7280',
+                marginBottom: '8px'
+              }}>
+                クイズ有無
+              </label>
+              <select
+                value={quizFilter}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value === 'all' || value === 'quiz-only' || value === 'no-quiz') {
+                    setQuizFilter(value);
+                  }
+                }}
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  border: '2px solid #e5e7eb',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  backgroundColor: 'white'
+                }}
+              >
+                <option value="all">すべて表示</option>
+                <option value="quiz-only">クイズあり</option>
+                <option value="no-quiz">クイズなし</option>
+              </select>
+            </div>
+            
+            {/* ジャンルフィルター */}
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ 
+                display: 'block',
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#6b7280',
+                marginBottom: '8px'
+              }}>
+                ジャンル
+              </label>
+              <select
+                value={selectedGenre}
+                onChange={(e) => setSelectedGenre(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  border: '2px solid #e5e7eb',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  backgroundColor: 'white'
+                }}
+              >
+                <option value="all">すべて</option>
+                {availableGenres.filter(g => g !== 'all').map(genre => (
+                  <option key={genre} value={genre}>{genre}</option>
+                ))}
+              </select>
+            </div>
+            
+            {/* 凡例 */}
             <div style={{
-              width: '16px',
-              height: '16px',
-              borderRadius: '50%',
-              backgroundColor: '#ef4444',
-              border: '2px solid white',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.2)'
-            }} />
-            <span style={{ fontSize: '12px', color: '#374151' }}>クイズあり</span>
+              marginTop: '20px',
+              paddingTop: '16px',
+              borderTop: '1px solid #e5e7eb'
+            }}>
+              <div style={{ fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '12px' }}>
+                凡例
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                <div style={{
+                  width: '20px',
+                  height: '20px',
+                  borderRadius: '50%',
+                  backgroundColor: '#ef4444',
+                  border: '2px solid white',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.2)'
+                }} />
+                <span style={{ fontSize: '14px', color: '#374151' }}>クイズあり</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{
+                  width: '20px',
+                  height: '20px',
+                  borderRadius: '50%',
+                  backgroundColor: '#9ca3af',
+                  border: '2px solid white',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.2)'
+                }} />
+                <span style={{ fontSize: '14px', color: '#374151' }}>クイズなし</span>
+              </div>
+            </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{
-              width: '16px',
-              height: '16px',
-              borderRadius: '50%',
-              backgroundColor: '#9ca3af',
-              border: '2px solid white',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.2)'
-            }} />
-            <span style={{ fontSize: '12px', color: '#374151' }}>クイズなし</span>
-          </div>
-        </div>
-      </div>
+        </>
+      )}
       
       {/* 位置情報ステータス表示 */}
       {locationStatus === 'loading' && (
