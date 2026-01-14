@@ -460,12 +460,10 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
       }
     };
 
-    if (showFilter) {
-      window.addEventListener('keydown', handleEscape);
-      return () => {
-        window.removeEventListener('keydown', handleEscape);
-      };
-    }
+    window.addEventListener('keydown', handleEscape);
+    return () => {
+      window.removeEventListener('keydown', handleEscape);
+    };
   }, [showFilter]);
 
   const handleQuizClose = () => {
@@ -535,7 +533,7 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
             tabIndex={0}
             onClick={() => setShowFilter(false)}
             onKeyDown={(e) => {
-              if (e.key === 'Escape' || e.key === 'Enter') {
+              if (e.key === 'Escape') {
                 setShowFilter(false);
               }
             }}
