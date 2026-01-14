@@ -452,6 +452,22 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
     });
   }, [selectedAreaCenter]);
 
+  // フィルターモーダルのEscapeキーハンドリング
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showFilter) {
+        setShowFilter(false);
+      }
+    };
+
+    if (showFilter) {
+      window.addEventListener('keydown', handleEscape);
+      return () => {
+        window.removeEventListener('keydown', handleEscape);
+      };
+    }
+  }, [showFilter]);
+
   const handleQuizClose = () => {
     setShowQuiz(false);
     setQuizData(null);
@@ -486,6 +502,7 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
       {/* フィルターボタン */}
       <button
         onClick={() => setShowFilter(true)}
+        aria-label="表示フィルターを開く"
         style={{
           position: 'absolute',
           bottom: '80px',
@@ -502,16 +519,9 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          transition: 'all 0.2s'
+          transition: 'transform 0.2s, box-shadow 0.2s'
         }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = 'scale(1.05)';
-          e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.2)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = 'scale(1)';
-          e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
-        }}
+        className="filter-button"
       >
         <FilterListIcon style={{ fontSize: '28px' }} />
       </button>
@@ -521,7 +531,15 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
         <>
           {/* バックドロップ */}
           <div
+            role="button"
+            tabIndex={0}
             onClick={() => setShowFilter(false)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape' || e.key === 'Enter') {
+                setShowFilter(false);
+              }
+            }}
+            aria-label="フィルターを閉じる"
             style={{
               position: 'fixed',
               top: 0,
@@ -532,7 +550,8 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
               zIndex: 1000,
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              cursor: 'pointer'
             }}
           />
           
@@ -568,6 +587,7 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
               </h3>
               <button
                 onClick={() => setShowFilter(false)}
+                aria-label="フィルターを閉じる"
                 style={{
                   background: 'none',
                   border: 'none',
@@ -785,6 +805,15 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
         
         .user-location-marker svg {
           display: block;
+        }
+        
+        .filter-button:hover {
+          transform: scale(1.05);
+          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+        }
+        
+        .filter-button:active {
+          transform: scale(0.95);
         }
       `}</style>
     </div>
