@@ -97,7 +97,7 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
     
     // ジャンルフィルター
     if (selectedGenre !== 'all') {
-      filtered = filtered.filter(spot => spot.genre && spot.genre.includes(selectedGenre));
+      filtered = filtered.filter(spot => spot.genre?.includes(selectedGenre));
     }
     
     return filtered;
@@ -514,7 +514,12 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
           </label>
           <select
             value={quizFilter}
-            onChange={(e) => setQuizFilter(e.target.value as 'all' | 'quiz-only' | 'no-quiz')}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value === 'all' || value === 'quiz-only' || value === 'no-quiz') {
+                setQuizFilter(value);
+              }
+            }}
             style={{
               width: '100%',
               padding: '8px 12px',
