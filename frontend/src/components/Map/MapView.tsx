@@ -29,6 +29,10 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
   const [quizData, setQuizData] = useState<CheckInResponse | null>(null);
   const [showQuiz, setShowQuiz] = useState(false);
   const [orientationPermissionNeeded, setOrientationPermissionNeeded] = useState(false);
+  
+  // フィルター状態
+  const [quizFilter, setQuizFilter] = useState<'all' | 'quiz-only' | 'no-quiz'>('all');
+  const [selectedGenre, setSelectedGenre] = useState<string>('all');
 
   // スポットクリック処理（useEffectの前に定義）
   const handleSpotClick = async (spot: Spot) => {
@@ -77,10 +81,35 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
 
   // エリアでフィルタリングされたスポット
   const filteredSpots = useMemo(() => {
-    if (!user.selected_area) {
-      return spots; // 全エリア表示
+    let filtered = spots;
+    
+    // エリアフィルター
+    if (user.selected_area) {
+      filtered = filtered.filter(spot => spot.area === user.selected_area);
     }
-    return spots.filter(spot => spot.area === user.selected_area);
+    
+    // クイズフィルター
+    if (quizFilter === 'quiz-only') {
+      filtered = filtered.filter(spot => spot.quiz);
+    } else if (quizFilter === 'no-quiz') {
+      filtered = filtered.filter(spot => !spot.quiz);
+    }
+    
+    // ジャンルフィルター
+    if (selectedGenre !== 'all') {
+      filtered = filtered.filter(spot => spot.genre && spot.genre.includes(selectedGenre));
+    }
+    
+    return filtered;
+  }, [spots, user.selected_area, quizFilter, selectedGenre]);
+  
+  // ジャンル一覧を取得（エリアでフィルタリングされたスポットから）
+  const availableGenres = useMemo(() => {
+    let baseSpots = spots;
+    if (user.selected_area) {
+      baseSpots = baseSpots.filter(spot => spot.area === user.selected_area);
+    }
+    return ['all', ...new Set(baseSpots.flatMap(s => s.genre || []))];
   }, [spots, user.selected_area]);
 
   // 選択されたエリアの中心座標を取得
@@ -279,7 +308,8 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
     filteredSpots.forEach((spot) => {
       const el = document.createElement('div');
       el.className = 'spot-marker';
-      el.style.backgroundColor = '#ef4444';
+      // クイズの有無で色を変える
+      el.style.backgroundColor = spot.quiz ? '#ef4444' : '#9ca3af';
       el.style.width = '30px';
       el.style.height = '30px';
       el.style.borderRadius = '50%';
@@ -448,6 +478,123 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
   return (
     <div style={{ position: 'relative', width: '100%', height: '100vh' }}>
       <div ref={mapContainer} style={{ width: '100%', height: '100%' }} />
+      
+      {/* フィルターコントロール */}
+      <div style={{
+        position: 'absolute',
+        top: '80px',
+        left: '10px',
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        borderRadius: '12px',
+        padding: '16px',
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+        zIndex: 10,
+        minWidth: '200px',
+        maxWidth: '280px'
+      }}>
+        <h3 style={{ 
+          margin: '0 0 12px 0', 
+          fontSize: '14px',
+          fontWeight: '600',
+          color: '#374151'
+        }}>
+          表示フィルター
+        </h3>
+        
+        {/* クイズフィルター */}
+        <div style={{ marginBottom: '12px' }}>
+          <label style={{ 
+            display: 'block',
+            fontSize: '12px',
+            fontWeight: '600',
+            color: '#6b7280',
+            marginBottom: '6px'
+          }}>
+            クイズ有無
+          </label>
+          <select
+            value={quizFilter}
+            onChange={(e) => setQuizFilter(e.target.value as 'all' | 'quiz-only' | 'no-quiz')}
+            style={{
+              width: '100%',
+              padding: '8px 12px',
+              border: '2px solid #e5e7eb',
+              borderRadius: '8px',
+              fontSize: '13px',
+              cursor: 'pointer',
+              backgroundColor: 'white'
+            }}
+          >
+            <option value="all">すべて表示</option>
+            <option value="quiz-only">クイズあり</option>
+            <option value="no-quiz">クイズなし</option>
+          </select>
+        </div>
+        
+        {/* ジャンルフィルター */}
+        <div style={{ marginBottom: '8px' }}>
+          <label style={{ 
+            display: 'block',
+            fontSize: '12px',
+            fontWeight: '600',
+            color: '#6b7280',
+            marginBottom: '6px'
+          }}>
+            ジャンル
+          </label>
+          <select
+            value={selectedGenre}
+            onChange={(e) => setSelectedGenre(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '8px 12px',
+              border: '2px solid #e5e7eb',
+              borderRadius: '8px',
+              fontSize: '13px',
+              cursor: 'pointer',
+              backgroundColor: 'white'
+            }}
+          >
+            <option value="all">すべて</option>
+            {availableGenres.filter(g => g !== 'all').map(genre => (
+              <option key={genre} value={genre}>{genre}</option>
+            ))}
+          </select>
+        </div>
+        
+        {/* 凡例 */}
+        <div style={{
+          marginTop: '16px',
+          paddingTop: '12px',
+          borderTop: '1px solid #e5e7eb'
+        }}>
+          <div style={{ fontSize: '12px', fontWeight: '600', color: '#6b7280', marginBottom: '8px' }}>
+            凡例
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+            <div style={{
+              width: '16px',
+              height: '16px',
+              borderRadius: '50%',
+              backgroundColor: '#ef4444',
+              border: '2px solid white',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.2)'
+            }} />
+            <span style={{ fontSize: '12px', color: '#374151' }}>クイズあり</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{
+              width: '16px',
+              height: '16px',
+              borderRadius: '50%',
+              backgroundColor: '#9ca3af',
+              border: '2px solid white',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.2)'
+            }} />
+            <span style={{ fontSize: '12px', color: '#374151' }}>クイズなし</span>
+          </div>
+        </div>
+      </div>
       
       {/* 位置情報ステータス表示 */}
       {locationStatus === 'loading' && (
