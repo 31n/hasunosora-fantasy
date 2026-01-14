@@ -455,15 +455,17 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
   // フィルターモーダルのEscapeキーハンドリング
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && showFilter) {
+      if (e.key === 'Escape') {
         setShowFilter(false);
       }
     };
 
-    window.addEventListener('keydown', handleEscape);
-    return () => {
-      window.removeEventListener('keydown', handleEscape);
-    };
+    if (showFilter) {
+      window.addEventListener('keydown', handleEscape);
+      return () => {
+        window.removeEventListener('keydown', handleEscape);
+      };
+    }
   }, [showFilter]);
 
   const handleQuizClose = () => {
@@ -530,7 +532,7 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
           {/* バックドロップ */}
           <div
             onClick={() => setShowFilter(false)}
-            aria-hidden="true"
+            role="presentation"
             style={{
               position: 'fixed',
               top: 0,
