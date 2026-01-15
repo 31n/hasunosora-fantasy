@@ -3,6 +3,13 @@ node_modules/
 */node_modules/
 **/node_modules/
 
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
 # その他の除外ファイル
 .env
 .env.local
