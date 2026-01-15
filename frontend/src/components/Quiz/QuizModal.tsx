@@ -164,7 +164,7 @@ export default function QuizModal({ user, spot, quizData, onClose }: QuizModalPr
                 )}
               </p>
               <p style={{ fontSize: '16px' }}>{result.message}</p>
-              {result.correct && (
+              {result.score_earned > 0 && (
                 <p style={{ fontSize: '20px', fontWeight: 'bold', marginTop: '12px' }}>
                   +{result.score_earned}点
                 </p>

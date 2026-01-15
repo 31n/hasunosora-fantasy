@@ -1,4 +1,5 @@
 from datetime import datetime
+import math
 from models.user import User
 from models.spot import Spot
 from models.checkin import CheckIn
@@ -60,6 +61,13 @@ class QuizService:
         
         # 不正解の場合
         else:
+            # 不正解時のポイント（正解時の1/4を切り上げ）
+            score = spot.quiz.get('score', 0)
+            incorrect_score = math.ceil(score / 4)
+            
+            # 得点を加算
+            user.add_score(incorrect_score)
+            
             # クールタイムを設定
             cooldown = QuizCooldown(user_id=user_id, spot_id=spot_id)
             cooldown.save()
@@ -70,14 +78,14 @@ class QuizService:
                 spot_id=spot_id,
                 quiz_answered=True,
                 quiz_correct=False,
-                score_earned=0
+                score_earned=incorrect_score
             )
             checkin.save()
             
             return {
                 'correct': False,
-                'score_earned': 0,
-                'total_score': user.total_score,
+                'score_earned': incorrect_score,
+                'total_score': user.total_score + incorrect_score,
                 'cooldown_until': cooldown.cooldown_until,
                 'message': f'不正解です。{user.total_score}分後に再挑戦できます。'
             }
