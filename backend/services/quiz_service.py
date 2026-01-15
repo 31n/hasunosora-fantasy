@@ -4,6 +4,7 @@ from models.user import User
 from models.spot import Spot
 from models.checkin import CheckIn
 from models.cooldown import QuizCooldown
+from config import config
 from typing import Dict
 
 class QuizService:
@@ -85,9 +86,9 @@ class QuizService:
             return {
                 'correct': False,
                 'score_earned': incorrect_score,
-                'total_score': user.total_score + incorrect_score,
+                'total_score': user.total_score,
                 'cooldown_until': cooldown.cooldown_until,
-                'message': f'不正解です。{user.total_score}分後に再挑戦できます。'
+                'message': f'不正解です。{config.QUIZ_COOLDOWN_MINUTES}分後に再挑戦できます。'
             }
     
     @staticmethod
