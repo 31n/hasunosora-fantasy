@@ -20,15 +20,15 @@ class QuizService:
         if not spot:
             raise ValueError('SPOT_NOT_FOUND')
         
-        # クールタイムチェック
-        on_cooldown, cooldown_until = QuizCooldown.is_on_cooldown(user_id, spot_id)
-        if on_cooldown:
-            raise ValueError('QUIZ_ON_COOLDOWN')
-        
         # 既に回答済みかチェック（初回チェックイン時のみクイズ可能）
         visit_count = CheckIn.count_visits(user_id, spot_id)
         if visit_count > 1:
             raise ValueError('QUIZ_ALREADY_ANSWERED')
+        
+        # クールタイムチェック（不正解後の再挑戦制限）
+        on_cooldown, cooldown_until = QuizCooldown.is_on_cooldown(user_id, spot_id)
+        if on_cooldown:
+            raise ValueError('QUIZ_ON_COOLDOWN')
         
         # 正解判定
         correct_answer = spot.quiz.get('correct_answer')
