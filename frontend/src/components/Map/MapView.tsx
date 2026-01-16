@@ -306,16 +306,20 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
       const el = document.createElement('div');
       el.className = 'spot-marker';
       
-      // 強調表示が有効でクイズありの場合、色を変える
+      // 強調表示が有効でクイズありの場合のみ黄色、それ以外は全てグレー
       const isHighlighted = highlightQuizSpots && spot.quiz;
       
-      if (spot.quiz) {
-        // クイズあり：強調時は明るい黄色、通常時は赤
-        el.style.backgroundColor = isHighlighted ? '#fbbf24' : '#ef4444';
-        el.style.border = isHighlighted ? '3px solid #f59e0b' : '3px solid white';
-      } else {
-        // クイズなし：グレー
+      if (isHighlighted) {
+        // 強調表示中のクイズあり：黄色
+        el.style.backgroundColor = '#fbbf24';
+        el.style.border = '3px solid #f59e0b';
+      } else if (highlightQuizSpots && !spot.quiz) {
+        // 強調表示中のクイズなし：グレー
         el.style.backgroundColor = '#9ca3af';
+        el.style.border = '3px solid white';
+      } else {
+        // 通常表示（クイズの有無に関わらず同じ色）
+        el.style.backgroundColor = '#14b8a6';
         el.style.border = '3px solid white';
       }
       
@@ -324,7 +328,6 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
       el.style.borderRadius = '50%';
       el.style.cursor = 'pointer';
       el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
-      el.style.transition = 'all 0.3s ease';
 
       const marker = new mapboxgl.Marker(el)
         .setLngLat([spot.longitude, spot.latitude])
@@ -698,30 +701,44 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
               <div style={{ fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '12px' }}>
                 凡例
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                <div style={{
-                  width: '20px',
-                  height: '20px',
-                  borderRadius: '50%',
-                  backgroundColor: highlightQuizSpots ? '#fbbf24' : '#ef4444',
-                  border: '2px solid white',
-                  boxShadow: '0 1px 2px rgba(0,0,0,0.2)'
-                }} />
-                <span style={{ fontSize: '14px', color: '#374151' }}>
-                  クイズあり{highlightQuizSpots ? ' (強調表示中)' : ''}
-                </span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{
-                  width: '20px',
-                  height: '20px',
-                  borderRadius: '50%',
-                  backgroundColor: '#9ca3af',
-                  border: '2px solid white',
-                  boxShadow: '0 1px 2px rgba(0,0,0,0.2)'
-                }} />
-                <span style={{ fontSize: '14px', color: '#374151' }}>クイズなし</span>
-              </div>
+              {highlightQuizSpots ? (
+                <>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                    <div style={{
+                      width: '20px',
+                      height: '20px',
+                      borderRadius: '50%',
+                      backgroundColor: '#fbbf24',
+                      border: '2px solid white',
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.2)'
+                    }} />
+                    <span style={{ fontSize: '14px', color: '#374151' }}>クイズあり (強調表示中)</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{
+                      width: '20px',
+                      height: '20px',
+                      borderRadius: '50%',
+                      backgroundColor: '#9ca3af',
+                      border: '2px solid white',
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.2)'
+                    }} />
+                    <span style={{ fontSize: '14px', color: '#374151' }}>クイズなし</span>
+                  </div>
+                </>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{
+                    width: '20px',
+                    height: '20px',
+                    borderRadius: '50%',
+                    backgroundColor: '#14b8a6',
+                    border: '2px solid white',
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.2)'
+                  }} />
+                  <span style={{ fontSize: '14px', color: '#374151' }}>すべてのスポット</span>
+                </div>
+              )}
             </div>
           </div>
         </>
