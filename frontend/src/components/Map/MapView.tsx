@@ -496,7 +496,7 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
   };
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100vh' }}>
+    <div style={{ position: 'relative', width: '100%', height: 'calc(100vh - 100px)' }}>
       <div ref={mapContainer} style={{ width: '100%', height: '100%' }} />
       
       {/* フィルターボタン */}
