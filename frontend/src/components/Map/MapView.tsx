@@ -506,24 +506,34 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
         style={{
           position: 'absolute',
           bottom: '20px',
-          right: '96px',
-          width: '56px',
-          height: '56px',
+          left: '20px',
+          padding: '12px 16px',
           backgroundColor: '#3b82f6',
           color: 'white',
           border: 'none',
-          borderRadius: '50%',
+          borderRadius: '50px',
+          fontSize: '14px',
+          fontWeight: '600',
           boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
           cursor: 'pointer',
           zIndex: 998,
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center',
-          transition: 'transform 0.2s, box-shadow 0.2s'
+          gap: '8px',
+          transition: 'all 0.2s'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = 'scale(1.05)';
+          e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.2)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = 'scale(1)';
+          e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
         }}
         className="filter-button"
       >
-        <FilterListIcon style={{ fontSize: '28px' }} />
+        <FilterListIcon style={{ fontSize: '18px', marginRight: '4px' }} />
+        フィルター
       </button>
       
       {/* フィルターモーダル */}
@@ -803,15 +813,6 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
         
         .user-location-marker svg {
           display: block;
-        }
-        
-        .filter-button:hover {
-          transform: scale(1.05);
-          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
-        }
-        
-        .filter-button:active {
-          transform: scale(0.95);
         }
       `}</style>
     </div>
