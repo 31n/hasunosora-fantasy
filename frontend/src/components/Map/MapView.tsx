@@ -77,6 +77,8 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
     } catch (error: any) {
       if (error.message.includes('OUT_OF_RANGE')) {
         alert('スポットから離れすぎています。スポットに近づいてください。');
+      } else if (error.message.includes('QUIZ_ON_COOLDOWN')) {
+        alert('クイズの再挑戦にはクールダウン時間が必要です。しばらく経ってから再度お試しください。');
       } else {
         alert('エラーが発生しました: ' + error.message);
       }

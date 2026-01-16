@@ -1,6 +1,7 @@
 from models.user import User
 from models.spot import Spot
 from models.checkin import CheckIn
+from models.cooldown import QuizCooldown
 from utils.distance import is_within_range
 from typing import Dict
 
@@ -25,6 +26,12 @@ class CheckInService:
         
         # 訪問履歴チェック
         is_first_visit = not CheckIn.has_visited(user_id, spot_id)
+        
+        # クールタイムチェック（初回訪問でクイズがある場合のみ）
+        if is_first_visit and spot.quiz:
+            on_cooldown, cooldown_until = QuizCooldown.is_on_cooldown(user_id, spot_id)
+            if on_cooldown:
+                raise ValueError('QUIZ_ON_COOLDOWN')
         
         # チェックイン記録を保存（クイズ回答前）
         checkin = CheckIn(
