@@ -9,7 +9,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'icons/*.png'],
       devOptions: {
-        enabled: false,
+        enabled: true, // 開発環境でもPWAを有効化
       },
       manifest: {
         name: 'スポットチェックイン',
