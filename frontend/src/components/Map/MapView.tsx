@@ -35,7 +35,7 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
   const [showFilter, setShowFilter] = useState(false);
   
   // フィルター状態
-  const [quizFilter, setQuizFilter] = useState<'all' | 'quiz-only' | 'no-quiz'>('all');
+  const [highlightQuizSpots, setHighlightQuizSpots] = useState(false);
   const [selectedGenre, setSelectedGenre] = useState<string>('all');
 
   // スポットクリック処理（useEffectの前に定義）
@@ -92,20 +92,13 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
       filtered = filtered.filter(spot => spot.area === user.selected_area);
     }
     
-    // クイズフィルター
-    if (quizFilter === 'quiz-only') {
-      filtered = filtered.filter(spot => spot.quiz);
-    } else if (quizFilter === 'no-quiz') {
-      filtered = filtered.filter(spot => !spot.quiz);
-    }
-    
     // ジャンルフィルター
     if (selectedGenre !== 'all') {
       filtered = filtered.filter(spot => spot.genre?.includes(selectedGenre));
     }
     
     return filtered;
-  }, [spots, user.selected_area, quizFilter, selectedGenre]);
+  }, [spots, user.selected_area, selectedGenre]);
   
   // ジャンル一覧を取得（エリアでフィルタリングされたスポットから）
   const availableGenres = useMemo(() => {
@@ -312,14 +305,26 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
     filteredSpots.forEach((spot) => {
       const el = document.createElement('div');
       el.className = 'spot-marker';
-      // クイズの有無で色を変える
-      el.style.backgroundColor = spot.quiz ? '#ef4444' : '#9ca3af';
+      
+      // 強調表示が有効でクイズありの場合、色を変える
+      const isHighlighted = highlightQuizSpots && spot.quiz;
+      
+      if (spot.quiz) {
+        // クイズあり：強調時は明るい黄色、通常時は赤
+        el.style.backgroundColor = isHighlighted ? '#fbbf24' : '#ef4444';
+        el.style.border = isHighlighted ? '3px solid #f59e0b' : '3px solid white';
+      } else {
+        // クイズなし：グレー
+        el.style.backgroundColor = '#9ca3af';
+        el.style.border = '3px solid white';
+      }
+      
       el.style.width = '30px';
       el.style.height = '30px';
       el.style.borderRadius = '50%';
       el.style.cursor = 'pointer';
-      el.style.border = '3px solid white';
       el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+      el.style.transition = 'all 0.3s ease';
 
       const marker = new mapboxgl.Marker(el)
         .setLngLat([spot.longitude, spot.latitude])
@@ -439,7 +444,7 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
     return () => {
       markers.forEach(marker => marker.remove());
     };
-  }, [filteredSpots]); // filteredSpotsに変更
+  }, [filteredSpots, highlightQuizSpots]); // 強調表示フラグも依存配列に追加
 
   // エリア変更時に地図の中心を移動
   useEffect(() => {
@@ -610,16 +615,34 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
               </button>
             </div>
             
-            {/* クイズフィルター */}
+            {/* クイズ強調表示 */}
             <div style={{ marginBottom: '16px' }}>
               <label style={{ 
-                display: 'block',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
                 fontSize: '14px',
                 fontWeight: '600',
-                color: '#6b7280',
-                marginBottom: '8px'
+                color: '#374151',
+                cursor: 'pointer',
+                padding: '12px',
+                backgroundColor: highlightQuizSpots ? '#fef3c7' : '#f9fafb',
+                borderRadius: '8px',
+                border: '2px solid',
+                borderColor: highlightQuizSpots ? '#fbbf24' : '#e5e7eb',
+                transition: 'all 0.2s'
               }}>
-                クイズ有無
+                <input
+                  type="checkbox"
+                  checked={highlightQuizSpots}
+                  onChange={(e) => setHighlightQuizSpots(e.target.checked)}
+                  style={{
+                    width: '20px',
+                    height: '20px',
+                    cursor: 'pointer'
+                  }}
+                />
+                <span>クイズありスポットを強調表示</span>
               </label>
               <select
                 value={quizFilter}
@@ -690,11 +713,13 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
                   width: '20px',
                   height: '20px',
                   borderRadius: '50%',
-                  backgroundColor: '#ef4444',
+                  backgroundColor: highlightQuizSpots ? '#fbbf24' : '#ef4444',
                   border: '2px solid white',
                   boxShadow: '0 1px 2px rgba(0,0,0,0.2)'
                 }} />
-                <span style={{ fontSize: '14px', color: '#374151' }}>クイズあり</span>
+                <span style={{ fontSize: '14px', color: '#374151' }}>
+                  クイズあり{highlightQuizSpots ? ' (強調表示中)' : ''}
+                </span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <div style={{
@@ -813,6 +838,17 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
         
         .user-location-marker svg {
           display: block;
+        }
+        
+        @keyframes pulse {
+          0%, 100% {
+            transform: scale(1);
+            opacity: 1;
+          }
+          50% {
+            transform: scale(1.1);
+            opacity: 0.8;
+          }
         }
       `}</style>
     </div>
