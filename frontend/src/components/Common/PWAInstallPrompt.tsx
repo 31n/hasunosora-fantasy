@@ -9,6 +9,7 @@ export default function PWAInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showIOSPrompt, setShowIOSPrompt] = useState(false);
   const [showPrompt, setShowPrompt] = useState(false);
+  const [showAndroidManual, setShowAndroidManual] = useState(false);
 
   useEffect(() => {
     console.log('[PWA] PWAInstallPrompt mounted');
@@ -62,6 +63,23 @@ export default function PWAInstallPrompt() {
       console.log('[PWA] Showing iOS prompt');
       setShowIOSPrompt(true);
       setShowPrompt(true);
+    }
+
+    // Androidで3秒待ってもbeforeinstallpromptが発火しない場合、手動案内を表示
+    const isAndroid = /Android/.test(navigator.userAgent);
+    if (isAndroid && !isIOS) {
+      const timer = setTimeout(() => {
+        if (!deferredPrompt) {
+          console.log('[PWA] beforeinstallprompt not fired, showing manual Android prompt');
+          setShowAndroidManual(true);
+          setShowPrompt(true);
+        }
+      }, 3000);
+
+      return () => {
+        clearTimeout(timer);
+        window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      };
     }
 
     return () => {
@@ -134,6 +152,17 @@ export default function PWAInstallPrompt() {
                   <li>画面下部の <strong>共有ボタン</strong> をタップ</li>
                   <li><strong>「ホーム画面に追加」</strong> を選択</li>
                   <li><strong>「追加」</strong> をタップ</li>
+                </ol>
+              </div>
+            ) : showAndroidManual ? (
+              <div style={{ fontSize: '14px', lineHeight: '1.5' }}>
+                <p style={{ margin: '0 0 8px 0' }}>
+                  このアプリをホーム画面に追加して、より快適に利用しましょう！
+                </p>
+                <ol style={{ margin: '0', paddingLeft: '20px', fontSize: '13px' }}>
+                  <li>画面右上の <strong>メニュー（︙）</strong> をタップ</li>
+                  <li><strong>「ホーム画面に追加」</strong> または <strong>「インストール」</strong> を選択</li>
+                  <li><strong>「追加」</strong> または <strong>「インストール」</strong> をタップ</li>
                 </ol>
               </div>
             ) : (
