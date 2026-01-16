@@ -644,28 +644,18 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
                 />
                 <span>クイズありスポットを強調表示</span>
               </label>
-              <select
-                value={quizFilter}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  if (value === 'all' || value === 'quiz-only' || value === 'no-quiz') {
-                    setQuizFilter(value);
-                  }
-                }}
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  border: '2px solid #e5e7eb',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  cursor: 'pointer',
-                  backgroundColor: 'white'
-                }}
-              >
-                <option value="all">すべて表示</option>
-                <option value="quiz-only">クイズあり</option>
-                <option value="no-quiz">クイズなし</option>
-              </select>
+              {highlightQuizSpots && (
+                <div style={{
+                  marginTop: '8px',
+                  padding: '8px 12px',
+                  backgroundColor: '#dbeafe',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  color: '#1e40af'
+                }}>
+                  💡 クイズありスポットが黄色で表示されます
+                </div>
+              )}
             </div>
             
             {/* ジャンルフィルター */}
