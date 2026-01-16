@@ -119,28 +119,81 @@ export default function SpotPopup({
             </div>
           )}
 
-          {/* 詳細を見るボタン */}
-          <button
-            onClick={() => setShowDetail(true)}
-            style={{
-              width: '100%',
-              padding: '12px',
-              backgroundColor: '#f3f4f6',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: '600',
-              color: '#374151',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '6px'
-            }}
-          >
-            <InfoIcon fontSize="small" />
-            詳細を見る
-          </button>
+          {/* アクションボタン */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {/* チェックインボタン */}
+            <button
+              onClick={onCheckin}
+              disabled={isCheckedIn}
+              style={{
+                width: '100%',
+                padding: '12px',
+                backgroundColor: isCheckedIn ? '#d1d5db' : '#10b981',
+                color: 'white',
+                border: 'none',
+                borderRadius: '10px',
+                cursor: isCheckedIn ? 'not-allowed' : 'pointer',
+                fontSize: '15px',
+                fontWeight: '700',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px'
+              }}
+            >
+              <CheckCircleIcon fontSize="small" />
+              {isCheckedIn ? 'チェックイン済み' : 'チェックイン'}
+            </button>
+
+            {/* クイズボタン */}
+            {spot.quiz && (
+              <button
+                onClick={onQuiz}
+                disabled={!isQuizAvailable}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  backgroundColor: !isQuizAvailable ? '#d1d5db' : '#f59e0b',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '10px',
+                  cursor: !isQuizAvailable ? 'not-allowed' : 'pointer',
+                  fontSize: '15px',
+                  fontWeight: '700',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px'
+                }}
+              >
+                <QuizIcon fontSize="small" />
+                {!isQuizAvailable ? 'クイズ挑戦中...' : `クイズに挑戦（${spot.quiz.score}pt）`}
+              </button>
+            )}
+
+            {/* 詳細を見るボタン */}
+            <button
+              onClick={() => setShowDetail(true)}
+              style={{
+                width: '100%',
+                padding: '10px',
+                backgroundColor: 'white',
+                color: '#3b82f6',
+                border: '2px solid #e5e7eb',
+                borderRadius: '10px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '600',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px'
+              }}
+            >
+              <InfoIcon fontSize="small" />
+              詳細を見る
+            </button>
+          </div>
         </div>
 
         <style>{`

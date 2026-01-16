@@ -346,28 +346,45 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
       const el = document.createElement('div');
       el.className = 'spot-marker';
       
-      // 強調表示が有効でクイズありの場合のみ黄色、それ以外は全てグレー
-      const isHighlighted = highlightQuizSpots && spot.quiz;
+      // 選択されたスポットかどうかをチェック
+      const isSelected = selectedSpot?.spot_id === spot.spot_id;
       
-      if (isHighlighted) {
-        // 強調表示中のクイズあり：黄色
-        el.style.backgroundColor = '#fbbf24';
-        el.style.border = '3px solid #f59e0b';
-      } else if (highlightQuizSpots && !spot.quiz) {
-        // 強調表示中のクイズなし：グレー
-        el.style.backgroundColor = '#9ca3af';
-        el.style.border = '3px solid white';
+      if (isSelected) {
+        // 選択中のスポット：目立つオレンジ色
+        el.style.backgroundColor = '#f97316';
+        el.style.border = '4px solid #ea580c';
+        el.style.width = '36px';
+        el.style.height = '36px';
+        el.style.boxShadow = '0 4px 12px rgba(249, 115, 22, 0.6)';
+        el.style.transform = 'scale(1.2)';
+        el.style.zIndex = '1000';
       } else {
-        // 通常表示（クイズの有無に関わらず同じ色）
-        el.style.backgroundColor = '#14b8a6';
-        el.style.border = '3px solid white';
+        // 強調表示が有効でクイズありの場合のみ黄色、それ以外は全てグレー
+        const isHighlighted = highlightQuizSpots && spot.quiz;
+        
+        if (isHighlighted) {
+          // 強調表示中のクイズあり：黄色
+          el.style.backgroundColor = '#fbbf24';
+          el.style.border = '3px solid #f59e0b';
+        } else if (highlightQuizSpots && !spot.quiz) {
+          // 強調表示中のクイズなし：グレー
+          el.style.backgroundColor = '#9ca3af';
+          el.style.border = '3px solid white';
+        } else {
+          // 通常表示（クイズの有無に関わらず同じ色）
+          el.style.backgroundColor = '#14b8a6';
+          el.style.border = '3px solid white';
+        }
+        
+        el.style.width = '30px';
+        el.style.height = '30px';
+        el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+        el.style.transform = 'scale(1)';
       }
       
-      el.style.width = '30px';
-      el.style.height = '30px';
       el.style.borderRadius = '50%';
       el.style.cursor = 'pointer';
-      el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+      el.style.transition = 'all 0.3s ease';
 
       const marker = new mapboxgl.Marker(el)
         .setLngLat([spot.longitude, spot.latitude])
@@ -375,111 +392,11 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
 
       markers.push(marker);
 
-      // ポップアップを作成（ボタン付き）
-      const popupContent = document.createElement('div');
-      popupContent.style.padding = '8px';
-      popupContent.style.minWidth = '200px';
-      
-      const title = document.createElement('div');
-      title.style.fontWeight = 'bold';
-      title.style.marginBottom = '8px';
-      title.textContent = spot.spot_name;
-      popupContent.appendChild(title);
-
-      // 距離表示用のdiv
-      const distanceDiv = document.createElement('div');
-      distanceDiv.style.fontSize = '12px';
-      distanceDiv.style.color = '#666';
-      distanceDiv.style.marginBottom = '8px';
-      popupContent.appendChild(distanceDiv);
-
-      // チェックインボタン
-      const checkinButton = document.createElement('button');
-      checkinButton.textContent = 'チェックイン';
-      checkinButton.style.width = '100%';
-      checkinButton.style.padding = '8px 16px';
-      checkinButton.style.borderRadius = '6px';
-      checkinButton.style.border = 'none';
-      checkinButton.style.fontWeight = '600';
-      checkinButton.style.cursor = 'pointer';
-      checkinButton.style.transition = 'background-color 0.2s';
-      
-      // 距離チェックとボタンスタイルの更新
-      const updateButtonState = () => {
-        const currentLocation = userLocationRef.current;
-        if (!currentLocation) {
-          checkinButton.disabled = true;
-          checkinButton.style.backgroundColor = '#d1d5db';
-          checkinButton.style.color = '#9ca3af';
-          distanceDiv.textContent = '位置情報を取得中...';
-          return;
-        }
-
-        const distance = calculateDistance(
-          currentLocation[1], // latitude
-          currentLocation[0], // longitude
-          spot.latitude,
-          spot.longitude
-        );
-
-        distanceDiv.textContent = `距離: ${formatDistance(distance)}`;
-
-        if (distance <= spot.detection_radius) {
-          checkinButton.disabled = false;
-          checkinButton.style.backgroundColor = '#3b82f6';
-          checkinButton.style.color = 'white';
-          checkinButton.onmouseover = () => {
-            if (!checkinButton.disabled) {
-              checkinButton.style.backgroundColor = '#2563eb';
-            }
-          };
-          checkinButton.onmouseout = () => {
-            if (!checkinButton.disabled) {
-              checkinButton.style.backgroundColor = '#3b82f6';
-            }
-          };
-        } else {
-          checkinButton.disabled = true;
-          checkinButton.style.backgroundColor = '#d1d5db';
-          checkinButton.style.color = '#9ca3af';
-          checkinButton.style.cursor = 'not-allowed';
-          distanceDiv.textContent += ' (範囲外)';
-        }
-      };
-
-      // 初期状態を設定
-      updateButtonState();
-
-      // ボタンクリック時の処理
-      checkinButton.onclick = (e) => {
-        console.log('Checkin button clicked:', spot.spot_name);
-        e.stopPropagation();
-        handleSpotClick(spot);
-        popup.remove();
-      };
-
-      popupContent.appendChild(checkinButton);
-
-      const popup = new mapboxgl.Popup({ 
-        offset: 25,
-        closeButton: true,
-        closeOnClick: true  // 吹き出し以外をタップで閉じる
-      })
-        .setDOMContent(popupContent);
-
-      // ポップアップが開かれたときに状態を更新
-      popup.on('open', () => {
-        console.log('Popup opened for:', spot.spot_name);
-        updateButtonState();
-      });
-      
-      marker.setPopup(popup);
-
-      // マーカークリック時にポップアップを開く
+      // マーカークリック時に直接モーダルを開く
       el.addEventListener('click', (e) => {
         console.log('Marker clicked:', spot.spot_name);
         e.stopPropagation();
-        marker.togglePopup();
+        handleSpotClick(spot);
       });
     });
 
@@ -487,7 +404,7 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
     return () => {
       markers.forEach(marker => marker.remove());
     };
-  }, [filteredSpots, highlightQuizSpots]); // 強調表示フラグも依存配列に追加
+  }, [filteredSpots, highlightQuizSpots, selectedSpot]); // selectedSpotも依存配列に追加
 
   // エリア変更時に地図の中心を移動
   useEffect(() => {
