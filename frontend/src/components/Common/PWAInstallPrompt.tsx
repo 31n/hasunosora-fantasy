@@ -11,12 +11,17 @@ export default function PWAInstallPrompt() {
   const [showPrompt, setShowPrompt] = useState(false);
 
   useEffect(() => {
+    console.log('[PWA] PWAInstallPrompt mounted');
+    
     // 既にPWAとしてインストール済みかチェック
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
                         (window.navigator as any).standalone ||
                         document.referrer.includes('android-app://');
 
+    console.log('[PWA] isStandalone:', isStandalone);
+
     if (isStandalone) {
+      console.log('[PWA] Already installed, not showing prompt');
       return; // 既にインストール済みなら何も表示しない
     }
 
@@ -27,26 +32,34 @@ export default function PWAInstallPrompt() {
       const now = new Date();
       const daysSinceDismissed = (now.getTime() - dismissedDate.getTime()) / (1000 * 60 * 60 * 24);
       
+      console.log('[PWA] Days since dismissed:', daysSinceDismissed);
+      
       // 7日間は再表示しない
       if (daysSinceDismissed < 7) {
+        console.log('[PWA] Dismissed recently, not showing prompt');
         return;
       }
     }
 
     // Android/Chrome用のbeforeinstallpromptイベント
     const handleBeforeInstallPrompt = (e: Event) => {
+      console.log('[PWA] beforeinstallprompt event fired!', e);
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       setShowPrompt(true);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    console.log('[PWA] Added beforeinstallprompt listener');
 
     // iOS Safariの検出
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     const isInStandaloneMode = (window.navigator as any).standalone;
     
+    console.log('[PWA] isIOS:', isIOS, 'isInStandaloneMode:', isInStandaloneMode);
+    
     if (isIOS && !isInStandaloneMode) {
+      console.log('[PWA] Showing iOS prompt');
       setShowIOSPrompt(true);
       setShowPrompt(true);
     }
@@ -59,8 +72,11 @@ export default function PWAInstallPrompt() {
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
 
+    console.log('[PWA] Install button clicked');
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
+    
+    console.log('[PWA] User choice:', outcome);
     
     if (outcome === 'accepted') {
       setShowPrompt(false);
@@ -70,6 +86,7 @@ export default function PWAInstallPrompt() {
   };
 
   const handleDismiss = () => {
+    console.log('[PWA] Prompt dismissed by user');
     localStorage.setItem('pwa-install-dismissed', new Date().toISOString());
     setShowPrompt(false);
   };
