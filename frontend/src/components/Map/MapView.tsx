@@ -423,7 +423,7 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
       const popup = new mapboxgl.Popup({ 
         offset: 25,
         closeButton: true,
-        closeOnClick: false
+        closeOnClick: true  // 吹き出し以外をタップで閉じる
       })
         .setDOMContent(popupContent);
 
@@ -504,7 +504,7 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
   };
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: 'calc(100vh - 100px)' }}>
+    <div style={{ position: 'relative', width: '100%', height: 'calc(100vh - 80px)' }}>
       <div ref={mapContainer} style={{ width: '100%', height: '100%' }} />
       
       {/* フィルターボタン */}
@@ -856,6 +856,21 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
             transform: scale(1.1);
             opacity: 0.8;
           }
+        }
+        
+        /* Mapboxポップアップの×ボタンを大きくしてタップしやすく */
+        .mapboxgl-popup-close-button {
+          width: 32px !important;
+          height: 32px !important;
+          font-size: 24px !important;
+          line-height: 32px !important;
+          padding: 0 !important;
+          border-radius: 4px;
+          transition: background-color 0.2s;
+        }
+        
+        .mapboxgl-popup-close-button:hover {
+          background-color: rgba(0, 0, 0, 0.1);
         }
       `}</style>
     </div>
