@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { userApi } from '../../services/api';
 import type { User } from '../../types';
+import PWAInstallPrompt from '../Common/PWAInstallPrompt';
 
 interface LoginProps {
   onLogin: (user: User) => void;
@@ -40,15 +41,17 @@ export default function Login({ onLogin }: LoginProps) {
   };
 
   return (
-    <div style={{ 
-      display: 'flex', 
-      flexDirection: 'column', 
-      alignItems: 'center', 
-      justifyContent: 'center', 
-      minHeight: '100vh',
-      padding: '24px',
-      backgroundColor: '#f3f4f6'
-    }}>
+    <>
+      <PWAInstallPrompt />
+      <div style={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        minHeight: '100vh',
+        padding: '24px',
+        backgroundColor: '#f3f4f6'
+      }}>
       <div style={{
         backgroundColor: 'white',
         borderRadius: '12px',
@@ -151,5 +154,6 @@ export default function Login({ onLogin }: LoginProps) {
         </div>
       </div>
     </div>
+    </>
   );
 }
