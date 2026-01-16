@@ -384,7 +384,6 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
       
       el.style.borderRadius = '50%';
       el.style.cursor = 'pointer';
-      el.style.transition = 'all 0.3s ease';
 
       const marker = new mapboxgl.Marker(el)
         .setLngLat([spot.longitude, spot.latitude])
@@ -481,7 +480,7 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
           fontWeight: '600',
           boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
           cursor: 'pointer',
-          zIndex: 998,
+          zIndex: 999,
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
@@ -799,6 +798,12 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
           onCheckin={handleCheckin}
           onQuiz={handleQuizChallenge}
           onDirections={handleDirections}
+          isInRange={calculateDistance(
+            userLocation[1],
+            userLocation[0],
+            selectedSpot.latitude,
+            selectedSpot.longitude
+          ) <= selectedSpot.detection_radius}
         />
       )}
 

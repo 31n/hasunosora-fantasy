@@ -16,6 +16,8 @@ interface SpotPopupProps {
   onDirections: () => void;
   isCheckedIn?: boolean;
   isQuizAvailable?: boolean;
+  isInRange?: boolean;
+  isOnCooldown?: boolean;
 }
 
 export default function SpotPopup({ 
@@ -26,7 +28,9 @@ export default function SpotPopup({
   onQuiz,
   onDirections,
   isCheckedIn = false,
-  isQuizAvailable = true
+  isQuizAvailable = true,
+  isInRange = true,
+  isOnCooldown = false
 }: SpotPopupProps) {
   const [showDetail, setShowDetail] = useState(false);
 
@@ -124,15 +128,15 @@ export default function SpotPopup({
             {/* チェックインボタン */}
             <button
               onClick={onCheckin}
-              disabled={isCheckedIn}
+              disabled={!isInRange || isCheckedIn}
               style={{
                 width: '100%',
                 padding: '12px',
-                backgroundColor: isCheckedIn ? '#d1d5db' : '#10b981',
+                backgroundColor: !isInRange || isCheckedIn ? '#d1d5db' : '#10b981',
                 color: 'white',
                 border: 'none',
                 borderRadius: '10px',
-                cursor: isCheckedIn ? 'not-allowed' : 'pointer',
+                cursor: !isInRange || isCheckedIn ? 'not-allowed' : 'pointer',
                 fontSize: '15px',
                 fontWeight: '700',
                 display: 'flex',
@@ -142,22 +146,22 @@ export default function SpotPopup({
               }}
             >
               <CheckCircleIcon fontSize="small" />
-              {isCheckedIn ? 'チェックイン済み' : 'チェックイン'}
+              {!isInRange ? 'スポットから離れすぎています' : isCheckedIn ? 'チェックイン済み' : 'チェックイン'}
             </button>
 
             {/* クイズボタン */}
             {spot.quiz && (
               <button
                 onClick={onQuiz}
-                disabled={!isQuizAvailable}
+                disabled={!isInRange || !isQuizAvailable || isOnCooldown}
                 style={{
                   width: '100%',
                   padding: '12px',
-                  backgroundColor: !isQuizAvailable ? '#d1d5db' : '#f59e0b',
+                  backgroundColor: !isInRange || !isQuizAvailable || isOnCooldown ? '#d1d5db' : '#f59e0b',
                   color: 'white',
                   border: 'none',
                   borderRadius: '10px',
-                  cursor: !isQuizAvailable ? 'not-allowed' : 'pointer',
+                  cursor: !isInRange || !isQuizAvailable || isOnCooldown ? 'not-allowed' : 'pointer',
                   fontSize: '15px',
                   fontWeight: '700',
                   display: 'flex',
@@ -167,7 +171,7 @@ export default function SpotPopup({
                 }}
               >
                 <QuizIcon fontSize="small" />
-                {!isQuizAvailable ? 'クイズ挑戦中...' : `クイズに挑戦（${spot.quiz.score}pt）`}
+                {!isInRange ? 'スポットから離れすぎています' : isOnCooldown ? 'クールタイム中' : !isQuizAvailable ? 'クイズ挑戦中...' : `クイズに挑戦（${spot.quiz.score}pt）`}
               </button>
             )}
 
@@ -332,15 +336,15 @@ export default function SpotPopup({
           {/* チェックインボタン */}
           <button
             onClick={onCheckin}
-            disabled={isCheckedIn}
+            disabled={!isInRange || isCheckedIn}
             style={{
               width: '100%',
               padding: '14px',
-              backgroundColor: isCheckedIn ? '#d1d5db' : '#10b981',
+              backgroundColor: !isInRange || isCheckedIn ? '#d1d5db' : '#10b981',
               color: 'white',
               border: 'none',
               borderRadius: '12px',
-              cursor: isCheckedIn ? 'not-allowed' : 'pointer',
+              cursor: !isInRange || isCheckedIn ? 'not-allowed' : 'pointer',
               fontSize: '16px',
               fontWeight: '700',
               display: 'flex',
@@ -350,22 +354,22 @@ export default function SpotPopup({
             }}
           >
             <CheckCircleIcon fontSize="medium" />
-            {isCheckedIn ? 'チェックイン済み' : 'チェックイン'}
+            {!isInRange ? 'スポットから離れすぎています' : isCheckedIn ? 'チェックイン済み' : 'チェックイン'}
           </button>
 
           {/* クイズボタン */}
           {spot.quiz && (
             <button
               onClick={onQuiz}
-              disabled={!isQuizAvailable}
+              disabled={!isInRange || !isQuizAvailable || isOnCooldown}
               style={{
                 width: '100%',
                 padding: '14px',
-                backgroundColor: !isQuizAvailable ? '#d1d5db' : '#f59e0b',
+                backgroundColor: !isInRange || !isQuizAvailable || isOnCooldown ? '#d1d5db' : '#f59e0b',
                 color: 'white',
                 border: 'none',
                 borderRadius: '12px',
-                cursor: !isQuizAvailable ? 'not-allowed' : 'pointer',
+                cursor: !isInRange || !isQuizAvailable || isOnCooldown ? 'not-allowed' : 'pointer',
                 fontSize: '16px',
                 fontWeight: '700',
                 display: 'flex',
@@ -375,7 +379,7 @@ export default function SpotPopup({
               }}
             >
               <QuizIcon fontSize="medium" />
-              {!isQuizAvailable ? 'クイズ挑戦中...' : `クイズに挑戦（${spot.quiz.score}pt）`}
+              {!isInRange ? 'スポットから離れすぎています' : isOnCooldown ? 'クールタイム中' : !isQuizAvailable ? 'クイズ挑戦中...' : `クイズに挑戦（${spot.quiz.score}pt）`}
             </button>
           )}
 
