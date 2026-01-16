@@ -3,6 +3,7 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { checkinApi } from '../../services/api';
 import QuizModal from '../Quiz/QuizModal';
+import SpotPopup from './SpotPopup';
 import type { User, Spot, Area, CheckInResponse } from '../../types';
 import { calculateDistance, formatDistance } from '../../utils/distance';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
@@ -38,19 +39,17 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
   const [highlightQuizSpots, setHighlightQuizSpots] = useState(false);
   const [selectedGenre, setSelectedGenre] = useState<string>('all');
 
-  // スポットクリック処理（useEffectの前に定義）
-  const handleSpotClick = async (spot: Spot) => {
+  // スポットクリック処理を更新（マーカークリックでポップアップ表示のみ）
+  const handleSpotClick = (spot: Spot) => {
     setSelectedSpot(spot);
+  };
 
-    // refから最新の位置情報を取得
+  // チェックイン処理を分離
+  const handleCheckin = async () => {
+    if (!selectedSpot) return;
+
     const currentLocation = userLocationRef.current;
 
-    // デバッグ情報
-    console.log('locationStatus:', locationStatus);
-    console.log('userLocation (state):', userLocation);
-    console.log('userLocation (ref):', currentLocation);
-
-    // refの値を優先的にチェック
     if (!currentLocation) {
       if (locationStatus === 'loading') {
         alert('位置情報を取得中です。しばらくお待ちください。');
@@ -63,7 +62,42 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
     try {
       const response = await checkinApi.checkin(
         user.user_id,
-        spot.spot_id,
+        selectedSpot.spot_id,
+        currentLocation[1], // latitude
+        currentLocation[0]  // longitude
+      );
+
+      alert(response.message || 'チェックイン完了！');
+    } catch (error: any) {
+      if (error.message.includes('OUT_OF_RANGE')) {
+        alert('スポットから離れすぎています。スポットに近づいてください。');
+      } else if (error.message.includes('ALREADY_CHECKED_IN')) {
+        alert('既にチェックイン済みです。');
+      } else {
+        alert('エラーが発生しました: ' + error.message);
+      }
+    }
+  };
+
+  // クイズ挑戦処理を分離
+  const handleQuizChallenge = async () => {
+    if (!selectedSpot) return;
+
+    const currentLocation = userLocationRef.current;
+
+    if (!currentLocation) {
+      if (locationStatus === 'loading') {
+        alert('位置情報を取得中です。しばらくお待ちください。');
+      } else {
+        alert('位置情報を取得できません。ブラウザの設定を確認してください。');
+      }
+      return;
+    }
+
+    try {
+      const response = await checkinApi.checkin(
+        user.user_id,
+        selectedSpot.spot_id,
         currentLocation[1], // latitude
         currentLocation[0]  // longitude
       );
@@ -72,7 +106,7 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
         setQuizData(response);
         setShowQuiz(true);
       } else {
-        alert(response.message || 'チェックイン完了！');
+        alert('クイズに挑戦できません: ' + (response.message || ''));
       }
     } catch (error: any) {
       if (error.message.includes('OUT_OF_RANGE')) {
@@ -83,6 +117,10 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
         alert('エラーが発生しました: ' + error.message);
       }
     }
+  };
+
+  const handleDirections = () => {
+    console.log('経路検索を開始');
   };
 
   // エリアでフィルタリングされたスポット
@@ -830,6 +868,23 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
         </div>
       )}
       
+      {/* スポットポップアップ */}
+      {selectedSpot && userLocation && (
+        <SpotPopup
+          spot={selectedSpot}
+          distance={calculateDistance(
+            userLocation[1],
+            userLocation[0],
+            selectedSpot.latitude,
+            selectedSpot.longitude
+          )}
+          onClose={() => setSelectedSpot(null)}
+          onCheckin={handleCheckin}
+          onQuiz={handleQuizChallenge}
+          onDirections={handleDirections}
+        />
+      )}
+
       {showQuiz && quizData && selectedSpot && (
         <QuizModal
           user={user}
