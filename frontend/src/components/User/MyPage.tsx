@@ -330,30 +330,29 @@ export default function MyPage({ user, setUser, spots, areas }: MyPageProps) {
 
           {/* エリアコード入力 */}
           <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid #e5e7eb' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-              <div>
-                <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '4px' }}>
-                  隠しエリアの解放
-                </h3>
-                <p style={{ fontSize: '12px', color: '#6b7280' }}>
-                  エリアコードを入力して隠しエリアを解放
-                </p>
-              </div>
+            <div style={{ marginBottom: '12px' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '4px' }}>
+                隠しエリアの解放
+              </h3>
+              <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '12px' }}>
+                エリアコードを入力して隠しエリアを解放
+              </p>
               {!showAreaCodeInput && (
                 <button
                   onClick={() => setShowAreaCodeInput(true)}
                   style={{
-                    padding: '8px 16px',
+                    width: '100%',
+                    padding: '12px 16px',
                     backgroundColor: '#f59e0b',
                     color: 'white',
                     border: 'none',
                     borderRadius: '8px',
-                    fontSize: '14px',
+                    fontSize: '16px',
                     fontWeight: '600',
                     cursor: 'pointer'
                   }}
                 >
-                  コード入力
+                  🔓 コード入力
                 </button>
               )}
             </div>
@@ -387,47 +386,52 @@ export default function MyPage({ user, setUser, spots, areas }: MyPageProps) {
               <div style={{
                 padding: '16px',
                 backgroundColor: '#fef3c7',
-                borderRadius: '8px',
+                borderRadius: '12px',
                 marginTop: '12px'
               }}>
                 <label style={{
                   display: 'block',
                   fontSize: '14px',
                   fontWeight: '600',
-                  marginBottom: '8px',
+                  marginBottom: '12px',
                   color: '#92400e'
                 }}>
                   エリアコードを入力
                 </label>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <input
-                    type="text"
-                    value={areaCode}
-                    onChange={(e) => setAreaCode(e.target.value)}
-                    placeholder="コードを入力"
-                    style={{
-                      flex: 1,
-                      padding: '12px',
-                      border: '2px solid #fbbf24',
-                      borderRadius: '8px',
-                      fontSize: '16px'
-                    }}
-                  />
+                <input
+                  type="text"
+                  value={areaCode}
+                  onChange={(e) => setAreaCode(e.target.value)}
+                  placeholder="コードを入力"
+                  autoFocus
+                  style={{
+                    width: '100%',
+                    padding: '14px',
+                    border: '2px solid #fbbf24',
+                    borderRadius: '8px',
+                    fontSize: '16px',
+                    marginBottom: '12px',
+                    boxSizing: 'border-box'
+                  }}
+                />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <button
                     onClick={handleUnlockArea}
                     disabled={loading}
                     style={{
-                      padding: '12px 24px',
+                      width: '100%',
+                      padding: '14px',
                       backgroundColor: '#f59e0b',
                       color: 'white',
                       border: 'none',
                       borderRadius: '8px',
+                      fontSize: '16px',
                       fontWeight: '600',
                       cursor: loading ? 'not-allowed' : 'pointer',
                       opacity: loading ? 0.5 : 1
                     }}
                   >
-                    解放
+                    {loading ? '解放中...' : '✨ 解放する'}
                   </button>
                   <button
                     onClick={() => {
@@ -436,12 +440,16 @@ export default function MyPage({ user, setUser, spots, areas }: MyPageProps) {
                     }}
                     disabled={loading}
                     style={{
-                      padding: '12px 16px',
+                      width: '100%',
+                      padding: '14px',
                       backgroundColor: '#6b7280',
                       color: 'white',
                       border: 'none',
                       borderRadius: '8px',
-                      cursor: loading ? 'not-allowed' : 'pointer'
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      cursor: loading ? 'not-allowed' : 'pointer',
+                      opacity: loading ? 0.7 : 1
                     }}
                   >
                     キャンセル
