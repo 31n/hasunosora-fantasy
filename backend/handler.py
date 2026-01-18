@@ -35,8 +35,8 @@ def handler(event, context):
         elif path.startswith('/users/') and path.endswith('/history') and http_method == 'GET':
             return get_history(event)
         
-        elif path.startswith('/users/') and path.endswith('/unlock-genre') and http_method == 'POST':
-            return unlock_genre(event)
+        elif path.startswith('/users/') and path.endswith('/unlock-area') and http_method == 'POST':
+            return unlock_area(event)
         
         elif path == '/master/version' and http_method == 'GET':
             return get_master_version(event)
@@ -165,18 +165,18 @@ def set_user_area(event):
         return error_response('INTERNAL_ERROR', str(e), 500)
 
 
-def unlock_genre(event):
+def unlock_area(event):
     try:
         path_parts = event['path'].split('/')
         user_id = path_parts[2]
         
         body = json.loads(event.get('body', '{}'))
-        genre_code = body.get('genre_code')
+        area_code = body.get('area_code')
         
-        if not genre_code:
-            return error_response('INVALID_REQUEST', 'genre_code is required', 400)
+        if not area_code:
+            return error_response('INVALID_REQUEST', 'area_code is required', 400)
         
-        result = UserService.unlock_genre(user_id, genre_code)
+        result = UserService.unlock_area(user_id, area_code)
         return success_response(result)
     except ValueError as e:
         return error_response(str(e), str(e), 400)

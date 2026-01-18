@@ -7,14 +7,14 @@ from config import config
 class User:
     def __init__(self, user_id: str, nickname: Optional[str] = None, 
                  total_score: int = 0, selected_area: Optional[str] = None,
-                 unlocked_genres: Optional[list] = None,
+                 unlocked_areas: Optional[list] = None,
                  created_at: Optional[str] = None):
         self.user_id = user_id
         self.nickname = nickname
         # Decimal型をintに変換
         self.total_score = int(total_score) if isinstance(total_score, Decimal) else total_score
         self.selected_area = selected_area  # 選択中のエリアID（nullable）
-        self.unlocked_genres = unlocked_genres or []  # 解放済みジャンルのリスト
+        self.unlocked_areas = unlocked_areas or []  # 解放済みエリアのリスト
         self.created_at = created_at or datetime.utcnow().isoformat()
     
     def to_dict(self) -> Dict:
@@ -24,7 +24,7 @@ class User:
             'nickname': self.nickname,
             'total_score': int(self.total_score),  # 必ずintに変換
             'selected_area': self.selected_area,
-            'unlocked_genres': self.unlocked_genres,
+            'unlocked_areas': self.unlocked_areas,
             'created_at': self.created_at
         }
     
@@ -48,7 +48,7 @@ class User:
             nickname=item.get('nickname'),
             total_score=item.get('total_score', 0),
             selected_area=item.get('selected_area'),
-            unlocked_genres=item.get('unlocked_genres', []),
+            unlocked_areas=item.get('unlocked_areas', []),
             created_at=item.get('created_at')
         )
     

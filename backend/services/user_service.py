@@ -112,51 +112,46 @@ class UserService:
         }
     
     @staticmethod
-    def unlock_genre(user_id: str, genre_code: str) -> Dict:
-        """ジャンルコードを検証してジャンルを解放"""
+    def unlock_area(user_id: str, area_code: str) -> Dict:
+        """エリアコードを検証してエリアを解放"""
         user = User.get(user_id)
         
         if not user:
             raise ValueError('USER_NOT_FOUND')
         
-        # 全エリアから該当するジャンルを探す
+        # コードが一致するエリアを探す
         areas = Area.get_all(include_inactive=False)
-        unlocked_genre = None
+        unlocked_area = None
         
         for area in areas:
-            restricted_genres = area.restricted_genres or {}
-            for genre_name, restriction in restricted_genres.items():
-                if restriction.get('is_restricted', False):
-                    if restriction.get('access_code') == genre_code:
-                        unlocked_genre = genre_name
-                        break
-            if unlocked_genre:
+            if area.is_restricted and area.access_code == area_code:
+                unlocked_area = area.area_id
                 break
         
-        if not unlocked_genre:
-            raise ValueError('INVALID_GENRE_CODE')
+        if not unlocked_area:
+            raise ValueError('INVALID_AREA_CODE')
         
         # すでに解放済みかチェック
-        if unlocked_genre in user.unlocked_genres:
-            raise ValueError('GENRE_ALREADY_UNLOCKED')
+        if unlocked_area in user.unlocked_areas:
+            raise ValueError('AREA_ALREADY_UNLOCKED')
         
-        # ジャンルを解放
+        # エリアを解放
         from utils.dynamodb import get_table
         from config import config
         
         table = get_table(config.USERS_TABLE)
-        unlocked_genres = user.unlocked_genres + [unlocked_genre]
+        unlocked_areas = user.unlocked_areas + [unlocked_area]
         
         table.update_item(
             Key={'user_id': user_id},
-            UpdateExpression='SET unlocked_genres = :genres',
-            ExpressionAttributeValues={':genres': unlocked_genres}
+            UpdateExpression='SET unlocked_areas = :areas',
+            ExpressionAttributeValues={':areas': unlocked_areas}
         )
         
-        user.unlocked_genres = unlocked_genres
+        user.unlocked_areas = unlocked_areas
         
         return {
             'success': True,
-            'unlocked_genre': unlocked_genre,
+            'unlocked_area': unlocked_area,
             'user': user.to_dict()
         }

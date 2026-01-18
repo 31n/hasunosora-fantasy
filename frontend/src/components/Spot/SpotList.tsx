@@ -26,25 +26,7 @@ export default function SpotList({ spots, user, areas }: SpotListProps) {
     : spots;
 
   // ジャンル一覧を取得（複数ジャンル対応）
-  const allGenres = new Set(filteredByArea.flatMap(s => s.genre || []));
-  const userUnlockedGenres = user.unlocked_genres || [];
-  const filteredGenres: string[] = [];
-  
-  // 制限ジャンルをフィルタリング
-  allGenres.forEach(genre => {
-    let isRestricted = false;
-    areas.forEach(area => {
-      const restriction = area.restricted_genres?.[genre];
-      if (restriction?.is_restricted && !userUnlockedGenres.includes(genre)) {
-        isRestricted = true;
-      }
-    });
-    if (!isRestricted) {
-      filteredGenres.push(genre);
-    }
-  });
-  
-  const genres = ['all', ...filteredGenres];
+  const genres = ['all', ...new Set(filteredByArea.flatMap(s => s.genre || []))];
 
   useEffect(() => {
     // 位置情報を取得
@@ -61,21 +43,19 @@ export default function SpotList({ spots, user, areas }: SpotListProps) {
   }, []);
 
   useEffect(() => {
+    // 制限エリアをフィルタリング
+    const userUnlockedAreas = user.unlocked_areas || [];
+    const unlockedSpots = filteredByArea.filter(spot => {
+      if (!spot.area) return true;
+      const area = areas.find(a => a.area_id === spot.area);
+      if (!area) return true;
+      if (area.is_restricted && !userUnlockedAreas.includes(area.area_id)) {
+        return false;
+      }
+      return true;
+    });
+    
     if (userLocation) {
-      // 制限ジャンルをフィルタリング
-      const unlockedSpots = filteredByArea.filter(spot => {
-        return (spot.genre || []).some(genre => {
-          let isRestricted = false;
-          areas.forEach(area => {
-            const restriction = area.restricted_genres?.[genre];
-            if (restriction?.is_restricted && !userUnlockedGenres.includes(genre)) {
-              isRestricted = true;
-            }
-          });
-          return !isRestricted;
-        });
-      });
-      
       // 距離を計算
       const withDistance = unlockedSpots.map(spot => ({
         ...spot,
@@ -88,22 +68,9 @@ export default function SpotList({ spots, user, areas }: SpotListProps) {
       }));
       setSpotsWithDistance(withDistance);
     } else {
-      // 制限ジャンルをフィルタリング
-      const unlockedSpots = filteredByArea.filter(spot => {
-        return (spot.genre || []).some(genre => {
-          let isRestricted = false;
-          areas.forEach(area => {
-            const restriction = area.restricted_genres?.[genre];
-            if (restriction?.is_restricted && !userUnlockedGenres.includes(genre)) {
-              isRestricted = true;
-            }
-          });
-          return !isRestricted;
-        });
-      });
       setSpotsWithDistance(unlockedSpots);
     }
-  }, [filteredByArea, userLocation, user.unlocked_genres, areas]);
+  }, [filteredByArea, userLocation, user.unlocked_areas, areas]);
 
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
     const R = 6371000; // 地球の半径（メートル）

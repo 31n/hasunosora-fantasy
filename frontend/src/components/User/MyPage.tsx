@@ -18,8 +18,8 @@ export default function MyPage({ user, setUser, spots, areas }: MyPageProps) {
   const [loading, setLoading] = useState(false);
   const [showUserId, setShowUserId] = useState(false);
   const [selectedStatArea, setSelectedStatArea] = useState<string>('all'); // 統計表示用エリア
-  const [showGenreCodeInput, setShowGenreCodeInput] = useState(false);
-  const [genreCode, setGenreCode] = useState('');
+  const [showAreaCodeInput, setShowAreaCodeInput] = useState(false);
+  const [areaCode, setAreaCode] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -108,6 +108,32 @@ export default function MyPage({ user, setUser, spots, areas }: MyPageProps) {
   const copyUserId = () => {
     navigator.clipboard.writeText(user.user_id);
     alert('ユーザーIDをコピーしました');
+  };
+
+  const handleUnlockArea = async () => {
+    if (!areaCode.trim()) {
+      alert('エリアコードを入力してください');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const result = await userApi.unlockArea(user.user_id, areaCode.trim());
+      setUser(result.user);
+      setAreaCode('');
+      setShowAreaCodeInput(false);
+      alert(`${result.unlocked_area} エリアが解放されました！`);
+    } catch (error: any) {
+      if (error.message.includes('INVALID_AREA_CODE')) {
+        alert('無効なエリアコードです');
+      } else if (error.message.includes('AREA_ALREADY_UNLOCKED')) {
+        alert('このエリアはすでに解放済みです');
+      } else {
+        alert('エラーが発生しました: ' + error.message);
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -302,20 +328,20 @@ export default function MyPage({ user, setUser, spots, areas }: MyPageProps) {
             </p>
           </div>
 
-          {/* ジャンルコード入力 */}
+          {/* エリアコード入力 */}
           <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid #e5e7eb' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
               <div>
                 <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '4px' }}>
-                  隠しジャンルの解放
+                  隠しエリアの解放
                 </h3>
                 <p style={{ fontSize: '12px', color: '#6b7280' }}>
-                  ジャンルコードを入力して隠しジャンルを解放
+                  エリアコードを入力して隠しエリアを解放
                 </p>
               </div>
-              {!showGenreCodeInput && (
+              {!showAreaCodeInput && (
                 <button
-                  onClick={() => setShowGenreCodeInput(true)}
+                  onClick={() => setShowAreaCodeInput(true)}
                   style={{
                     padding: '8px 16px',
                     backgroundColor: '#f59e0b',
@@ -332,29 +358,32 @@ export default function MyPage({ user, setUser, spots, areas }: MyPageProps) {
               )}
             </div>
 
-            {user.unlocked_genres && user.unlocked_genres.length > 0 && (
+            {user.unlocked_areas && user.unlocked_areas.length > 0 && (
               <div style={{ marginBottom: '12px' }}>
                 <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '8px' }}>
-                  解放済みジャンル
+                  解放済みエリア
                 </p>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  {user.unlocked_genres.map((genre) => (
-                    <span key={genre} style={{
-                      padding: '6px 12px',
-                      backgroundColor: '#fef3c7',
-                      color: '#92400e',
-                      borderRadius: '12px',
-                      fontSize: '14px',
-                      fontWeight: '600'
-                    }}>
-                      {genre}
-                    </span>
-                  ))}
+                  {user.unlocked_areas.map((areaId) => {
+                    const area = areas.find(a => a.area_id === areaId);
+                    return (
+                      <span key={areaId} style={{
+                        padding: '6px 12px',
+                        backgroundColor: '#fef3c7',
+                        color: '#92400e',
+                        borderRadius: '12px',
+                        fontSize: '14px',
+                        fontWeight: '600'
+                      }}>
+                        {area?.area_name || areaId}
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
             )}
 
-            {showGenreCodeInput && (
+            {showAreaCodeInput && (
               <div style={{
                 padding: '16px',
                 backgroundColor: '#fef3c7',
@@ -368,13 +397,13 @@ export default function MyPage({ user, setUser, spots, areas }: MyPageProps) {
                   marginBottom: '8px',
                   color: '#92400e'
                 }}>
-                  ジャンルコードを入力
+                  エリアコードを入力
                 </label>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <input
                     type="text"
-                    value={genreCode}
-                    onChange={(e) => setGenreCode(e.target.value)}
+                    value={areaCode}
+                    onChange={(e) => setAreaCode(e.target.value)}
                     placeholder="コードを入力"
                     style={{
                       flex: 1,
@@ -385,7 +414,7 @@ export default function MyPage({ user, setUser, spots, areas }: MyPageProps) {
                     }}
                   />
                   <button
-                    onClick={handleUnlockGenre}
+                    onClick={handleUnlockArea}
                     disabled={loading}
                     style={{
                       padding: '12px 24px',
@@ -402,8 +431,8 @@ export default function MyPage({ user, setUser, spots, areas }: MyPageProps) {
                   </button>
                   <button
                     onClick={() => {
-                      setShowGenreCodeInput(false);
-                      setGenreCode('');
+                      setShowAreaCodeInput(false);
+                      setAreaCode('');
                     }}
                     disabled={loading}
                     style={{

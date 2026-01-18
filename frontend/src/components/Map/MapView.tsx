@@ -127,27 +127,23 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
   const filteredSpots = useMemo(() => {
     let filtered = spots;
     
+    // 制限エリアのフィルタリング（解放済みエリアのみ表示）
+    const userUnlockedAreas = user.unlocked_areas || [];
+    filtered = filtered.filter(spot => {
+      if (!spot.area) return true; // エリアが設定されていないスポットは表示
+      const area = areas.find(a => a.area_id === spot.area);
+      if (!area) return true;
+      // 制限ありのエリアで、解放済みでない場合は非表示
+      if (area.is_restricted && !userUnlockedAreas.includes(area.area_id)) {
+        return false;
+      }
+      return true;
+    });
+    
     // エリアフィルター
     if (user.selected_area) {
       filtered = filtered.filter(spot => spot.area === user.selected_area);
     }
-    
-    // 制限ジャンルのフィルタリング（解放済みジャンルのみ表示）
-    const userUnlockedGenres = user.unlocked_genres || [];
-    filtered = filtered.filter(spot => {
-      // スポットが属するジャンルをチェック
-      return (spot.genre || []).some(genre => {
-        // このジャンルが制限されているかチェック
-        let isRestricted = false;
-        areas.forEach(area => {
-          const restriction = area.restricted_genres?.[genre];
-          if (restriction?.is_restricted && !userUnlockedGenres.includes(genre)) {
-            isRestricted = true;
-          }
-        });
-        return !isRestricted;
-      });
-    });
     
     // ジャンルフィルター
     if (selectedGenre !== 'all') {
@@ -155,39 +151,30 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
     }
     
     return filtered;
-  }, [spots, user.selected_area, selectedGenre, user.unlocked_genres, areas]);
+  }, [spots, user.selected_area, selectedGenre, user.unlocked_areas, areas]);
   
   // ジャンル一覧を取得（エリアでフィルタリングされたスポットから）
   const availableGenres = useMemo(() => {
     let baseSpots = spots;
+    
+    // 制限エリアのフィルタリング
+    const userUnlockedAreas = user.unlocked_areas || [];
+    baseSpots = baseSpots.filter(spot => {
+      if (!spot.area) return true;
+      const area = areas.find(a => a.area_id === spot.area);
+      if (!area) return true;
+      if (area.is_restricted && !userUnlockedAreas.includes(area.area_id)) {
+        return false;
+      }
+      return true;
+    });
+    
     if (user.selected_area) {
       baseSpots = baseSpots.filter(spot => spot.area === user.selected_area);
     }
     
-    // すべてのジャンルを取得
-    const allGenres = new Set(baseSpots.flatMap(s => s.genre || []));
-    
-    // 制限ジャンルをフィルタリング（解放済みジャンルのみ表示）
-    const userUnlockedGenres = user.unlocked_genres || [];
-    const filteredGenres: string[] = [];
-    
-    allGenres.forEach(genre => {
-      // 各エリアの制限設定をチェック
-      let isRestricted = false;
-      areas.forEach(area => {
-        const restriction = area.restricted_genres?.[genre];
-        if (restriction?.is_restricted && !userUnlockedGenres.includes(genre)) {
-          isRestricted = true;
-        }
-      });
-      
-      if (!isRestricted) {
-        filteredGenres.push(genre);
-      }
-    });
-    
-    return ['all', ...filteredGenres];
-  }, [spots, user.selected_area, user.unlocked_genres, areas]);
+    return ['all', ...new Set(baseSpots.flatMap(s => s.genre || []))];
+  }, [spots, user.selected_area, user.unlocked_areas, areas]);
 
   // 選択されたエリアの中心座標を取得
   const selectedAreaCenter = useMemo(() => {
