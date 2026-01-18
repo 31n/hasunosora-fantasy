@@ -129,6 +129,7 @@ function App() {
     <BrowserRouter>
       <AppContent
         user={user}
+        setUser={setUser}
         spots={spots}
         areas={areas}
         loading={loading}
@@ -143,6 +144,7 @@ function App() {
 
 function AppContent({
   user,
+  setUser,
   spots,
   areas,
   loading,
@@ -152,6 +154,7 @@ function AppContent({
   handleReload
 }: {
   user: User | null;
+  setUser: (user: User) => void;
   spots: Spot[];
   areas: Area[];
   loading: boolean;
