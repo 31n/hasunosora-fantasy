@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { storage } from './services/storage';
 import { userApi, masterApi } from './services/api';
@@ -127,7 +127,44 @@ function App() {
 
   return (
     <BrowserRouter>
-      <div className="app">
+      <AppContent
+        user={user}
+        spots={spots}
+        areas={areas}
+        loading={loading}
+        reloading={reloading}
+        handleLogin={handleLogin}
+        handleLogout={handleLogout}
+        handleReload={handleReload}
+      />
+    </BrowserRouter>
+  );
+}
+
+function AppContent({
+  user,
+  spots,
+  areas,
+  loading,
+  reloading,
+  handleLogin,
+  handleLogout,
+  handleReload
+}: {
+  user: User | null;
+  spots: Spot[];
+  areas: Area[];
+  loading: boolean;
+  reloading: boolean;
+  handleLogin: (userData: User) => void;
+  handleLogout: () => void;
+  handleReload: () => void;
+}) {
+  const location = useLocation();
+  const isMapPage = location.pathname === '/';
+
+  return (
+    <div className={`app ${isMapPage ? 'map-page' : ''}`}>
         {user && (
           <>
             <Header user={user} onLogout={handleLogout} />
@@ -198,7 +235,6 @@ function App() {
           <Route path="/admin/spots/:spotId/edit" element={<AdminSpotForm />} />
         </Routes>
       </div>
-    </BrowserRouter>
   );
 }
 
