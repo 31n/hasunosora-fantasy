@@ -8,6 +8,7 @@ import type {
   MasterVersionResponse,
   MasterDataResponse,
   SpotsResponse,
+  UnlockGenreResponse,
   Spot,
   Area
 } from '../types';
@@ -70,6 +71,13 @@ export const userApi = {
     return fetchApi(
       `/users/${userId}/history?limit=${limit}&offset=${offset}`
     );
+  },
+
+  unlockGenre: async (userId: string, genreCode: string): Promise<UnlockGenreResponse> => {
+    return fetchApi<UnlockGenreResponse>(`/users/${userId}/unlock-genre`, {
+      method: 'POST',
+      body: JSON.stringify({ genre_code: genreCode }),
+    });
   },
 };
 

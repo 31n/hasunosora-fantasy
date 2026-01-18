@@ -18,6 +18,8 @@ export default function MyPage({ user, setUser, spots, areas }: MyPageProps) {
   const [loading, setLoading] = useState(false);
   const [showUserId, setShowUserId] = useState(false);
   const [selectedStatArea, setSelectedStatArea] = useState<string>('all'); // 統計表示用エリア
+  const [showGenreCodeInput, setShowGenreCodeInput] = useState(false);
+  const [genreCode, setGenreCode] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -61,6 +63,32 @@ export default function MyPage({ user, setUser, spots, areas }: MyPageProps) {
       storage.clearUserId();
       navigate('/login');
       window.location.reload();
+    }
+  };
+
+  const handleUnlockGenre = async () => {
+    if (!genreCode.trim()) {
+      alert('ジャンルコードを入力してください');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const result = await userApi.unlockGenre(user.user_id, genreCode.trim());
+      setUser(result.user);
+      setGenreCode('');
+      setShowGenreCodeInput(false);
+      alert(`「${result.unlocked_genre}」ジャンルが解放されました！`);
+    } catch (error: any) {
+      if (error.message.includes('INVALID_GENRE_CODE')) {
+        alert('無効なジャンルコードです');
+      } else if (error.message.includes('GENRE_ALREADY_UNLOCKED')) {
+        alert('このジャンルは既に解放済みです');
+      } else {
+        alert('エラーが発生しました: ' + error.message);
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -272,6 +300,126 @@ export default function MyPage({ user, setUser, spots, areas }: MyPageProps) {
             <p style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>
               選択したエリアのスポットのみが地図に表示されます
             </p>
+          </div>
+
+          {/* ジャンルコード入力 */}
+          <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid #e5e7eb' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <div>
+                <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '4px' }}>
+                  隠しジャンルの解放
+                </h3>
+                <p style={{ fontSize: '12px', color: '#6b7280' }}>
+                  ジャンルコードを入力して隠しジャンルを解放
+                </p>
+              </div>
+              {!showGenreCodeInput && (
+                <button
+                  onClick={() => setShowGenreCodeInput(true)}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#f59e0b',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                >
+                  コード入力
+                </button>
+              )}
+            </div>
+
+            {user.unlocked_genres && user.unlocked_genres.length > 0 && (
+              <div style={{ marginBottom: '12px' }}>
+                <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '8px' }}>
+                  解放済みジャンル
+                </p>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {user.unlocked_genres.map((genre) => (
+                    <span key={genre} style={{
+                      padding: '6px 12px',
+                      backgroundColor: '#fef3c7',
+                      color: '#92400e',
+                      borderRadius: '12px',
+                      fontSize: '14px',
+                      fontWeight: '600'
+                    }}>
+                      {genre}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {showGenreCodeInput && (
+              <div style={{
+                padding: '16px',
+                backgroundColor: '#fef3c7',
+                borderRadius: '8px',
+                marginTop: '12px'
+              }}>
+                <label style={{
+                  display: 'block',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  marginBottom: '8px',
+                  color: '#92400e'
+                }}>
+                  ジャンルコードを入力
+                </label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input
+                    type="text"
+                    value={genreCode}
+                    onChange={(e) => setGenreCode(e.target.value)}
+                    placeholder="コードを入力"
+                    style={{
+                      flex: 1,
+                      padding: '12px',
+                      border: '2px solid #fbbf24',
+                      borderRadius: '8px',
+                      fontSize: '16px'
+                    }}
+                  />
+                  <button
+                    onClick={handleUnlockGenre}
+                    disabled={loading}
+                    style={{
+                      padding: '12px 24px',
+                      backgroundColor: '#f59e0b',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      fontWeight: '600',
+                      cursor: loading ? 'not-allowed' : 'pointer',
+                      opacity: loading ? 0.5 : 1
+                    }}
+                  >
+                    解放
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowGenreCodeInput(false);
+                      setGenreCode('');
+                    }}
+                    disabled={loading}
+                    style={{
+                      padding: '12px 16px',
+                      backgroundColor: '#6b7280',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: loading ? 'not-allowed' : 'pointer'
+                    }}
+                  >
+                    キャンセル
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

@@ -4,6 +4,7 @@ export interface User {
   nickname?: string;
   total_score: number;
   selected_area?: string;
+  unlocked_genres: string[]; // 解放済みジャンルのリスト
   created_at: string;
 }
 
@@ -16,6 +17,7 @@ export interface Area {
   display_order: number;
   is_active: boolean;
   available_genres: string[]; // このエリアで利用可能なジャンル
+  restricted_genres: { [genre: string]: { access_code: string; is_restricted: boolean } }; // 制限付きジャンル
   created_at: string;
   updated_at: string;
 }
@@ -104,4 +106,10 @@ export interface MasterDataResponse {
 export interface SpotsResponse {
   version: string;
   spots: Spot[];
+}
+
+export interface UnlockGenreResponse {
+  success: boolean;
+  unlocked_genre: string;
+  user: User;
 }

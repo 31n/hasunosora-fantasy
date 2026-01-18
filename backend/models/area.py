@@ -9,6 +9,7 @@ class Area:
                  center_latitude: float, center_longitude: float,
                  display_order: int = 0, is_active: bool = True,
                  available_genres: List[str] = None,
+                 restricted_genres: Optional[Dict[str, Dict]] = None,
                  created_at: Optional[str] = None, updated_at: Optional[str] = None):
         self.area_id = area_id
         self.area_name = area_name
@@ -18,6 +19,7 @@ class Area:
         self.display_order = int(display_order) if isinstance(display_order, Decimal) else display_order
         self.is_active = bool(is_active)
         self.available_genres = available_genres or []
+        self.restricted_genres = restricted_genres or {}  # {"genre_name": {"access_code": "CODE123", "is_restricted": true}}
         self.created_at = created_at or datetime.utcnow().isoformat()
         self.updated_at = updated_at or datetime.utcnow().isoformat()
     
@@ -38,6 +40,7 @@ class Area:
                 'display_order': self.display_order,
                 'is_active': self.is_active,
                 'available_genres': self.available_genres,
+                'restricted_genres': self.restricted_genres,
                 'created_at': self.created_at,
                 'updated_at': self.updated_at
             }
@@ -51,6 +54,7 @@ class Area:
                 'display_order': self.display_order,
                 'is_active': self.is_active,
                 'available_genres': self.available_genres,
+                'restricted_genres': self.restricted_genres,
                 'created_at': self.created_at,
                 'updated_at': self.updated_at
             }
@@ -79,6 +83,7 @@ class Area:
             display_order=item.get('display_order', 0),
             is_active=item.get('is_active', True),
             available_genres=item.get('available_genres', []),
+            restricted_genres=item.get('restricted_genres', {}),
             created_at=item.get('created_at'),
             updated_at=item.get('updated_at')
         )
@@ -99,6 +104,7 @@ class Area:
                 display_order=item.get('display_order', 0),
                 is_active=item.get('is_active', True),
                 available_genres=item.get('available_genres', []),
+                restricted_genres=item.get('restricted_genres', {}),
                 created_at=item.get('created_at'),
                 updated_at=item.get('updated_at')
             )

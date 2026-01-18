@@ -16,7 +16,8 @@ export default function AdminAreaList() {
     center_longitude: 139.7454,
     display_order: 0,
     is_active: true,
-    available_genres: [] as string[]
+    available_genres: [] as string[],
+    restricted_genres: {} as { [genre: string]: { access_code: string; is_restricted: boolean } }
   });
   const navigate = useNavigate();
 
@@ -75,7 +76,8 @@ export default function AdminAreaList() {
       center_longitude: area.center_longitude,
       display_order: area.display_order,
       is_active: area.is_active,
-      available_genres: area.available_genres || []
+      available_genres: area.available_genres || [],
+      restricted_genres: area.restricted_genres || {}
     });
     setShowForm(true);
   };
@@ -106,7 +108,8 @@ export default function AdminAreaList() {
       center_longitude: 139.7454,
       display_order: 0,
       is_active: true,
-      available_genres: []
+      available_genres: [],
+      restricted_genres: {}
     });
   };
 
@@ -387,6 +390,104 @@ export default function AdminAreaList() {
                   textAlign: 'center'
                 }}>
                   ジャンルが設定されていません
+                </div>
+              )}
+            </div>
+
+            {/* ジャンル制限設定 */}
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                ジャンル制限設定
+              </label>
+              <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '12px' }}>
+                制限を設定すると、コードを入力したユーザーのみそのジャンルを表示できます。
+              </p>
+              {formData.available_genres.length > 0 ? (
+                <div style={{ 
+                  display: 'flex', 
+                  flexDirection: 'column',
+                  gap: '12px',
+                  padding: '12px',
+                  border: '2px solid #e5e7eb',
+                  borderRadius: '8px',
+                  backgroundColor: '#f9fafb'
+                }}>
+                  {formData.available_genres.map((genre) => {
+                    const restriction = formData.restricted_genres[genre] || { access_code: '', is_restricted: false };
+                    return (
+                      <div key={genre} style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        padding: '12px',
+                        backgroundColor: 'white',
+                        borderRadius: '8px',
+                        border: '1px solid #e5e7eb'
+                      }}>
+                        <div style={{ flex: '0 0 150px', fontWeight: '600' }}>
+                          {genre}
+                        </div>
+                        <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', flex: '0 0 100px' }}>
+                          <input
+                            type="checkbox"
+                            checked={restriction.is_restricted}
+                            onChange={(e) => {
+                              setFormData({
+                                ...formData,
+                                restricted_genres: {
+                                  ...formData.restricted_genres,
+                                  [genre]: {
+                                    ...restriction,
+                                    is_restricted: e.target.checked
+                                  }
+                                }
+                              });
+                            }}
+                            style={{ marginRight: '8px', width: '18px', height: '18px' }}
+                          />
+                          <span>制限あり</span>
+                        </label>
+                        {restriction.is_restricted && (
+                          <input
+                            type="text"
+                            placeholder="アクセスコード"
+                            value={restriction.access_code}
+                            onChange={(e) => {
+                              setFormData({
+                                ...formData,
+                                restricted_genres: {
+                                  ...formData.restricted_genres,
+                                  [genre]: {
+                                    ...restriction,
+                                    access_code: e.target.value
+                                  }
+                                }
+                              });
+                            }}
+                            style={{
+                              flex: 1,
+                              padding: '8px 12px',
+                              border: '2px solid #e5e7eb',
+                              borderRadius: '6px',
+                              fontSize: '14px'
+                            }}
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div style={{ 
+                  padding: '12px',
+                  border: '2px solid #e5e7eb',
+                  borderRadius: '8px',
+                  backgroundColor: '#f9fafb',
+                  color: '#9ca3af',
+                  fontSize: '14px',
+                  textAlign: 'center'
+                }}>
+                  まずジャンルを追加してください
                 </div>
               )}
             </div>

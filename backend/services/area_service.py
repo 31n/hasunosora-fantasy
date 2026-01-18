@@ -24,7 +24,8 @@ class AreaService:
     @staticmethod
     def create_area(area_id: str, area_name: str, center_latitude: float, 
                    center_longitude: float, display_order: int = 0,
-                   available_genres: List[str] = None) -> Dict:
+                   available_genres: List[str] = None,
+                   restricted_genres: Dict = None) -> Dict:
         """新しいエリアを作成"""
         # 既存チェック
         existing = Area.get(area_id)
@@ -38,6 +39,7 @@ class AreaService:
             center_longitude=center_longitude,
             display_order=display_order,
             available_genres=available_genres or [],
+            restricted_genres=restricted_genres or {},
             is_active=True
         )
         area.save()
@@ -47,7 +49,8 @@ class AreaService:
     @staticmethod
     def update_area(area_id: str, area_name: str = None, center_latitude: float = None,
                    center_longitude: float = None, display_order: int = None,
-                   is_active: bool = None, available_genres: List[str] = None) -> Dict:
+                   is_active: bool = None, available_genres: List[str] = None,
+                   restricted_genres: Dict = None) -> Dict:
         """エリアを更新"""
         area = Area.get(area_id)
         
@@ -67,6 +70,8 @@ class AreaService:
             area.is_active = is_active
         if available_genres is not None:
             area.available_genres = available_genres
+        if restricted_genres is not None:
+            area.restricted_genres = restricted_genres
         
         area.save()
         

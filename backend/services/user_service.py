@@ -110,3 +110,53 @@ class UserService:
             'total_count': len(checkins),
             'checkins': checkins
         }
+    
+    @staticmethod
+    def unlock_genre(user_id: str, genre_code: str) -> Dict:
+        """ジャンルコードを検証してジャンルを解放"""
+        user = User.get(user_id)
+        
+        if not user:
+            raise ValueError('USER_NOT_FOUND')
+        
+        # 全エリアから該当するジャンルを探す
+        areas = Area.get_all(include_inactive=False)
+        unlocked_genre = None
+        
+        for area in areas:
+            restricted_genres = area.restricted_genres or {}
+            for genre_name, restriction in restricted_genres.items():
+                if restriction.get('is_restricted', False):
+                    if restriction.get('access_code') == genre_code:
+                        unlocked_genre = genre_name
+                        break
+            if unlocked_genre:
+                break
+        
+        if not unlocked_genre:
+            raise ValueError('INVALID_GENRE_CODE')
+        
+        # すでに解放済みかチェック
+        if unlocked_genre in user.unlocked_genres:
+            raise ValueError('GENRE_ALREADY_UNLOCKED')
+        
+        # ジャンルを解放
+        from utils.dynamodb import get_table
+        from config import config
+        
+        table = get_table(config.USERS_TABLE)
+        unlocked_genres = user.unlocked_genres + [unlocked_genre]
+        
+        table.update_item(
+            Key={'user_id': user_id},
+            UpdateExpression='SET unlocked_genres = :genres',
+            ExpressionAttributeValues={':genres': unlocked_genres}
+        )
+        
+        user.unlocked_genres = unlocked_genres
+        
+        return {
+            'success': True,
+            'unlocked_genre': unlocked_genre,
+            'user': user.to_dict()
+        }

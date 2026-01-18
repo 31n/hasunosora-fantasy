@@ -132,13 +132,30 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
       filtered = filtered.filter(spot => spot.area === user.selected_area);
     }
     
+    // 制限ジャンルのフィルタリング（解放済みジャンルのみ表示）
+    const userUnlockedGenres = user.unlocked_genres || [];
+    filtered = filtered.filter(spot => {
+      // スポットが属するジャンルをチェック
+      return (spot.genre || []).some(genre => {
+        // このジャンルが制限されているかチェック
+        let isRestricted = false;
+        areas.forEach(area => {
+          const restriction = area.restricted_genres?.[genre];
+          if (restriction?.is_restricted && !userUnlockedGenres.includes(genre)) {
+            isRestricted = true;
+          }
+        });
+        return !isRestricted;
+      });
+    });
+    
     // ジャンルフィルター
     if (selectedGenre !== 'all') {
       filtered = filtered.filter(spot => spot.genre?.includes(selectedGenre));
     }
     
     return filtered;
-  }, [spots, user.selected_area, selectedGenre]);
+  }, [spots, user.selected_area, selectedGenre, user.unlocked_genres, areas]);
   
   // ジャンル一覧を取得（エリアでフィルタリングされたスポットから）
   const availableGenres = useMemo(() => {
@@ -146,8 +163,31 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
     if (user.selected_area) {
       baseSpots = baseSpots.filter(spot => spot.area === user.selected_area);
     }
-    return ['all', ...new Set(baseSpots.flatMap(s => s.genre || []))];
-  }, [spots, user.selected_area]);
+    
+    // すべてのジャンルを取得
+    const allGenres = new Set(baseSpots.flatMap(s => s.genre || []));
+    
+    // 制限ジャンルをフィルタリング（解放済みジャンルのみ表示）
+    const userUnlockedGenres = user.unlocked_genres || [];
+    const filteredGenres: string[] = [];
+    
+    allGenres.forEach(genre => {
+      // 各エリアの制限設定をチェック
+      let isRestricted = false;
+      areas.forEach(area => {
+        const restriction = area.restricted_genres?.[genre];
+        if (restriction?.is_restricted && !userUnlockedGenres.includes(genre)) {
+          isRestricted = true;
+        }
+      });
+      
+      if (!isRestricted) {
+        filteredGenres.push(genre);
+      }
+    });
+    
+    return ['all', ...filteredGenres];
+  }, [spots, user.selected_area, user.unlocked_genres, areas]);
 
   // 選択されたエリアの中心座標を取得
   const selectedAreaCenter = useMemo(() => {
