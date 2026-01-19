@@ -357,15 +357,37 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
     if (!map.current) return;
 
     const spotIdParam = searchParams.get('spotId');
+    console.log('spotId useEffect triggered. spotIdParam:', spotIdParam);
+    
     if (spotIdParam) {
       const targetSpot = spots.find(s => s.spot_id === spotIdParam);
+      console.log('targetSpot found:', targetSpot);
+      
       if (targetSpot) {
-        map.current.flyTo({
-          center: [targetSpot.longitude, targetSpot.latitude],
-          zoom: 17,
-          essential: true
-        });
-        setSelectedSpot(targetSpot);
+        // 地図がロード完了後に移動
+        if (map.current.isStyleLoaded()) {
+          console.log('Map is loaded. Flying to spot:', targetSpot.spot_name);
+          map.current.flyTo({
+            center: [targetSpot.longitude, targetSpot.latitude],
+            zoom: 17,
+            essential: true
+          });
+          setSelectedSpot(targetSpot);
+        } else {
+          // 地図のロードを待ってから移動
+          console.log('Map not loaded yet. Waiting for load event...');
+          map.current.once('load', () => {
+            console.log('Map loaded. Flying to spot:', targetSpot.spot_name);
+            if (map.current) {
+              map.current.flyTo({
+                center: [targetSpot.longitude, targetSpot.latitude],
+                zoom: 17,
+                essential: true
+              });
+              setSelectedSpot(targetSpot);
+            }
+          });
+        }
       }
     }
   }, [searchParams, spots]);
