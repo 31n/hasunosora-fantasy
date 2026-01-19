@@ -50,7 +50,10 @@ class AreaService:
     
     @staticmethod
     def update_area(area_id: str, area_name: str = None, center_latitude: float = None,
-                   is_restricted: bool = None, access_code: str = None) -> Dict:
+                   center_longitude: float = None, display_order: int = None,
+                   is_active: bool = None, available_genres: List[str] = None,
+                   is_restricted: bool = None, access_code: str = None,
+                   restricted_genres: List[str] = None) -> Dict:
         """エリアを更新"""
         area = Area.get(area_id)
         
