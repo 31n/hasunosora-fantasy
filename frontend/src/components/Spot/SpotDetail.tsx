@@ -88,7 +88,13 @@ export default function SpotDetail({ user }: SpotDetailProps) {
   }
 
   return (
-    <div style={{ padding: '16px', maxWidth: '800px', margin: '0 auto' }}>
+    <div style={{ 
+      width: '100%',
+      maxWidth: '1000px',
+      padding: '16px',
+      margin: '0 auto',
+      boxSizing: 'border-box'
+    }}>
       <button
         onClick={() => navigate('/spots')}
         style={{
@@ -192,7 +198,7 @@ export default function SpotDetail({ user }: SpotDetailProps) {
 
         {/* 地図で表示ボタン */}
         <button
-          onClick={() => navigate('/')}
+          onClick={() => navigate(`/?spotId=${spot.spot_id}`)}
           style={{
             width: '100%',
             marginTop: '16px',

@@ -16,8 +16,14 @@ interface SpotWithDistance extends Spot {
 export default function SpotList({ spots, user, areas }: SpotListProps) {
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [spotsWithDistance, setSpotsWithDistance] = useState<SpotWithDistance[]>([]);
-  const [sortBy, setSortBy] = useState<'distance' | 'name'>('distance');
-  const [selectedGenre, setSelectedGenre] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<'distance' | 'name'>(() => {
+    const saved = sessionStorage.getItem('spotList_sortBy');
+    return (saved as 'distance' | 'name') || 'distance';
+  });
+  const [selectedGenre, setSelectedGenre] = useState<string>(() => {
+    const saved = sessionStorage.getItem('spotList_selectedGenre');
+    return saved || 'all';
+  });
   const navigate = useNavigate();
 
   // ユーザーの選択エリアに基づいてスポットをフィルタリング
@@ -111,7 +117,13 @@ export default function SpotList({ spots, user, areas }: SpotListProps) {
   const filteredSpots = getFilteredAndSortedSpots();
 
   return (
-    <div style={{ padding: '16px', maxWidth: '800px', margin: '0 auto' }}>
+    <div style={{ 
+      width: '100%',
+      maxWidth: '1000px',
+      padding: '16px',
+      margin: '0 auto',
+      boxSizing: 'border-box'
+    }}>
       <h1 style={{ marginBottom: '24px' }}>スポット一覧</h1>
 
       {/* フィルター・ソート */}
@@ -123,7 +135,11 @@ export default function SpotList({ spots, user, areas }: SpotListProps) {
       }}>
         <select
           value={sortBy}
-          onChange={(e) => setSortBy(e.target.value as 'distance' | 'name')}
+          onChange={(e) => {
+            const value = e.target.value as 'distance' | 'name';
+            setSortBy(value);
+            sessionStorage.setItem('spotList_sortBy', value);
+          }}
           style={{
             padding: '8px 12px',
             border: '2px solid #e5e7eb',
@@ -138,7 +154,11 @@ export default function SpotList({ spots, user, areas }: SpotListProps) {
 
         <select
           value={selectedGenre}
-          onChange={(e) => setSelectedGenre(e.target.value)}
+          onChange={(e) => {
+            const value = e.target.value;
+            setSelectedGenre(value);
+            sessionStorage.setItem('spotList_selectedGenre', value);
+          }}
           style={{
             padding: '8px 12px',
             border: '2px solid #e5e7eb',

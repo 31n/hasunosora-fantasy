@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { checkinApi } from '../../services/api';
@@ -18,6 +19,7 @@ interface MapViewProps {
 }
 
 export default function MapView({ user, spots, areas }: MapViewProps) {
+  const [searchParams] = useSearchParams();
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const userMarker = useRef<mapboxgl.Marker | null>(null);
@@ -186,15 +188,28 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
   useEffect(() => {
     if (!mapContainer.current) return;
 
-    // 地図の初期中心座標を決定
-    const initialCenter = selectedAreaCenter || [139.7454, 35.6586]; // エリア中心 or 東京タワー
+    // URLパラメータからspotIdを取得
+    const spotIdParam = searchParams.get('spotId');
+    let initialCenter: [number, number] = selectedAreaCenter || [139.7454, 35.6586]; // エリア中心 or 東京タワー
+    let initialZoom = 15;
+    
+    // spotIdが指定されている場合、そのスポットの位置を中心にする
+    if (spotIdParam) {
+      const targetSpot = spots.find(s => s.spot_id === spotIdParam);
+      if (targetSpot) {
+        initialCenter = [targetSpot.longitude, targetSpot.latitude];
+        initialZoom = 17; // スポット表示時はズームを大きくする
+        // スポットを選択状態にする
+        setSelectedSpot(targetSpot);
+      }
+    }
 
     // 地図を初期化（日本語化）
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/streets-v12',
       center: initialCenter,
-      zoom: 15, // ズームレベルを大きく（12→15）
+      zoom: initialZoom,
       language: 'ja' // 日本語化
     });
 
@@ -216,9 +231,12 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
           setUserLocation(location);
           setLocationStatus('available');
 
-          if (map.current) {
+          // spotIdが指定されていない場合のみ、ユーザーの位置に地図を移動
+          if (!spotIdParam && map.current) {
             map.current.setCenter([longitude, latitude]);
+          }
 
+          if (map.current) {
             // 矢印型のマーカーを作成
             const el = document.createElement('div');
             el.className = 'user-location-marker';
@@ -343,7 +361,7 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
       
       map.current?.remove();
     };
-  }, []);
+  }, [spots, searchParams]);
 
   // 方角が変わったときに矢印を回転
   useEffect(() => {
