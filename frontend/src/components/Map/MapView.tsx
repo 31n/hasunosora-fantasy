@@ -220,6 +220,7 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
           setLocationStatus('available');
 
           // spotIdが指定されていない場合のみ、ユーザーの位置に地図を移動
+          const spotIdParam = searchParams.get('spotId');
           if (!spotIdParam && map.current) {
             map.current.setCenter([longitude, latitude]);
           }
@@ -276,10 +277,10 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
             const setupOrientationListeners = () => {
               if ('ondeviceorientationabsolute' in window) {
                 orientationEventType.current = 'deviceorientationabsolute';
-                window.addEventListener('deviceorientationabsolute', handleOrientation);
+                (window as any).addEventListener('deviceorientationabsolute', handleOrientation);
               } else if ('ondeviceorientation' in window) {
                 orientationEventType.current = 'deviceorientation';
-                window.addEventListener('deviceorientation', handleOrientation);
+                (window as any).addEventListener('deviceorientation', handleOrientation);
               }
             };
 
@@ -496,10 +497,10 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
         if (permission === 'granted') {
           if ('ondeviceorientationabsolute' in window) {
             orientationEventType.current = 'deviceorientationabsolute';
-            window.addEventListener('deviceorientationabsolute', handleOrientation);
+            (window as any).addEventListener('deviceorientationabsolute', handleOrientation);
           } else if ('ondeviceorientation' in window) {
             orientationEventType.current = 'deviceorientation';
-            window.addEventListener('deviceorientation', handleOrientation);
+            (window as any).addEventListener('deviceorientation', handleOrientation);
           }
           setOrientationPermissionNeeded(false);
         }
