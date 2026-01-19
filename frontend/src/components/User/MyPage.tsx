@@ -163,7 +163,13 @@ export default function MyPage({ user, setUser, spots, areas }: MyPageProps) {
   }, [history, spots, selectedStatArea]);
 
   return (
-    <div style={{ padding: '16px', maxWidth: '800px', margin: '0 auto' }}>
+    <div style={{ 
+      width: '100%',
+      maxWidth: '1000px',
+      padding: '16px',
+      margin: '0 auto',
+      boxSizing: 'border-box'
+    }}>
       <h1 style={{ marginBottom: '24px' }}>マイページ</h1>
 
       {/* ユーザー情報 */}
