@@ -19,7 +19,7 @@ interface MapViewProps {
 }
 
 export default function MapView({ user, spots, areas }: MapViewProps) {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const userMarker = useRef<mapboxgl.Marker | null>(null);
@@ -357,31 +357,28 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
     if (!map.current) return;
 
     const spotIdParam = searchParams.get('spotId');
-    console.log('spotId useEffect triggered. spotIdParam:', spotIdParam);
     
     if (spotIdParam) {
       const targetSpot = spots.find(s => s.spot_id === spotIdParam);
-      console.log('targetSpot found:', targetSpot);
       
       if (targetSpot) {
         // 地図がロード完了後に移動
         if (map.current.isStyleLoaded()) {
-          console.log('Map is loaded. Flying to spot:', targetSpot.spot_name);
           map.current.flyTo({
             center: [targetSpot.longitude, targetSpot.latitude],
             zoom: 17,
+            duration: 1000, // 1秒でアニメーション
             essential: true
           });
           setSelectedSpot(targetSpot);
         } else {
           // 地図のロードを待ってから移動
-          console.log('Map not loaded yet. Waiting for load event...');
           map.current.once('load', () => {
-            console.log('Map loaded. Flying to spot:', targetSpot.spot_name);
             if (map.current) {
               map.current.flyTo({
                 center: [targetSpot.longitude, targetSpot.latitude],
                 zoom: 17,
+                duration: 1000, // 1秒でアニメーション
                 essential: true
               });
               setSelectedSpot(targetSpot);
@@ -510,6 +507,10 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
     setShowQuiz(false);
     setQuizData(null);
     setSelectedSpot(null);
+    // URLパラメータからspotIdを削除
+    const params = new URLSearchParams(searchParams);
+    params.delete('spotId');
+    setSearchParams(params);
   };
 
   const requestOrientationPermission = async () => {
@@ -868,7 +869,13 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
             selectedSpot.latitude,
             selectedSpot.longitude
           )}
-          onClose={() => setSelectedSpot(null)}
+          onClose={() => {
+            setSelectedSpot(null);
+            // URLパラメータからspotIdを削除
+            const params = new URLSearchParams(searchParams);
+            params.delete('spotId');
+            setSearchParams(params);
+          }}
           onCheckin={handleCheckin}
           onQuiz={handleQuizChallenge}
           onDirections={handleDirections}
