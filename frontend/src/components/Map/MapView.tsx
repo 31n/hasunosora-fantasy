@@ -364,22 +364,18 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
       if (targetSpot) {
         // 地図がロード完了後に移動
         if (map.current.isStyleLoaded()) {
-          map.current.flyTo({
+          map.current.jumpTo({
             center: [targetSpot.longitude, targetSpot.latitude],
-            zoom: 17,
-            duration: 1000, // 1秒でアニメーション
-            essential: true
+            zoom: 17
           });
           setSelectedSpot(targetSpot);
         } else {
           // 地図のロードを待ってから移動
           map.current.once('load', () => {
             if (map.current) {
-              map.current.flyTo({
+              map.current.jumpTo({
                 center: [targetSpot.longitude, targetSpot.latitude],
-                zoom: 17,
-                duration: 1000, // 1秒でアニメーション
-                essential: true
+                zoom: 17
               });
               setSelectedSpot(targetSpot);
             }
