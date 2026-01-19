@@ -2,19 +2,23 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { adminApi } from '../../services/api';
 import { storage } from '../../services/storage';
-import type { Spot } from '../../types';
+import { indexedDB } from '../../services/indexedDB';
+import type { Spot, Area } from '../../types';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import CloseIcon from '@mui/icons-material/Close';
 
 export default function AdminSpotList() {
   const [spots, setSpots] = useState<Spot[]>([]);
+  const [areas, setAreas] = useState<Area[]>([]);
+  const [selectedArea, setSelectedArea] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
     checkAuth();
+    loadAreas();
     loadSpots();
   }, [location.pathname]);
 
@@ -22,6 +26,15 @@ export default function AdminSpotList() {
     const password = storage.getAdminPassword();
     if (!password) {
       navigate('/admin');
+    }
+  };
+
+  const loadAreas = async () => {
+    try {
+      const cachedAreas = await indexedDB.getAllAreas();
+      setAreas(cachedAreas);
+    } catch (error) {
+      console.error('エリア取得エラー:', error);
     }
   };
 
@@ -62,6 +75,10 @@ export default function AdminSpotList() {
     storage.clearAdminPassword();
     navigate('/admin');
   };
+
+  const filteredSpots = selectedArea
+    ? spots.filter(spot => spot.area === selectedArea)
+    : spots;
 
   if (loading) {
     return (
@@ -135,8 +152,47 @@ export default function AdminSpotList() {
         </div>
       </div>
 
+      {/* エリアフィルター */}
+      <div style={{
+        backgroundColor: 'white',
+        borderRadius: '12px',
+        padding: '16px',
+        marginBottom: '16px',
+        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+      }}>
+        <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+          エリアでフィルター
+        </label>
+        <select
+          value={selectedArea}
+          onChange={(e) => setSelectedArea(e.target.value)}
+          style={{
+            width: '100%',
+            padding: '12px',
+            border: '2px solid #e5e7eb',
+            borderRadius: '8px',
+            fontSize: '16px',
+            backgroundColor: 'white',
+            cursor: 'pointer'
+          }}
+        >
+          <option value="">すべてのエリア ({spots.length}件)</option>
+          {areas.map(area => {
+            const count = spots.filter(s => s.area === area.area_id).length;
+            return (
+              <option key={area.area_id} value={area.area_id}>
+                {area.area_name} ({count}件)
+              </option>
+            );
+          })}
+          <option value="unassigned">
+            エリア未設定 ({spots.filter(s => !s.area).length}件)
+          </option>
+        </select>
+      </div>
+
       {/* スポット一覧 */}
-      {spots.length === 0 ? (
+      {filteredSpots.length === 0 ? (
         <div style={{
           textAlign: 'center',
           padding: '48px',
@@ -145,7 +201,7 @@ export default function AdminSpotList() {
           boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
         }}>
           <p style={{ marginBottom: '16px', color: '#6b7280' }}>
-            スポットがまだありません
+            {selectedArea ? '該当するスポットがありません' : 'スポットがまだありません'}
           </p>
           <button
             onClick={() => navigate('/admin/spots/new')}
@@ -169,7 +225,7 @@ export default function AdminSpotList() {
           gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
           gap: '16px'
         }}>
-          {spots.map((spot) => (
+          {filteredSpots.map((spot) => (
             <div
               key={spot.spot_id}
               style={{
