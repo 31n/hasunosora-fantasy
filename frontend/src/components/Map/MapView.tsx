@@ -856,15 +856,15 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
       )}
       
       {/* スポットポップアップ */}
-      {selectedSpot && userLocation && (
+      {selectedSpot && (
         <SpotPopup
           spot={selectedSpot}
-          distance={calculateDistance(
+          distance={userLocation ? calculateDistance(
             userLocation[1],
             userLocation[0],
             selectedSpot.latitude,
             selectedSpot.longitude
-          )}
+          ) : null}
           onClose={() => {
             setSelectedSpot(null);
             // URLパラメータからspotIdを削除
@@ -875,12 +875,12 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
           onCheckin={handleCheckin}
           onQuiz={handleQuizChallenge}
           onDirections={handleDirections}
-          isInRange={calculateDistance(
+          isInRange={userLocation ? calculateDistance(
             userLocation[1],
             userLocation[0],
             selectedSpot.latitude,
             selectedSpot.longitude
-          ) <= selectedSpot.detection_radius}
+          ) <= selectedSpot.detection_radius : false}
         />
       )}
 

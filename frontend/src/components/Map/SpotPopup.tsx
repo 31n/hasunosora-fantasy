@@ -9,7 +9,7 @@ import DirectionsIcon from '@mui/icons-material/Directions';
 
 interface SpotPopupProps {
   spot: Spot;
-  distance: number;
+  distance: number | null;
   onClose: () => void;
   onCheckin: () => void;
   onQuiz: () => void;

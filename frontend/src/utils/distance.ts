@@ -27,7 +27,10 @@ export function calculateDistance(
 /**
  * 距離を人間が読みやすい形式にフォーマット
  */
-export function formatDistance(distance: number): string {
+export function formatDistance(distance: number | null | undefined): string {
+  if (distance === null || distance === undefined) {
+    return '-';
+  }
   if (distance < 1000) {
     return `${Math.round(distance)}m`;
   }
