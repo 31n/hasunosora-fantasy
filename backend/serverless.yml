@@ -98,6 +98,15 @@ functions:
               - Content-Type
               - Authorization
             allowCredentials: false
+      - http:
+          path: /users/{user_id}/unlock-area
+          method: post
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: false
       
       # マスタ関連
       - http:
