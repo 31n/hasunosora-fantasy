@@ -31,9 +31,6 @@ export default function SpotList({ spots, user, areas }: SpotListProps) {
     ? spots.filter(spot => spot.area === user.selected_area)
     : spots;
 
-  // ジャンル一覧を取得（複数ジャンル対応）
-  const genres = ['all', ...new Set(filteredByArea.flatMap(s => s.genre || []))];
-
   useEffect(() => {
     // 位置情報を取得
     if (navigator.geolocation) {
@@ -48,6 +45,9 @@ export default function SpotList({ spots, user, areas }: SpotListProps) {
     }
   }, []);
 
+  // ジャンル一覧を保存するstate
+  const [genres, setGenres] = useState<string[]>(['all']);
+
   useEffect(() => {
     // 制限エリアをフィルタリング
     const userUnlockedAreas = user.unlocked_areas || [];
@@ -60,6 +60,10 @@ export default function SpotList({ spots, user, areas }: SpotListProps) {
       }
       return true;
     });
+    
+    // ジャンル一覧を制限フィルタリング後のスポットから取得
+    const availableGenres = ['all', ...new Set(unlockedSpots.flatMap(s => s.genre || []))];
+    setGenres(availableGenres);
     
     if (userLocation) {
       // 距離を計算

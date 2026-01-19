@@ -323,7 +323,14 @@ export default function MyPage({ user, setUser, spots, areas }: MyPageProps) {
               }}
             >
               <option value="">全エリア</option>
-              {areas.filter(a => a.is_active).map(area => (
+              {areas.filter(a => {
+                if (!a.is_active) return false;
+                // 制限エリアは解放済みの場合のみ表示
+                if (a.is_restricted) {
+                  return user.unlocked_areas?.includes(a.area_id);
+                }
+                return true;
+              }).map(area => (
                 <option key={area.area_id} value={area.area_id}>
                   {area.area_name}
                 </option>
