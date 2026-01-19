@@ -428,6 +428,8 @@ def admin_create_area(event):
         center_longitude = body.get('center_longitude')
         display_order = body.get('display_order', 0)
         available_genres = body.get('available_genres', [])
+        is_restricted = body.get('is_restricted', False)
+        access_code = body.get('access_code')
         
         result = AreaService.create_area(
             area_id=area_id,
@@ -435,7 +437,9 @@ def admin_create_area(event):
             center_latitude=center_latitude,
             center_longitude=center_longitude,
             display_order=display_order,
-            available_genres=available_genres
+            available_genres=available_genres,
+            is_restricted=is_restricted,
+            access_code=access_code
         )
         return success_response(result, 201)
     except ValueError as e:
@@ -458,7 +462,9 @@ def admin_update_area(event):
             center_longitude=body.get('center_longitude'),
             display_order=body.get('display_order'),
             is_active=body.get('is_active'),
-            available_genres=body.get('available_genres')
+            available_genres=body.get('available_genres'),
+            is_restricted=body.get('is_restricted'),
+            access_code=body.get('access_code')
         )
         return success_response(result)
     except ValueError as e:
