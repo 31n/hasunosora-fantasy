@@ -190,10 +190,10 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
 
     // URLパラメータからspotIdを取得
     const spotIdParam = searchParams.get('spotId');
-    let initialCenter: [number, number] = selectedAreaCenter || [139.7454, 35.6586]; // エリア中心 or 東京タワー
+    let initialCenter: [number, number];
     let initialZoom = 15;
     
-    // spotIdが指定されている場合、そのスポットの位置を中心にする
+    // spotIdが指定されている場合、そのスポットの位置を中心にする（最優先）
     if (spotIdParam) {
       const targetSpot = spots.find(s => s.spot_id === spotIdParam);
       if (targetSpot) {
@@ -201,7 +201,13 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
         initialZoom = 17; // スポット表示時はズームを大きくする
         // スポットを選択状態にする
         setSelectedSpot(targetSpot);
+      } else {
+        // スポットが見つからない場合はエリア中心またはデフォルト
+        initialCenter = selectedAreaCenter || [139.7454, 35.6586];
       }
+    } else {
+      // spotIdがない場合はエリア中心またはデフォルト
+      initialCenter = selectedAreaCenter || [139.7454, 35.6586];
     }
 
     // 地図を初期化（日本語化）
