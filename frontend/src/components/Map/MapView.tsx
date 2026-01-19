@@ -188,27 +188,9 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
   useEffect(() => {
     if (!mapContainer.current) return;
 
-    // URLパラメータからspotIdを取得
-    const spotIdParam = searchParams.get('spotId');
-    let initialCenter: [number, number];
-    let initialZoom = 15;
-    
-    // spotIdが指定されている場合、そのスポットの位置を中心にする（最優先）
-    if (spotIdParam) {
-      const targetSpot = spots.find(s => s.spot_id === spotIdParam);
-      if (targetSpot) {
-        initialCenter = [targetSpot.longitude, targetSpot.latitude];
-        initialZoom = 17; // スポット表示時はズームを大きくする
-        // スポットを選択状態にする
-        setSelectedSpot(targetSpot);
-      } else {
-        // スポットが見つからない場合はエリア中心またはデフォルト
-        initialCenter = selectedAreaCenter || [139.7454, 35.6586];
-      }
-    } else {
-      // spotIdがない場合はエリア中心またはデフォルト
-      initialCenter = selectedAreaCenter || [139.7454, 35.6586];
-    }
+    // 地図の初期中心座標を決定（エリア中心またはデフォルト）
+    const initialCenter = selectedAreaCenter || [139.7454, 35.6586];
+    const initialZoom = 15;
 
     // 地図を初期化（日本語化）
     map.current = new mapboxgl.Map({
@@ -367,7 +349,25 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
       
       map.current?.remove();
     };
-  }, [spots, searchParams]);
+  }, []); // 初回のみ実行
+
+  // spotIdパラメータが変更されたときに地図の中心を移動
+  useEffect(() => {
+    if (!map.current) return;
+
+    const spotIdParam = searchParams.get('spotId');
+    if (spotIdParam) {
+      const targetSpot = spots.find(s => s.spot_id === spotIdParam);
+      if (targetSpot) {
+        map.current.flyTo({
+          center: [targetSpot.longitude, targetSpot.latitude],
+          zoom: 17,
+          essential: true
+        });
+        setSelectedSpot(targetSpot);
+      }
+    }
+  }, [searchParams, spots]);
 
   // 方角が変わったときに矢印を回転
   useEffect(() => {
