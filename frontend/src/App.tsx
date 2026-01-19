@@ -172,11 +172,17 @@ function AppContent({
           <Header user={user} onLogout={handleLogout} />
         )}
         
-        <div style={!isMapPage ? {
+        <div style={isMapPage ? {
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          position: 'relative'
+        } : {
           flex: 1,
           overflowY: 'auto',
           overflowX: 'hidden'
-        } : undefined}>
+        }}>
           {user && (
             /* 再読み込みボタン */
             <button
