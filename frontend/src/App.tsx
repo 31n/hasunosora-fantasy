@@ -169,9 +169,16 @@ function AppContent({
   return (
     <div className={`app ${isMapPage ? 'map-page' : ''}`}>
         {user && (
-          <>
-            <Header user={user} onLogout={handleLogout} />
-            {/* 再読み込みボタン */}
+          <Header user={user} onLogout={handleLogout} />
+        )}
+        
+        <div style={!isMapPage ? {
+          flex: 1,
+          overflowY: 'auto',
+          overflowX: 'hidden'
+        } : undefined}>
+          {user && (
+            /* 再読み込みボタン */
             <button
               onClick={handleReload}
               disabled={reloading}
@@ -208,10 +215,9 @@ function AppContent({
               <RefreshIcon style={{ fontSize: '18px', marginRight: '4px' }} />
               {reloading ? '更新中...' : '再読み込み'}
             </button>
-          </>
-        )}
-        
-        <Routes>
+          )}
+          
+          <Routes>
           {/* ユーザー未ログイン時 */}
           {!user ? (
             <>
@@ -237,6 +243,7 @@ function AppContent({
           <Route path="/admin/spots/new" element={<AdminSpotForm />} />
           <Route path="/admin/spots/:spotId/edit" element={<AdminSpotForm />} />
         </Routes>
+        </div>
       </div>
   );
 }
