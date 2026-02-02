@@ -5,6 +5,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { checkinApi } from '../../services/api';
 import QuizModal from '../Quiz/QuizModal';
 import SpotPopup from './SpotPopup';
+import CheckinAnimation from '../Common/CheckinAnimation';
 import type { User, Spot, Area, CheckInResponse } from '../../types';
 import { calculateDistance, formatDistance } from '../../utils/distance';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
@@ -32,6 +33,7 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
   const [selectedSpot, setSelectedSpot] = useState<Spot | null>(null);
   const [quizData, setQuizData] = useState<CheckInResponse | null>(null);
   const [showQuiz, setShowQuiz] = useState(false);
+  const [showCheckinAnimation, setShowCheckinAnimation] = useState(false);
   const [orientationPermissionNeeded, setOrientationPermissionNeeded] = useState(false);
   
   // フィルター表示状態
@@ -69,7 +71,12 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
         currentLocation[0]  // longitude
       );
 
-      alert(response.message || 'チェックイン完了！');
+      // チェックイン成功時にアニメーションを表示
+      setShowCheckinAnimation(true);
+      // アニメーション後にメッセージを表示
+      setTimeout(() => {
+        alert(response.message || 'チェックイン完了！');
+      }, 1500);
     } catch (error: any) {
       if (error.message.includes('OUT_OF_RANGE')) {
         alert('スポットから離れすぎています。スポットに近づいてください。');
@@ -929,6 +936,11 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
           background-color: rgba(0, 0, 0, 0.1);
         }
       `}</style>
+      
+      {/* チェックインアニメーション */}
+      {showCheckinAnimation && (
+        <CheckinAnimation onComplete={() => setShowCheckinAnimation(false)} />
+      )}
     </div>
   );
 }
