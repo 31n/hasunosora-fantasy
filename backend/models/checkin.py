@@ -84,3 +84,21 @@ class CheckIn:
         )
         
         return len(response.get('Items', []))
+    
+    @staticmethod
+    def has_answered_quiz(user_id: str, spot_id: str) -> bool:
+        """ユーザーが既にこのスポットのクイズに回答済みか確認"""
+        table = get_table(config.CHECKINS_TABLE)
+        
+        response = table.query(
+            KeyConditionExpression='user_id = :uid',
+            FilterExpression='spot_id = :sid AND quiz_answered = :answered',
+            ExpressionAttributeValues={
+                ':uid': user_id,
+                ':sid': spot_id,
+                ':answered': True
+            },
+            Limit=1
+        )
+        
+        return len(response.get('Items', [])) > 0

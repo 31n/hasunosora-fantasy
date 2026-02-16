@@ -21,8 +21,7 @@ class QuizService:
             raise ValueError('SPOT_NOT_FOUND')
         
         # 既に回答済みかチェック（初回チェックイン時のみクイズ可能）
-        visit_count = CheckIn.count_visits(user_id, spot_id)
-        if visit_count > 1:
+        if CheckIn.has_answered_quiz(user_id, spot_id):
             raise ValueError('QUIZ_ALREADY_ANSWERED')
         
         # クールタイムチェック（不正解後の再挑戦制限）
