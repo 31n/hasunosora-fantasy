@@ -35,6 +35,8 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
   const [showQuiz, setShowQuiz] = useState(false);
   const [showCheckinAnimation, setShowCheckinAnimation] = useState(false);
   const [orientationPermissionNeeded, setOrientationPermissionNeeded] = useState(false);
+  const checkinAnimationTimer = useRef<number | null>(null);
+  const checkinAlertTimer = useRef<number | null>(null);
   
   // フィルター表示状態
   const [showFilter, setShowFilter] = useState(false);
@@ -71,11 +73,29 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
         currentLocation[0]  // longitude
       );
 
+      // 既存タイマーをクリア
+      if (checkinAnimationTimer.current !== null) {
+        window.clearTimeout(checkinAnimationTimer.current);
+        checkinAnimationTimer.current = null;
+      }
+      if (checkinAlertTimer.current !== null) {
+        window.clearTimeout(checkinAlertTimer.current);
+        checkinAlertTimer.current = null;
+      }
+
       // チェックイン成功時にアニメーションを表示
       setShowCheckinAnimation(true);
+
+      // アラート表示前にアニメーションを確実に閉じる（モバイルのブロッキング対策）
+      checkinAnimationTimer.current = window.setTimeout(() => {
+        setShowCheckinAnimation(false);
+        checkinAnimationTimer.current = null;
+      }, 1200);
+
       // アニメーション後にメッセージを表示
-      setTimeout(() => {
+      checkinAlertTimer.current = window.setTimeout(() => {
         alert(response.message || 'チェックイン完了！');
+        checkinAlertTimer.current = null;
       }, 1500);
     } catch (error: any) {
       if (error.message.includes('OUT_OF_RANGE')) {
@@ -358,6 +378,19 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
       map.current?.remove();
     };
   }, []); // 初回のみ実行
+
+  useEffect(() => {
+    return () => {
+      if (checkinAnimationTimer.current !== null) {
+        window.clearTimeout(checkinAnimationTimer.current);
+        checkinAnimationTimer.current = null;
+      }
+      if (checkinAlertTimer.current !== null) {
+        window.clearTimeout(checkinAlertTimer.current);
+        checkinAlertTimer.current = null;
+      }
+    };
+  }, []);
 
   // spotIdパラメータが変更されたときに地図の中心を移動
   useEffect(() => {
