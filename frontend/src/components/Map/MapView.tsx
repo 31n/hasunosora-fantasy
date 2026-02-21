@@ -36,7 +36,6 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
   const [showCheckinAnimation, setShowCheckinAnimation] = useState(false);
   const [orientationPermissionNeeded, setOrientationPermissionNeeded] = useState(false);
   const checkinAnimationTimer = useRef<number | null>(null);
-  const checkinAlertTimer = useRef<number | null>(null);
   
   // フィルター表示状態
   const [showFilter, setShowFilter] = useState(false);
@@ -78,10 +77,6 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
         window.clearTimeout(checkinAnimationTimer.current);
         checkinAnimationTimer.current = null;
       }
-      if (checkinAlertTimer.current !== null) {
-        window.clearTimeout(checkinAlertTimer.current);
-        checkinAlertTimer.current = null;
-      }
 
       // チェックイン成功時にアニメーションを表示
       setShowCheckinAnimation(true);
@@ -92,11 +87,6 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
         checkinAnimationTimer.current = null;
       }, 1200);
 
-      // アニメーション後にメッセージを表示
-      checkinAlertTimer.current = window.setTimeout(() => {
-        alert(response.message || 'チェックイン完了！');
-        checkinAlertTimer.current = null;
-      }, 1500);
     } catch (error: any) {
       if (error.message.includes('OUT_OF_RANGE')) {
         alert('スポットから離れすぎています。スポットに近づいてください。');
@@ -384,10 +374,6 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
       if (checkinAnimationTimer.current !== null) {
         window.clearTimeout(checkinAnimationTimer.current);
         checkinAnimationTimer.current = null;
-      }
-      if (checkinAlertTimer.current !== null) {
-        window.clearTimeout(checkinAlertTimer.current);
-        checkinAlertTimer.current = null;
       }
     };
   }, []);
