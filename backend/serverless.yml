@@ -9,7 +9,8 @@ provider:
     DYNAMODB_TABLE_PREFIX: ${env:DYNAMODB_TABLE_PREFIX, 'hasu-fantasy-'}
     S3_BUCKET_NAME: ${env:S3_BUCKET_NAME, 'hasu-fantasy-images'}
     S3_REGION: ${env:S3_REGION, 'ap-northeast-1'}
-    QUIZ_COOLDOWN_MINUTES: ${env:QUIZ_COOLDOWN_MINUTES, '30'}
+    CHECKIN_SCORE: ${env:CHECKIN_SCORE, '10'}
+    CHECKIN_COOLDOWN_MINUTES: ${env:CHECKIN_COOLDOWN_MINUTES, '5'}
     ADMIN_PASSWORD: ${env:ADMIN_PASSWORD, 'change_me'}
   apiGateway:
     binaryMediaTypes:

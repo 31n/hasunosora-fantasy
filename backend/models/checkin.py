@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Optional
 from decimal import Decimal
 from utils.dynamodb import get_table
@@ -101,4 +101,69 @@ class CheckIn:
             Limit=1
         )
         
+        return len(response.get('Items', [])) > 0
+
+    @staticmethod
+    def is_within_cooldown(user_id: str, spot_id: str) -> bool:
+        """チェックインクールタイム中か確認（CHECKIN_COOLDOWN_MINUTES以内に同スポットをチェックイン済みか）"""
+        table = get_table(config.CHECKINS_TABLE)
+
+        cutoff = (datetime.utcnow() - timedelta(minutes=config.CHECKIN_COOLDOWN_MINUTES)).isoformat()
+
+        response = table.query(
+            KeyConditionExpression='user_id = :uid AND spot_id_timestamp BETWEEN :start AND :end',
+            ExpressionAttributeValues={
+                ':uid': user_id,
+                ':start': f"{spot_id}#{cutoff}",
+                ':end': f"{spot_id}~"
+            },
+            Limit=1
+        )
+
+        return len(response.get('Items', [])) > 0
+
+    @staticmethod
+    def has_checkin_today(user_id: str, spot_id: str) -> bool:
+        """当日（JST）にポイント付与済みのチェックインがあるか確認"""
+        table = get_table(config.CHECKINS_TABLE)
+
+        JST = timezone(timedelta(hours=9))
+        today_jst = datetime.now(JST).replace(hour=0, minute=0, second=0, microsecond=0)
+        today_utc = today_jst.astimezone(timezone.utc).replace(tzinfo=None).isoformat()
+
+        response = table.query(
+            KeyConditionExpression='user_id = :uid AND spot_id_timestamp BETWEEN :start AND :end',
+            FilterExpression='score_earned > :zero',
+            ExpressionAttributeValues={
+                ':uid': user_id,
+                ':start': f"{spot_id}#{today_utc}",
+                ':end': f"{spot_id}~",
+                ':zero': 0
+            },
+            Limit=1
+        )
+
+        return len(response.get('Items', [])) > 0
+
+    @staticmethod
+    def has_answered_quiz_today(user_id: str, spot_id: str) -> bool:
+        """当日（JST）にクイズに回答済みか確認"""
+        table = get_table(config.CHECKINS_TABLE)
+
+        JST = timezone(timedelta(hours=9))
+        today_jst = datetime.now(JST).replace(hour=0, minute=0, second=0, microsecond=0)
+        today_utc = today_jst.astimezone(timezone.utc).replace(tzinfo=None).isoformat()
+
+        response = table.query(
+            KeyConditionExpression='user_id = :uid AND spot_id_timestamp BETWEEN :start AND :end',
+            FilterExpression='quiz_answered = :answered',
+            ExpressionAttributeValues={
+                ':uid': user_id,
+                ':start': f"{spot_id}#{today_utc}",
+                ':end': f"{spot_id}~",
+                ':answered': True
+            },
+            Limit=1
+        )
+
         return len(response.get('Items', [])) > 0

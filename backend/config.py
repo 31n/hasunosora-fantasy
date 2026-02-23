@@ -9,8 +9,9 @@ class Config:
     S3_BUCKET_NAME = os.getenv('S3_BUCKET_NAME', 'hasu-fantasy-images')
     S3_REGION = os.getenv('S3_REGION', 'ap-northeast-1')
     
-    # Quiz
-    QUIZ_COOLDOWN_MINUTES = int(os.getenv('QUIZ_COOLDOWN_MINUTES', '30'))
+    # CheckIn
+    CHECKIN_SCORE = int(os.getenv('CHECKIN_SCORE', '10'))
+    CHECKIN_COOLDOWN_MINUTES = int(os.getenv('CHECKIN_COOLDOWN_MINUTES', '5'))
     
     # Admin
     ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'change_me_in_production')

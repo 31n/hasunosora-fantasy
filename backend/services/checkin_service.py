@@ -1,8 +1,8 @@
 from models.user import User
 from models.spot import Spot
 from models.checkin import CheckIn
-from models.cooldown import QuizCooldown
 from utils.distance import is_within_range
+from config import config
 from typing import Dict
 
 class CheckInService:
@@ -13,40 +13,49 @@ class CheckInService:
         user = User.get(user_id)
         if not user:
             raise ValueError('USER_NOT_FOUND')
-        
+
         spot = Spot.get(spot_id)
         if not spot:
             raise ValueError('SPOT_NOT_FOUND')
-        
+
         # 距離チェック
-        if not is_within_range(latitude, longitude, 
-                               spot.latitude, spot.longitude, 
+        if not is_within_range(latitude, longitude,
+                               spot.latitude, spot.longitude,
                                spot.detection_radius):
             raise ValueError('OUT_OF_RANGE')
-        
-        # 訪問履歴チェック
-        is_first_visit = not CheckIn.has_visited(user_id, spot_id)
-        
-        # クールタイムチェック（初回訪問でクイズがある場合のみ）
-        if is_first_visit and spot.quiz:
-            on_cooldown, cooldown_until = QuizCooldown.is_on_cooldown(user_id, spot_id)
-            if on_cooldown:
-                raise ValueError('QUIZ_ON_COOLDOWN')
-        
-        # チェックイン記録を保存（クイズ回答前）
+
+        # クールタイムチェック（5分以内の同スポット再チェックインを防ぐ）
+        if CheckIn.is_within_cooldown(user_id, spot_id):
+            raise ValueError('CHECKIN_ON_COOLDOWN')
+
+        # 当日（JST）ポイント付与済みか確認
+        already_scored_today = CheckIn.has_checkin_today(user_id, spot_id)
+
+        # ポイント付与
+        score_earned = 0
+        if not already_scored_today:
+            score_earned = config.CHECKIN_SCORE
+            user.add_score(score_earned)
+
+        # チェックイン記録を保存
         checkin = CheckIn(
             user_id=user_id,
             spot_id=spot_id,
             quiz_answered=False,
             quiz_correct=False,
-            score_earned=0
+            score_earned=score_earned
         )
         checkin.save()
-        
-        # 初回訪問かつクイズが設定されている場合のみクイズを返す
-        if is_first_visit and spot.quiz:
+
+        # クイズの提示判定（当日未回答かつクイズが設定されている場合）
+        from models.cooldown import QuizCooldown
+        quiz_answered_today, _ = QuizCooldown.is_on_cooldown(user_id, spot_id)
+
+        if spot.quiz and not quiz_answered_today:
             return {
-                'is_first_visit': True,
+                'score_earned': score_earned,
+                'total_score': user.total_score,
+                'already_scored_today': already_scored_today,
                 'quiz_available': True,
                 'quiz': {
                     'question': spot.quiz.get('question'),
@@ -55,15 +64,9 @@ class CheckInService:
                 }
             }
         else:
-            # クイズがない、または既に訪問済み
-            message = 'チェックイン完了！'
-            if not is_first_visit:
-                message = 'チェックイン完了！このスポットは訪問済みです。'
-            elif not spot.quiz:
-                message = 'チェックイン完了！このスポットにはクイズがありません。'
-            
             return {
-                'is_first_visit': is_first_visit,
-                'quiz_available': False,
-                'message': message
+                'score_earned': score_earned,
+                'total_score': user.total_score,
+                'already_scored_today': already_scored_today,
+                'quiz_available': False
             }
