@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Dict, List
 from decimal import Decimal
 from utils.dynamodb import get_table
@@ -22,8 +22,8 @@ class Area:
         self.available_genres = available_genres or []
         self.is_restricted = bool(is_restricted)  # このエリアが制限されているか
         self.access_code = access_code  # アクセスコード（制限ありの場合）
-        self.created_at = created_at or datetime.utcnow().isoformat()
-        self.updated_at = updated_at or datetime.utcnow().isoformat()
+        self.created_at = created_at or datetime.now(timezone.utc).isoformat()
+        self.updated_at = updated_at or datetime.now(timezone.utc).isoformat()
     
     def to_dict(self, for_dynamodb: bool = False) -> Dict:
         """
@@ -65,7 +65,7 @@ class Area:
     
     def save(self):
         """DynamoDBに保存"""
-        self.updated_at = datetime.utcnow().isoformat()
+        self.updated_at = datetime.now(timezone.utc).isoformat()
         table = get_table(config.AREAS_TABLE)
         table.put_item(Item=self.to_dict(for_dynamodb=True))
     
@@ -149,5 +149,5 @@ class Area:
         
         return {
             'version': version,
-            'updated_at': datetime.utcnow().isoformat()
+            'updated_at': datetime.now(timezone.utc).isoformat()
         }

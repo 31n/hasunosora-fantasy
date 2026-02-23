@@ -47,7 +47,9 @@ export default function SpotDetail({ user }: SpotDetailProps) {
   };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
+    // タイムゾーン情報がない文字列はUTCとして扱う（バックエンドはUTC保存）
+    const normalized = /Z|[+-]\d{2}:?\d{2}$/.test(dateString) ? dateString : dateString + 'Z';
+    const date = new Date(normalized);
     return date.toLocaleString('ja-JP', {
       year: 'numeric',
       month: 'numeric',

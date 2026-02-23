@@ -11,7 +11,7 @@ class CheckIn:
                  score_earned: int = 0):
         self.user_id = user_id
         self.spot_id = spot_id
-        self.checked_in_at = checked_in_at or datetime.utcnow().isoformat()
+        self.checked_in_at = checked_in_at or datetime.now(timezone.utc).isoformat()
         self.quiz_answered = quiz_answered
         self.quiz_correct = quiz_correct
         # Decimal型をintに変換

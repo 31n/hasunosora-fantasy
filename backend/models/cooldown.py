@@ -20,7 +20,7 @@ class QuizCooldown:
                  cooldown_until: Optional[str] = None):
         self.user_id = user_id
         self.spot_id = spot_id
-        self.answered_at = answered_at or datetime.utcnow().isoformat()
+        self.answered_at = answered_at or datetime.now(timezone.utc).isoformat()
 
         if cooldown_until:
             self.cooldown_until = cooldown_until

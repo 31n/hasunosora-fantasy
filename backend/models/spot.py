@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Dict, Optional
 from decimal import Decimal
 import uuid
@@ -23,8 +23,8 @@ class Spot:
         self.quiz = quiz  # Noneも許可
         self.area = area  # エリアID（nullable）
         self.version = version or datetime.utcnow().strftime('%Y%m%d')
-        self.created_at = created_at or datetime.utcnow().isoformat()
-        self.updated_at = updated_at or datetime.utcnow().isoformat()
+        self.created_at = created_at or datetime.now(timezone.utc).isoformat()
+        self.updated_at = updated_at or datetime.now(timezone.utc).isoformat()
     
     def to_dict(self, for_dynamodb: bool = False) -> Dict:
         """
@@ -104,8 +104,8 @@ class Spot:
     
     def save(self):
         """DynamoDBに保存"""
-        self.updated_at = datetime.utcnow().isoformat()
-        self.version = datetime.utcnow().strftime('%Y%m%d')
+        self.updated_at = datetime.now(timezone.utc).isoformat()
+        self.version = datetime.now(timezone.utc).strftime('%Y%m%d')
         
         table = get_table(config.SPOTS_TABLE)
         # DynamoDB用に変換して保存
@@ -199,12 +199,12 @@ class Spot:
     def _update_master_version():
         """マスターバージョンを更新"""
         table = get_table(config.MASTER_VERSION_TABLE)
-        current_version = datetime.utcnow().strftime('%Y%m%d')
+        current_version = datetime.now(timezone.utc).strftime('%Y%m%d')
         
         table.put_item(Item={
             'id': 'current',
             'version': current_version,
-            'updated_at': datetime.utcnow().isoformat()
+            'updated_at': datetime.now(timezone.utc).isoformat()
         })
     
     @staticmethod
@@ -220,8 +220,8 @@ class Spot:
             }
         
         # 初回は現在日付を返す
-        current_version = datetime.utcnow().strftime('%Y%m%d')
+        current_version = datetime.now(timezone.utc).strftime('%Y%m%d')
         return {
             'version': current_version,
-            'updated_at': datetime.utcnow().isoformat()
+            'updated_at': datetime.now(timezone.utc).isoformat()
         }

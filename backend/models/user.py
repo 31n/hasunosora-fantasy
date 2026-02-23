@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Dict
 from decimal import Decimal
 from utils.dynamodb import get_table
@@ -15,7 +15,7 @@ class User:
         self.total_score = int(total_score) if isinstance(total_score, Decimal) else total_score
         self.selected_area = selected_area  # 選択中のエリアID（nullable）
         self.unlocked_areas = unlocked_areas or []  # 解放済みエリアのリスト
-        self.created_at = created_at or datetime.utcnow().isoformat()
+        self.created_at = created_at or datetime.now(timezone.utc).isoformat()
     
     def to_dict(self) -> Dict:
         """辞書形式に変換"""
