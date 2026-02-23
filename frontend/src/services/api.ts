@@ -3,6 +3,7 @@ import type {
   User,
   CheckInHistory,
   CheckInResponse,
+  QuizChallengeResponse,
   QuizAnswerResponse,
   CooldownResponse,
   MasterVersionResponse,
@@ -120,6 +121,18 @@ export const checkinApi = {
     return fetchApi<QuizAnswerResponse>('/quiz/answer', {
       method: 'POST',
       body: JSON.stringify({ user_id: userId, spot_id: spotId, answer }),
+    });
+  },
+
+  quizChallenge: async (
+    userId: string,
+    spotId: string,
+    latitude: number,
+    longitude: number
+  ): Promise<QuizChallengeResponse> => {
+    return fetchApi<QuizChallengeResponse>('/quiz/challenge', {
+      method: 'POST',
+      body: JSON.stringify({ user_id: userId, spot_id: spotId, latitude, longitude }),
     });
   },
 

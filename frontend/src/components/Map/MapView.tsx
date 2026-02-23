@@ -114,7 +114,7 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
     }
 
     try {
-      const response = await checkinApi.checkin(
+      const response = await checkinApi.quizChallenge(
         user.user_id,
         selectedSpot.spot_id,
         currentLocation[1], // latitude
@@ -122,16 +122,16 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
       );
 
       if (response.quiz_available && response.quiz) {
-        setQuizData(response);
+        setQuizData(response as any);
         setShowQuiz(true);
       } else {
-        alert('クイズに挑戦できません: ' + (response.message || ''));
+        alert('クイズに挑戦できません。');
       }
     } catch (error: any) {
       if (error.message.includes('OUT_OF_RANGE')) {
         alert('スポットから離れすぎています。スポットに近づいてください。');
-      } else if (error.message.includes('QUIZ_ON_COOLDOWN')) {
-        alert('クイズの再挑戦にはクールダウン時間が必要です。しばらく経ってから再度お試しください。');
+      } else if (error.message.includes('QUIZ_ALREADY_ANSWERED_TODAY')) {
+        alert('本日はすでにクイズに回答済みです。明日また挑戦できます。');
       } else {
         alert('エラーが発生しました: ' + error.message);
       }

@@ -155,6 +155,15 @@ functions:
               - Authorization
             allowCredentials: false
       - http:
+          path: /quiz/challenge
+          method: post
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: false
+      - http:
           path: /quiz/cooldown/{user_id}/{spot_id}
           method: get
           cors:

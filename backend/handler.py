@@ -52,6 +52,9 @@ def handler(event, context):
         
         elif path == '/quiz/answer' and http_method == 'POST':
             return answer_quiz(event)
+
+        elif path == '/quiz/challenge' and http_method == 'POST':
+            return quiz_challenge(event)
         
         elif path.startswith('/quiz/cooldown/') and http_method == 'GET':
             return check_cooldown(event)
@@ -241,6 +244,23 @@ def answer_quiz(event):
             user_id=body.get('user_id'),
             spot_id=body.get('spot_id'),
             answer=int(body.get('answer'))
+        )
+        return success_response(result)
+    except ValueError as e:
+        return error_response(str(e), str(e), 400)
+    except Exception as e:
+        return error_response('INTERNAL_ERROR', str(e), 500)
+
+
+def quiz_challenge(event):
+    try:
+        body = json.loads(event.get('body', '{}'))
+
+        result = QuizService.quiz_challenge(
+            user_id=body.get('user_id'),
+            spot_id=body.get('spot_id'),
+            latitude=float(body.get('latitude')),
+            longitude=float(body.get('longitude'))
         )
         return success_response(result)
     except ValueError as e:

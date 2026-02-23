@@ -69,7 +69,9 @@ export interface ApiError {
 }
 
 export interface CheckInResponse {
-  is_first_visit: boolean;
+  score_earned: number;
+  total_score: number;
+  already_scored_today: boolean;
   quiz_available: boolean;
   quiz?: {
     question: string;
@@ -77,6 +79,17 @@ export interface CheckInResponse {
     score: number;
   };
   message?: string;
+}
+
+export interface QuizChallengeResponse {
+  checkin_score_earned: number;
+  total_score: number;
+  quiz_available: boolean;
+  quiz: {
+    question: string;
+    choices: string[];
+    score: number;
+  };
 }
 
 export interface QuizAnswerResponse {
