@@ -9,9 +9,10 @@ interface QuizModalProps {
   spot: Spot;
   quizData: CheckInResponse;
   onClose: () => void;
+  readOnly?: boolean;
 }
 
-export default function QuizModal({ user, spot, quizData, onClose }: QuizModalProps) {
+export default function QuizModal({ user, spot, quizData, onClose, readOnly = false }: QuizModalProps) {
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [result, setResult] = useState<{
     correct: boolean;
@@ -77,6 +78,20 @@ export default function QuizModal({ user, spot, quizData, onClose }: QuizModalPr
 
         {!result ? (
           <>
+            {readOnly && (
+              <div style={{
+                marginBottom: '16px',
+                padding: '12px 16px',
+                backgroundColor: '#fef3c7',
+                borderRadius: '8px',
+                fontSize: '14px',
+                color: '#92400e',
+                fontWeight: '600'
+              }}>
+                📅 本日は回答済みです。明日また挑戦できます。
+              </div>
+            )}
+
             <p style={{ fontSize: '18px', marginBottom: '24px', fontWeight: 'bold' }}>
               {quizData.quiz?.question}
             </p>
@@ -91,16 +106,18 @@ export default function QuizModal({ user, spot, quizData, onClose }: QuizModalPr
                     marginBottom: '8px',
                     border: '2px solid #e5e7eb',
                     borderRadius: '8px',
-                    cursor: 'pointer',
-                    backgroundColor: selectedAnswer === index ? '#dbeafe' : 'white',
+                    cursor: readOnly ? 'default' : 'pointer',
+                    backgroundColor: !readOnly && selectedAnswer === index ? '#dbeafe' : 'white',
+                    opacity: readOnly ? 0.7 : 1,
                   }}
                 >
                   <input
                     type="radio"
                     name="answer"
                     value={index}
-                    checked={selectedAnswer === index}
-                    onChange={() => setSelectedAnswer(index)}
+                    checked={!readOnly && selectedAnswer === index}
+                    onChange={() => !readOnly && setSelectedAnswer(index)}
+                    disabled={readOnly}
                     style={{ marginRight: '8px' }}
                   />
                   {choice}
@@ -109,31 +126,33 @@ export default function QuizModal({ user, spot, quizData, onClose }: QuizModalPr
             </div>
 
             <div style={{ display: 'flex', gap: '12px' }}>
-              <button
-                onClick={handleSubmit}
-                disabled={submitting || selectedAnswer === null}
-                style={{
-                  flex: 1,
-                  padding: '12px',
-                  backgroundColor: '#3b82f6',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '16px',
-                  fontWeight: 'bold',
-                  cursor: submitting ? 'not-allowed' : 'pointer',
-                  opacity: submitting ? 0.5 : 1,
-                }}
-              >
-                {submitting ? '送信中...' : '回答する'}
-              </button>
+              {!readOnly && (
+                <button
+                  onClick={handleSubmit}
+                  disabled={submitting || selectedAnswer === null}
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    backgroundColor: '#3b82f6',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '16px',
+                    fontWeight: 'bold',
+                    cursor: submitting ? 'not-allowed' : 'pointer',
+                    opacity: submitting ? 0.5 : 1,
+                  }}
+                >
+                  {submitting ? '送信中...' : '回答する'}
+                </button>
+              )}
               <button
                 onClick={onClose}
                 style={{
                   flex: 1,
                   padding: '12px',
-                  backgroundColor: '#e5e7eb',
-                  color: '#374151',
+                  backgroundColor: readOnly ? '#3b82f6' : '#e5e7eb',
+                  color: readOnly ? 'white' : '#374151',
                   border: 'none',
                   borderRadius: '8px',
                   fontSize: '16px',
@@ -141,7 +160,7 @@ export default function QuizModal({ user, spot, quizData, onClose }: QuizModalPr
                   cursor: 'pointer',
                 }}
               >
-                キャンセル
+                閉じる
               </button>
             </div>
           </>

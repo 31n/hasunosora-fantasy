@@ -33,6 +33,7 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
   const [selectedSpot, setSelectedSpot] = useState<Spot | null>(null);
   const [quizData, setQuizData] = useState<CheckInResponse | null>(null);
   const [showQuiz, setShowQuiz] = useState(false);
+  const [quizReadOnly, setQuizReadOnly] = useState(false);
   const [showCheckinAnimation, setShowCheckinAnimation] = useState(false);
   const [orientationPermissionNeeded, setOrientationPermissionNeeded] = useState(false);
   const checkinAnimationTimer = useRef<number | null>(null);
@@ -90,6 +91,8 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
     } catch (error: any) {
       if (error.message.includes('OUT_OF_RANGE')) {
         alert('スポットから離れすぎています。スポットに近づいてください。');
+      } else if (error.message.includes('CHECKIN_ON_COOLDOWN')) {
+        alert('連続チェックインはできません。少し時間を空けて再挑戦してください。');
       } else if (error.message.includes('ALREADY_CHECKED_IN')) {
         alert('既にチェックイン済みです。');
       } else {
@@ -131,7 +134,24 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
       if (error.message.includes('OUT_OF_RANGE')) {
         alert('スポットから離れすぎています。スポットに近づいてください。');
       } else if (error.message.includes('QUIZ_ALREADY_ANSWERED_TODAY')) {
-        alert('本日はすでにクイズに回答済みです。明日また挑戦できます。');
+        // 選択中スポットのクイズデータを閲覧専用で表示
+        if (selectedSpot?.quiz) {
+          setQuizData({
+            score_earned: 0,
+            total_score: user.total_score,
+            already_scored_today: true,
+            quiz_available: true,
+            quiz: {
+              question: selectedSpot.quiz.question,
+              choices: selectedSpot.quiz.choices,
+              score: selectedSpot.quiz.score,
+            },
+          });
+          setQuizReadOnly(true);
+          setShowQuiz(true);
+        } else {
+          alert('本日はすでにクイズに回答済みです。明日また挑戦できます。');
+        }
       } else {
         alert('エラーが発生しました: ' + error.message);
       }
@@ -528,6 +548,7 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
   const handleQuizClose = () => {
     setShowQuiz(false);
     setQuizData(null);
+    setQuizReadOnly(false);
     setSelectedSpot(null);
     // URLパラメータからspotIdを削除
     const params = new URLSearchParams(searchParams);
@@ -916,6 +937,7 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
           spot={selectedSpot}
           quizData={quizData}
           onClose={handleQuizClose}
+          readOnly={quizReadOnly}
         />
       )}
 

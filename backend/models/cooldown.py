@@ -11,7 +11,7 @@ def _next_midnight_jst_as_utc() -> datetime:
     next_midnight_jst = (now_jst + timedelta(days=1)).replace(
         hour=0, minute=0, second=0, microsecond=0
     )
-    return next_midnight_jst.astimezone(timezone.utc).replace(tzinfo=None)
+    return next_midnight_jst.astimezone(timezone.utc)
 
 
 class QuizCooldown:
