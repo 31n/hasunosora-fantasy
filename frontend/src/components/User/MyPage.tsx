@@ -137,11 +137,13 @@ export default function MyPage({ user, setUser, spots, areas }: MyPageProps) {
   };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
+    // タイムゾーン情報がない文字列はUTCとして扱う（バックエンドはUTC保存）
+    const normalized = /Z|[+-]\d{2}:?\d{2}$/.test(dateString) ? dateString : dateString + 'Z';
+    const date = new Date(normalized);
+    const month = Number(date.toLocaleString('ja-JP', { month: 'numeric', timeZone: 'Asia/Tokyo' }));
+    const day = Number(date.toLocaleString('ja-JP', { day: 'numeric', timeZone: 'Asia/Tokyo' }));
+    const hours = date.toLocaleString('ja-JP', { hour: '2-digit', hour12: false, timeZone: 'Asia/Tokyo' });
+    const minutes = date.toLocaleString('ja-JP', { minute: '2-digit', timeZone: 'Asia/Tokyo' }).padStart(2, '0');
     return `${month}/${day} ${hours}:${minutes}`;
   };
 
