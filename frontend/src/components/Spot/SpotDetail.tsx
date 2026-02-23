@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { indexedDB } from '../../services/indexedDB';
 import { userApi, checkinApi } from '../../services/api';
 import type { User, Spot, CheckInHistory } from '../../types';
@@ -14,6 +14,9 @@ export default function SpotDetail({ user }: SpotDetailProps) {
   const [history, setHistory] = useState<CheckInHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = (location.state as { from?: string } | null)?.from;
+  const handleBack = () => navigate(from || '/spots');
 
   useEffect(() => {
     loadSpotData();
@@ -71,7 +74,7 @@ export default function SpotDetail({ user }: SpotDetailProps) {
       <div style={{ padding: '24px', textAlign: 'center' }}>
         <p style={{ marginBottom: '16px' }}>スポットが見つかりません</p>
         <button
-          onClick={() => navigate('/spots')}
+          onClick={handleBack}
           style={{
             padding: '12px 24px',
             backgroundColor: '#3b82f6',
@@ -96,7 +99,7 @@ export default function SpotDetail({ user }: SpotDetailProps) {
       boxSizing: 'border-box'
     }}>
       <button
-        onClick={() => navigate('/spots')}
+        onClick={handleBack}
         style={{
           marginBottom: '16px',
           padding: '8px 16px',

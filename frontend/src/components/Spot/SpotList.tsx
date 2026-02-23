@@ -197,7 +197,7 @@ export default function SpotList({ spots, user, areas }: SpotListProps) {
           filteredSpots.map((spot) => (
             <div
               key={spot.spot_id}
-              onClick={() => navigate(`/spots/${spot.spot_id}`)}
+              onClick={() => navigate(`/spots/${spot.spot_id}`, { state: { from: '/spots' } })}
               style={{
                 backgroundColor: 'white',
                 borderRadius: '12px',

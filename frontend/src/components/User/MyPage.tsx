@@ -593,7 +593,7 @@ export default function MyPage({ user, setUser, spots, areas }: MyPageProps) {
             {history.slice(0, 10).map((item, index) => (
               <div
                 key={index}
-                onClick={() => navigate(`/spots/${item.spot_id}`)}
+                onClick={() => navigate(`/spots/${item.spot_id}`, { state: { from: '/mypage' } })}
                 style={{
                   padding: '16px',
                   backgroundColor: '#f9fafb',
