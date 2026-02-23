@@ -17,6 +17,7 @@ export default function SpotDetail({ user }: SpotDetailProps) {
   const location = useLocation();
   const from = (location.state as { from?: string } | null)?.from;
   const handleBack = () => navigate(from || '/spots');
+  const backLabel = from === '/mypage' ? 'マイページに戻る' : '一覧に戻る';
 
   useEffect(() => {
     loadSpotData();
@@ -84,7 +85,7 @@ export default function SpotDetail({ user }: SpotDetailProps) {
             cursor: 'pointer'
           }}
         >
-          一覧に戻る
+          {backLabel}
         </button>
       </div>
     );
@@ -112,7 +113,7 @@ export default function SpotDetail({ user }: SpotDetailProps) {
           gap: '8px'
         }}
       >
-        ← 一覧に戻る
+        ← {backLabel}
       </button>
 
       {/* 画像ギャラリー */}
