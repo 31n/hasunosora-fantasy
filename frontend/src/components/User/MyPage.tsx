@@ -140,11 +140,16 @@ export default function MyPage({ user, setUser, spots, areas }: MyPageProps) {
     // タイムゾーン情報がない文字列はUTCとして扱う（バックエンドはUTC保存）
     const normalized = /Z|[+-]\d{2}:?\d{2}$/.test(dateString) ? dateString : dateString + 'Z';
     const date = new Date(normalized);
-    const month = Number(date.toLocaleString('ja-JP', { month: 'numeric', timeZone: 'Asia/Tokyo' }));
-    const day = Number(date.toLocaleString('ja-JP', { day: 'numeric', timeZone: 'Asia/Tokyo' }));
-    const hours = date.toLocaleString('ja-JP', { hour: '2-digit', hour12: false, timeZone: 'Asia/Tokyo' });
-    const minutes = date.toLocaleString('ja-JP', { minute: '2-digit', timeZone: 'Asia/Tokyo' }).padStart(2, '0');
-    return `${month}/${day} ${hours}:${minutes}`;
+    const parts = new Intl.DateTimeFormat('ja-JP', {
+      month: 'numeric',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+      timeZone: 'Asia/Tokyo'
+    }).formatToParts(date);
+    const get = (type: string) => parts.find(p => p.type === type)?.value ?? '';
+    return `${get('month')}/${get('day')} ${get('hour')}:${get('minute')}`;
   };
 
   // エリア別統計計算
