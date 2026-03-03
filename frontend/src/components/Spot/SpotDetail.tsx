@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { indexedDB } from '../../services/indexedDB';
 import { userApi, checkinApi } from '../../services/api';
@@ -13,6 +13,8 @@ export default function SpotDetail({ user }: SpotDetailProps) {
   const [spot, setSpot] = useState<Spot | null>(null);
   const [history, setHistory] = useState<CheckInHistory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [imageIndex, setImageIndex] = useState(0);
+  const touchStartX = useRef<number | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as { from?: string } | null)?.from;
@@ -121,20 +123,138 @@ export default function SpotDetail({ user }: SpotDetailProps) {
 
       {/* 画像ギャラリー */}
       {spot.images.length > 0 && (
-        <div style={{ 
-          marginBottom: '24px',
-          borderRadius: '12px',
-          overflow: 'hidden'
-        }}>
-          <img
-            src={spot.images[0]}
-            alt={spot.spot_name}
+        <div style={{ marginBottom: '24px' }}>
+          <div
             style={{
-              width: '100%',
-              height: '300px',
-              objectFit: 'cover'
+              position: 'relative',
+              borderRadius: '12px',
+              overflow: 'hidden',
+              userSelect: 'none',
             }}
-          />
+            onTouchStart={(e) => {
+              touchStartX.current = e.touches[0].clientX;
+            }}
+            onTouchEnd={(e) => {
+              if (touchStartX.current === null) return;
+              const diff = touchStartX.current - e.changedTouches[0].clientX;
+              if (Math.abs(diff) > 40) {
+                if (diff > 0) {
+                  setImageIndex((prev) => Math.min(prev + 1, spot.images.length - 1));
+                } else {
+                  setImageIndex((prev) => Math.max(prev - 1, 0));
+                }
+              }
+              touchStartX.current = null;
+            }}
+          >
+            <img
+              src={spot.images[imageIndex]}
+              alt={`${spot.spot_name} ${imageIndex + 1}`}
+              style={{
+                width: '100%',
+                height: '300px',
+                objectFit: 'cover',
+                display: 'block',
+              }}
+            />
+
+            {/* 左右矢印ボタン（複数画像のとき） */}
+            {spot.images.length > 1 && (
+              <>
+                <button
+                  onClick={() => setImageIndex((prev) => Math.max(prev - 1, 0))}
+                  disabled={imageIndex === 0}
+                  style={{
+                    position: 'absolute',
+                    left: '8px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'rgba(0,0,0,0.4)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: '36px',
+                    height: '36px',
+                    fontSize: '18px',
+                    cursor: imageIndex === 0 ? 'default' : 'pointer',
+                    opacity: imageIndex === 0 ? 0.3 : 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    lineHeight: 1,
+                  }}
+                  aria-label="前の画像"
+                >
+                  ‹
+                </button>
+                <button
+                  onClick={() => setImageIndex((prev) => Math.min(prev + 1, spot.images.length - 1))}
+                  disabled={imageIndex === spot.images.length - 1}
+                  style={{
+                    position: 'absolute',
+                    right: '8px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'rgba(0,0,0,0.4)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: '36px',
+                    height: '36px',
+                    fontSize: '18px',
+                    cursor: imageIndex === spot.images.length - 1 ? 'default' : 'pointer',
+                    opacity: imageIndex === spot.images.length - 1 ? 0.3 : 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    lineHeight: 1,
+                  }}
+                  aria-label="次の画像"
+                >
+                  ›
+                </button>
+
+                {/* 枚数インジケーター */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    bottom: '8px',
+                    right: '12px',
+                    background: 'rgba(0,0,0,0.5)',
+                    color: 'white',
+                    borderRadius: '12px',
+                    padding: '2px 10px',
+                    fontSize: '12px',
+                  }}
+                >
+                  {imageIndex + 1} / {spot.images.length}
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* ドットナビゲーション（複数画像のとき） */}
+          {spot.images.length > 1 && (
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '10px' }}>
+              {spot.images.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setImageIndex(idx)}
+                  style={{
+                    width: idx === imageIndex ? '20px' : '8px',
+                    height: '8px',
+                    borderRadius: '4px',
+                    border: 'none',
+                    padding: 0,
+                    cursor: 'pointer',
+                    backgroundColor: idx === imageIndex ? '#3b82f6' : '#d1d5db',
+                    transition: 'width 0.2s, background-color 0.2s',
+                  }}
+                  aria-label={`画像 ${idx + 1}`}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
 
