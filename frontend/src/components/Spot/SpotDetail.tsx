@@ -14,6 +14,7 @@ export default function SpotDetail({ user }: SpotDetailProps) {
   const [history, setHistory] = useState<CheckInHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [imageIndex, setImageIndex] = useState(0);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const touchStartX = useRef<number | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
@@ -150,13 +151,41 @@ export default function SpotDetail({ user }: SpotDetailProps) {
             <img
               src={spot.images[imageIndex]}
               alt={`${spot.spot_name} ${imageIndex + 1}`}
+              onClick={() => setIsFullscreen(true)}
               style={{
                 width: '100%',
                 height: '300px',
                 objectFit: 'cover',
                 display: 'block',
+                cursor: 'zoom-in',
               }}
             />
+
+            {/* フルスクリーンボタン */}
+            <button
+              onClick={() => setIsFullscreen(true)}
+              style={{
+                position: 'absolute',
+                bottom: '8px',
+                left: '8px',
+                background: 'rgba(0,0,0,0.45)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                width: '32px',
+                height: '32px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 0,
+              }}
+              aria-label="フルスクリーン表示"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+              </svg>
+            </button>
 
             {/* 左右矢印ボタン（複数画像のとき） */}
             {spot.images.length > 1 && (
@@ -403,6 +432,155 @@ export default function SpotDetail({ user }: SpotDetailProps) {
           </div>
         )}
       </div>
+
+      {/* フルスクリーンモーダル */}
+      {isFullscreen && (
+        <div
+          onClick={() => setIsFullscreen(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0,0,0,0.95)',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
+            onTouchEnd={(e) => {
+              if (touchStartX.current === null) return;
+              const diff = touchStartX.current - e.changedTouches[0].clientX;
+              if (Math.abs(diff) > 40) {
+                if (diff > 0) {
+                  setImageIndex((prev) => Math.min(prev + 1, spot.images.length - 1));
+                } else {
+                  setImageIndex((prev) => Math.max(prev - 1, 0));
+                }
+              }
+              touchStartX.current = null;
+            }}
+            style={{
+              position: 'relative',
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <img
+              src={spot.images[imageIndex]}
+              alt={`${spot.spot_name} ${imageIndex + 1}`}
+              style={{
+                maxWidth: '100%',
+                maxHeight: '100%',
+                objectFit: 'contain',
+              }}
+            />
+
+            {/* 閉じるボタン */}
+            <button
+              onClick={() => setIsFullscreen(false)}
+              style={{
+                position: 'absolute',
+                top: '16px',
+                right: '16px',
+                background: 'rgba(0,0,0,0.6)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '50%',
+                width: '40px',
+                height: '40px',
+                fontSize: '22px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 0,
+              }}
+              aria-label="閉じる"
+            >
+              ✕
+            </button>
+
+            {/* 矢印 & カウンター */}
+            {spot.images.length > 1 && (
+              <>
+                <button
+                  onClick={() => setImageIndex((prev) => Math.max(prev - 1, 0))}
+                  disabled={imageIndex === 0}
+                  style={{
+                    position: 'absolute',
+                    left: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'rgba(255,255,255,0.2)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: '44px',
+                    height: '44px',
+                    fontSize: '26px',
+                    cursor: imageIndex === 0 ? 'default' : 'pointer',
+                    opacity: imageIndex === 0 ? 0.3 : 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    lineHeight: 1,
+                  }}
+                  aria-label="前の画像"
+                >
+                  ‹
+                </button>
+                <button
+                  onClick={() => setImageIndex((prev) => Math.min(prev + 1, spot.images.length - 1))}
+                  disabled={imageIndex === spot.images.length - 1}
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'rgba(255,255,255,0.2)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: '44px',
+                    height: '44px',
+                    fontSize: '26px',
+                    cursor: imageIndex === spot.images.length - 1 ? 'default' : 'pointer',
+                    opacity: imageIndex === spot.images.length - 1 ? 0.3 : 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    lineHeight: 1,
+                  }}
+                  aria-label="次の画像"
+                >
+                  ›
+                </button>
+                <div
+                  style={{
+                    position: 'absolute',
+                    bottom: '20px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    background: 'rgba(0,0,0,0.5)',
+                    color: 'white',
+                    borderRadius: '12px',
+                    padding: '4px 14px',
+                    fontSize: '14px',
+                  }}
+                >
+                  {imageIndex + 1} / {spot.images.length}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
