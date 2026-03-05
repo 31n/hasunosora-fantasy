@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import type { Spot } from '../../types';
 import { formatDistance } from '../../utils/distance';
 import CloseIcon from '@mui/icons-material/Close';
@@ -506,7 +507,7 @@ export default function SpotPopup({
             width: '100vw',
             height: '100dvh',
             backgroundColor: 'rgba(0,0,0,0.95)',
-            zIndex: 2000,
+            zIndex: 9999,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}
         >
@@ -529,7 +530,7 @@ export default function SpotPopup({
               src={spot.images[imageIndex]}
               alt={`${spot.spot_name} ${imageIndex + 1}`}
               onClick={() => setRotation((prev) => (prev + 90) % 360)}
-              style={{ maxWidth: rotation === 90 || rotation === 270 ? '100dvh' : '100vw', maxHeight: rotation === 90 || rotation === 270 ? '100vw' : '100dvh', objectFit: 'contain', cursor: 'pointer', transition: 'transform 0.3s ease', transform: `rotate(${rotation}deg)` }}
+              style={{ width: rotation === 90 || rotation === 270 ? '100dvh' : '100vw', height: rotation === 90 || rotation === 270 ? '100vw' : '100dvh', objectFit: 'contain', cursor: 'pointer', transition: 'transform 0.3s ease', transform: `rotate(${rotation}deg)` }}
             />
             <button
               onClick={() => setIsFullscreen(false)}
@@ -579,7 +580,8 @@ export default function SpotPopup({
               </>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

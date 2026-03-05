@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { indexedDB } from '../../services/indexedDB';
 import { userApi, checkinApi } from '../../services/api';
@@ -435,7 +436,7 @@ export default function SpotDetail({ user }: SpotDetailProps) {
       </div>
 
       {/* フルスクリーンモーダル */}
-      {isFullscreen && (
+      {isFullscreen && createPortal(
         <div
           onClick={() => { setIsFullscreen(false); setRotation(0); }}
           style={{
@@ -444,7 +445,7 @@ export default function SpotDetail({ user }: SpotDetailProps) {
             width: '100vw',
             height: '100dvh',
             backgroundColor: 'rgba(0,0,0,0.95)',
-            zIndex: 1000,
+            zIndex: 9999,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -479,8 +480,8 @@ export default function SpotDetail({ user }: SpotDetailProps) {
               alt={`${spot.spot_name} ${imageIndex + 1}`}
               onClick={() => setRotation((prev) => (prev + 90) % 360)}
               style={{
-                maxWidth: rotation === 90 || rotation === 270 ? '100dvh' : '100vw',
-                maxHeight: rotation === 90 || rotation === 270 ? '100vw' : '100dvh',
+                width: rotation === 90 || rotation === 270 ? '100dvh' : '100vw',
+                height: rotation === 90 || rotation === 270 ? '100vw' : '100dvh',
                 objectFit: 'contain',
                 cursor: 'pointer',
                 transition: 'transform 0.3s ease',
@@ -586,7 +587,8 @@ export default function SpotDetail({ user }: SpotDetailProps) {
               </>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
