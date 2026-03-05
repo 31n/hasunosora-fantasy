@@ -491,7 +491,7 @@ export default function SpotDetail({ user }: SpotDetailProps) {
 
             {/* 閉じるボタン */}
             <button
-              onClick={() => setIsFullscreen(false)}
+              onClick={() => { setIsFullscreen(false); setRotation(0); }}
               style={{
                 position: 'absolute',
                 top: '16px',

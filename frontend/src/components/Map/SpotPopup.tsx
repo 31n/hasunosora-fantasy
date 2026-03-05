@@ -499,9 +499,9 @@ export default function SpotPopup({
       `}</style>
 
       {/* フルスクリーンモーダル */}
-      {isFullscreen && (
+      {isFullscreen && createPortal(
         <div
-          onClick={() => setIsFullscreen(false)}
+          onClick={() => { setIsFullscreen(false); setRotation(0); }}
           style={{
             position: 'fixed', inset: 0,
             width: '100vw',
