@@ -479,8 +479,8 @@ export default function SpotDetail({ user }: SpotDetailProps) {
               alt={`${spot.spot_name} ${imageIndex + 1}`}
               onClick={() => setRotation((prev) => (prev + 90) % 360)}
               style={{
-                maxWidth: '100vw',
-                maxHeight: '100dvh',
+                maxWidth: rotation === 90 || rotation === 270 ? '100dvh' : '100vw',
+                maxHeight: rotation === 90 || rotation === 270 ? '100vw' : '100dvh',
                 objectFit: 'contain',
                 cursor: 'pointer',
                 transition: 'transform 0.3s ease',

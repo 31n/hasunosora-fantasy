@@ -529,7 +529,7 @@ export default function SpotPopup({
               src={spot.images[imageIndex]}
               alt={`${spot.spot_name} ${imageIndex + 1}`}
               onClick={() => setRotation((prev) => (prev + 90) % 360)}
-              style={{ maxWidth: '100vw', maxHeight: '100dvh', objectFit: 'contain', cursor: 'pointer', transition: 'transform 0.3s ease', transform: `rotate(${rotation}deg)` }}
+              style={{ maxWidth: rotation === 90 || rotation === 270 ? '100dvh' : '100vw', maxHeight: rotation === 90 || rotation === 270 ? '100vw' : '100dvh', objectFit: 'contain', cursor: 'pointer', transition: 'transform 0.3s ease', transform: `rotate(${rotation}deg)` }}
             />
             <button
               onClick={() => setIsFullscreen(false)}
