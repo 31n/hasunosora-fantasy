@@ -35,6 +35,7 @@ export default function SpotPopup({
   const [showDetail, setShowDetail] = useState(false);
   const [imageIndex, setImageIndex] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [rotation, setRotation] = useState(0);
   const touchStartX = useRef<number | null>(null);
 
   // 経路検索（Googleマップアプリに遷移）
@@ -518,6 +519,7 @@ export default function SpotPopup({
               if (Math.abs(diff) > 40) {
                 if (diff > 0) setImageIndex((prev) => Math.min(prev + 1, spot.images.length - 1));
                 else setImageIndex((prev) => Math.max(prev - 1, 0));
+                setRotation(0);
               }
               touchStartX.current = null;
             }}
@@ -526,7 +528,8 @@ export default function SpotPopup({
             <img
               src={spot.images[imageIndex]}
               alt={`${spot.spot_name} ${imageIndex + 1}`}
-              style={{ maxWidth: '100vw', maxHeight: '100dvh', objectFit: 'contain' }}
+              onClick={() => setRotation((prev) => (prev + 90) % 360)}
+              style={{ maxWidth: '100vw', maxHeight: '100dvh', objectFit: 'contain', cursor: 'pointer', transition: 'transform 0.3s ease', transform: `rotate(${rotation}deg)` }}
             />
             <button
               onClick={() => setIsFullscreen(false)}
@@ -541,7 +544,7 @@ export default function SpotPopup({
             {spot.images.length > 1 && (
               <>
                 <button
-                  onClick={() => setImageIndex((prev) => Math.max(prev - 1, 0))}
+                  onClick={() => { setImageIndex((prev) => Math.max(prev - 1, 0)); setRotation(0); }}
                   disabled={imageIndex === 0}
                   style={{
                     position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)',
@@ -554,7 +557,7 @@ export default function SpotPopup({
                   aria-label="前の画像"
                 >‹</button>
                 <button
-                  onClick={() => setImageIndex((prev) => Math.min(prev + 1, spot.images.length - 1))}
+                  onClick={() => { setImageIndex((prev) => Math.min(prev + 1, spot.images.length - 1)); setRotation(0); }}
                   disabled={imageIndex === spot.images.length - 1}
                   style={{
                     position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)',

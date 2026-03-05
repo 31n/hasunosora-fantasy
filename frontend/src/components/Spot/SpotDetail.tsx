@@ -15,6 +15,7 @@ export default function SpotDetail({ user }: SpotDetailProps) {
   const [loading, setLoading] = useState(true);
   const [imageIndex, setImageIndex] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [rotation, setRotation] = useState(0);
   const touchStartX = useRef<number | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
@@ -436,7 +437,7 @@ export default function SpotDetail({ user }: SpotDetailProps) {
       {/* フルスクリーンモーダル */}
       {isFullscreen && (
         <div
-          onClick={() => setIsFullscreen(false)}
+          onClick={() => { setIsFullscreen(false); setRotation(0); }}
           style={{
             position: 'fixed',
             inset: 0,
@@ -476,10 +477,14 @@ export default function SpotDetail({ user }: SpotDetailProps) {
             <img
               src={spot.images[imageIndex]}
               alt={`${spot.spot_name} ${imageIndex + 1}`}
+              onClick={() => setRotation((prev) => (prev + 90) % 360)}
               style={{
                 maxWidth: '100vw',
                 maxHeight: '100dvh',
                 objectFit: 'contain',
+                cursor: 'pointer',
+                transition: 'transform 0.3s ease',
+                transform: `rotate(${rotation}deg)`,
               }}
             />
 
