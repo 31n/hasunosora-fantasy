@@ -440,6 +440,8 @@ export default function SpotDetail({ user }: SpotDetailProps) {
           style={{
             position: 'fixed',
             inset: 0,
+            width: '100vw',
+            height: '100dvh',
             backgroundColor: 'rgba(0,0,0,0.95)',
             zIndex: 1000,
             display: 'flex',
@@ -464,8 +466,8 @@ export default function SpotDetail({ user }: SpotDetailProps) {
             }}
             style={{
               position: 'relative',
-              width: '100%',
-              height: '100%',
+              width: '100vw',
+              height: '100dvh',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -475,8 +477,8 @@ export default function SpotDetail({ user }: SpotDetailProps) {
               src={spot.images[imageIndex]}
               alt={`${spot.spot_name} ${imageIndex + 1}`}
               style={{
-                maxWidth: '100%',
-                maxHeight: '100%',
+                maxWidth: '100vw',
+                maxHeight: '100dvh',
                 objectFit: 'contain',
               }}
             />

@@ -502,6 +502,8 @@ export default function SpotPopup({
           onClick={() => setIsFullscreen(false)}
           style={{
             position: 'fixed', inset: 0,
+            width: '100vw',
+            height: '100dvh',
             backgroundColor: 'rgba(0,0,0,0.95)',
             zIndex: 2000,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -519,12 +521,12 @@ export default function SpotPopup({
               }
               touchStartX.current = null;
             }}
-            style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            style={{ position: 'relative', width: '100vw', height: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
             <img
               src={spot.images[imageIndex]}
               alt={`${spot.spot_name} ${imageIndex + 1}`}
-              style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+              style={{ maxWidth: '100vw', maxHeight: '100dvh', objectFit: 'contain' }}
             />
             <button
               onClick={() => setIsFullscreen(false)}
