@@ -428,7 +428,7 @@ export default function AdminSpotList() {
 
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button
-                  onClick={() => navigate(`/admin/spots/${spot.spot_id}/edit`)}
+                  onClick={() => navigate(`/admin/spots/${spot.spot_id}/edit`, { state: { returnSearch: location.search } })}
                   style={{
                     flex: 1,
                     padding: '10px',
