@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { adminApi } from '../../services/api';
 import { storage } from '../../services/storage';
 import { indexedDB } from '../../services/indexedDB';
@@ -18,6 +18,8 @@ export default function AdminSpotForm() {
   const [isShortCode, setIsShortCode] = useState(false);
   const [areas, setAreas] = useState<Area[]>([]);
   const navigate = useNavigate();
+  const location = useLocation();
+  const returnSearch = (location.state as { returnSearch?: string } | null)?.returnSearch ?? '';
 
   const [formData, setFormData] = useState({
     spot_name: '',
@@ -270,7 +272,7 @@ export default function AdminSpotForm() {
         alert('スポットを作成しました');
       }
 
-      navigate('/admin/spots');
+      navigate('/admin/spots' + returnSearch);
     } catch (error: any) {
       console.error('保存エラー:', error);
       alert('保存に失敗しました: ' + error.message);
@@ -282,7 +284,7 @@ export default function AdminSpotForm() {
   return (
     <div style={{ padding: '16px', maxWidth: '800px', margin: '0 auto' }}>
       <button
-        onClick={() => navigate('/admin/spots')}
+        onClick={() => navigate('/admin/spots' + returnSearch)}
         style={{
           marginBottom: '16px',
           padding: '8px 16px',
@@ -827,7 +829,7 @@ export default function AdminSpotForm() {
           </button>
           <button
             type="button"
-            onClick={() => navigate('/admin/spots')}
+            onClick={() => navigate('/admin/spots' + returnSearch)}
             style={{
               flex: 1,
               padding: '16px',

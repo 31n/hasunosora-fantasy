@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useState, useEffect, useMemo } from 'react';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { adminApi } from '../../services/api';
 import { storage } from '../../services/storage';
 import { indexedDB } from '../../services/indexedDB';
@@ -11,10 +11,13 @@ import CloseIcon from '@mui/icons-material/Close';
 export default function AdminSpotList() {
   const [spots, setSpots] = useState<Spot[]>([]);
   const [areas, setAreas] = useState<Area[]>([]);
-  const [selectedArea, setSelectedArea] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedArea = searchParams.get('area') ?? '';
+  const selectedGenre = searchParams.get('genre') ?? '';
+  const selectedQuiz = searchParams.get('quiz') ?? '';
 
   useEffect(() => {
     checkAuth();
@@ -76,9 +79,39 @@ export default function AdminSpotList() {
     navigate('/admin');
   };
 
-  const filteredSpots = selectedArea
-    ? spots.filter(spot => spot.area === selectedArea)
-    : spots;
+  const allGenres = useMemo(() => {
+    const set = new Set<string>();
+    spots.forEach(s => s.genre?.forEach(g => set.add(g)));
+    return Array.from(set).sort();
+  }, [spots]);
+
+  const filteredSpots = useMemo(() => {
+    return spots.filter(spot => {
+      if (selectedArea) {
+        if (selectedArea === 'unassigned') {
+          if (spot.area) return false;
+        } else {
+          if (spot.area !== selectedArea) return false;
+        }
+      }
+      if (selectedGenre && !spot.genre?.includes(selectedGenre)) return false;
+      if (selectedQuiz === 'yes' && !spot.quiz) return false;
+      if (selectedQuiz === 'no' && spot.quiz) return false;
+      return true;
+    });
+  }, [spots, selectedArea, selectedGenre, selectedQuiz]);
+
+  const setFilter = (key: string, value: string) => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (value) {
+        next.set(key, value);
+      } else {
+        next.delete(key);
+      }
+      return next;
+    }, { replace: true });
+  };
 
   if (loading) {
     return (
@@ -120,7 +153,7 @@ export default function AdminSpotList() {
             エリア管理
           </button>
           <button
-            onClick={() => navigate('/admin/spots/new')}
+            onClick={() => navigate('/admin/spots/new', { state: { returnSearch: location.search } })}
             style={{
               padding: '12px 24px',
               backgroundColor: '#3b82f6',
@@ -152,43 +185,125 @@ export default function AdminSpotList() {
         </div>
       </div>
 
-      {/* エリアフィルター */}
+      {/* フィルター */}
       <div style={{
         backgroundColor: 'white',
         borderRadius: '12px',
         padding: '16px',
         marginBottom: '16px',
-        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+        gap: '16px'
       }}>
-        <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
-          エリアでフィルター
-        </label>
-        <select
-          value={selectedArea}
-          onChange={(e) => setSelectedArea(e.target.value)}
-          style={{
-            width: '100%',
-            padding: '12px',
-            border: '2px solid #e5e7eb',
-            borderRadius: '8px',
-            fontSize: '16px',
-            backgroundColor: 'white',
-            cursor: 'pointer'
-          }}
-        >
-          <option value="">すべてのエリア ({spots.length}件)</option>
-          {areas.map(area => {
-            const count = spots.filter(s => s.area === area.area_id).length;
-            return (
-              <option key={area.area_id} value={area.area_id}>
-                {area.area_name} ({count}件)
-              </option>
-            );
-          })}
-          <option value="unassigned">
-            エリア未設定 ({spots.filter(s => !s.area).length}件)
-          </option>
-        </select>
+        {/* エリアフィルター */}
+        <div>
+          <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px' }}>
+            エリア
+          </label>
+          <select
+            value={selectedArea}
+            onChange={(e) => setFilter('area', e.target.value)}
+            style={{
+              width: '100%',
+              padding: '10px 12px',
+              border: '2px solid ' + (selectedArea ? '#3b82f6' : '#e5e7eb'),
+              borderRadius: '8px',
+              fontSize: '14px',
+              backgroundColor: 'white',
+              cursor: 'pointer'
+            }}
+          >
+            <option value="">すべてのエリア ({spots.length}件)</option>
+            {areas.map(area => {
+              const count = spots.filter(s => s.area === area.area_id).length;
+              return (
+                <option key={area.area_id} value={area.area_id}>
+                  {area.area_name} ({count}件)
+                </option>
+              );
+            })}
+            <option value="unassigned">
+              エリア未設定 ({spots.filter(s => !s.area).length}件)
+            </option>
+          </select>
+        </div>
+
+        {/* ジャンルフィルター */}
+        <div>
+          <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px' }}>
+            ジャンル
+          </label>
+          <select
+            value={selectedGenre}
+            onChange={(e) => setFilter('genre', e.target.value)}
+            style={{
+              width: '100%',
+              padding: '10px 12px',
+              border: '2px solid ' + (selectedGenre ? '#3b82f6' : '#e5e7eb'),
+              borderRadius: '8px',
+              fontSize: '14px',
+              backgroundColor: 'white',
+              cursor: 'pointer'
+            }}
+          >
+            <option value="">すべてのジャンル</option>
+            {allGenres.map(g => {
+              const count = spots.filter(s => s.genre?.includes(g)).length;
+              return (
+                <option key={g} value={g}>
+                  {g} ({count}件)
+                </option>
+              );
+            })}
+          </select>
+        </div>
+
+        {/* クイズフィルター */}
+        <div>
+          <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px' }}>
+            クイズ
+          </label>
+          <select
+            value={selectedQuiz}
+            onChange={(e) => setFilter('quiz', e.target.value)}
+            style={{
+              width: '100%',
+              padding: '10px 12px',
+              border: '2px solid ' + (selectedQuiz ? '#3b82f6' : '#e5e7eb'),
+              borderRadius: '8px',
+              fontSize: '14px',
+              backgroundColor: 'white',
+              cursor: 'pointer'
+            }}
+          >
+            <option value="">すべて ({spots.length}件)</option>
+            <option value="yes">クイズあり ({spots.filter(s => !!s.quiz).length}件)</option>
+            <option value="no">クイズなし ({spots.filter(s => !s.quiz).length}件)</option>
+          </select>
+        </div>
+
+        {/* フィルタークリアボタン */}
+        {(selectedArea || selectedGenre || selectedQuiz) && (
+          <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+            <button
+              onClick={() => setSearchParams({}, { replace: true })}
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                backgroundColor: '#f3f4f6',
+                border: '2px solid #e5e7eb',
+                borderRadius: '8px',
+                fontSize: '14px',
+                cursor: 'pointer',
+                color: '#6b7280',
+                fontWeight: '600'
+              }}
+            >
+              フィルターをリセット
+            </button>
+          </div>
+        )}
       </div>
 
       {/* スポット一覧 */}
@@ -201,7 +316,7 @@ export default function AdminSpotList() {
           boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
         }}>
           <p style={{ marginBottom: '16px', color: '#6b7280' }}>
-            {selectedArea ? '該当するスポットがありません' : 'スポットがまだありません'}
+            {(selectedArea || selectedGenre || selectedQuiz) ? '該当するスポットがありません' : 'スポットがまだありません'}
           </p>
           <button
             onClick={() => navigate('/admin/spots/new')}
