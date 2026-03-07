@@ -42,6 +42,7 @@ class AdminService:
             images=spot_data.get('images', []),
             genre=spot_data.get('genre', []),
             area=spot_data.get('area'),
+            reading=spot_data.get('reading') or None,
             quiz=quiz  # Noneでも可
         )
         
@@ -84,6 +85,8 @@ class AdminService:
         spot.images = spot_data.get('images', spot.images)
         spot.genre = spot_data.get('genre', spot.genre)
         spot.area = spot_data.get('area', spot.area)
+        if 'reading' in spot_data:
+            spot.reading = spot_data['reading'] or None
         
         # クイズの更新（Noneも許可）
         if 'quiz' in spot_data:
