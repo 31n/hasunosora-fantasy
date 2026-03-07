@@ -23,6 +23,7 @@ export default function AdminSpotForm() {
 
   const [formData, setFormData] = useState({
     spot_name: '',
+    reading: '',
     description: '',
     latitude: '',
     longitude: '',
@@ -68,6 +69,7 @@ export default function AdminSpotForm() {
       if (spot) {
         setFormData({
           spot_name: spot.spot_name,
+          reading: spot.reading || '',
           description: spot.description,
           latitude: spot.latitude.toString(),
           longitude: spot.longitude.toString(),
@@ -242,6 +244,7 @@ export default function AdminSpotForm() {
     try {
       const spotData: any = {
         spot_name: formData.spot_name,
+        reading: formData.reading || null,
         description: formData.description,
         latitude: parseFloat(formData.latitude),
         longitude: parseFloat(formData.longitude),
@@ -327,6 +330,28 @@ export default function AdminSpotForm() {
                 fontSize: '16px'
               }}
             />
+          </div>
+
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+              ふりがな
+            </label>
+            <input
+              type="text"
+              value={formData.reading}
+              onChange={(e) => setFormData({ ...formData, reading: e.target.value })}
+              placeholder="例：はすのそらこうえん"
+              style={{
+                width: '100%',
+                padding: '12px',
+                border: '2px solid #e5e7eb',
+                borderRadius: '8px',
+                fontSize: '16px'
+              }}
+            />
+            <p style={{ marginTop: '4px', fontSize: '12px', color: '#6b7280' }}>
+              名前順での並び替えに使用します（ユーザーには表示されません）
+            </p>
           </div>
 
           <div style={{ marginBottom: '16px' }}>

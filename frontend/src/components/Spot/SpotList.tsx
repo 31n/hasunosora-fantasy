@@ -112,7 +112,11 @@ export default function SpotList({ spots, user, areas }: SpotListProps) {
     if (sortBy === 'distance' && userLocation) {
       filtered.sort((a, b) => (a.distance || 0) - (b.distance || 0));
     } else if (sortBy === 'name') {
-      filtered.sort((a, b) => a.spot_name.localeCompare(b.spot_name));
+      filtered.sort((a, b) => {
+        const keyA = a.reading || a.spot_name;
+        const keyB = b.reading || b.spot_name;
+        return keyA.localeCompare(keyB, 'ja');
+      });
     }
 
     return filtered;

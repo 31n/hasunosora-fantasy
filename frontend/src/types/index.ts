@@ -34,6 +34,7 @@ export interface Quiz {
 export interface Spot {
   spot_id: string;
   spot_name: string;
+  reading?: string; // ふりがな（並び替え用）
   description: string;
   latitude: number;
   longitude: number;
