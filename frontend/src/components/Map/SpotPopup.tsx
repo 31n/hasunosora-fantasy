@@ -7,6 +7,7 @@ import InfoIcon from '@mui/icons-material/Info';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import QuizIcon from '@mui/icons-material/Quiz';
 import DirectionsIcon from '@mui/icons-material/Directions';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 
 interface SpotPopupProps {
   spot: Spot;
@@ -202,6 +203,35 @@ export default function SpotPopup({
               <InfoIcon fontSize="small" />
               詳細を見る
             </button>
+
+            {/* 外部リンク */}
+            {spot.url && (
+              <a
+                href={spot.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  width: '100%',
+                  padding: '10px',
+                  backgroundColor: 'white',
+                  color: '#6b7280',
+                  border: '2px solid #e5e7eb',
+                  borderRadius: '10px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  textDecoration: 'none',
+                  boxSizing: 'border-box'
+                }}
+              >
+                <OpenInNewIcon fontSize="small" />
+                詳細ページを開く
+              </a>
+            )}
           </div>
         </div>
 
@@ -484,8 +514,35 @@ export default function SpotPopup({
             <DirectionsIcon fontSize="medium" />
             ここへの経路を検索
           </button>
-        </div>
-      </div>
+
+          {/* 外部リンク */}
+          {spot.url && (
+            <a
+              href={spot.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                width: '100%',
+                padding: '14px',
+                backgroundColor: 'white',
+                color: '#6b7280',
+                border: '2px solid #e5e7eb',
+                borderRadius: '12px',
+                fontSize: '16px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                textDecoration: 'none',
+                boxSizing: 'border-box'
+              }}
+            >
+              <OpenInNewIcon fontSize="medium" />
+              詳細ページを開く
+            </a>
+          )}
 
       <style>{`
         @keyframes slideUpDetail {
