@@ -43,6 +43,7 @@ export interface Spot {
   genre: string[]; // ジャンル（複数可）
   area?: string; // エリアID
   quiz?: Quiz; // クイズは任意
+  url?: string; // 外部リンク（任意）
   version: string;
   created_at: string;
   updated_at: string;

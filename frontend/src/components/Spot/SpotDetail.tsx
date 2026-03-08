@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { indexedDB } from '../../services/indexedDB';
 import { userApi, checkinApi } from '../../services/api';
 import type { User, Spot, CheckInHistory } from '../../types';
@@ -372,6 +373,36 @@ export default function SpotDetail({ user }: SpotDetailProps) {
         >
           地図で表示
         </button>
+
+        {/* 外部リンク */}
+        {spot.url && (
+          <a
+            href={spot.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              width: '100%',
+              marginTop: '12px',
+              padding: '12px',
+              backgroundColor: 'white',
+              color: '#3b82f6',
+              border: '2px solid #3b82f6',
+              borderRadius: '8px',
+              fontSize: '16px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              textDecoration: 'none',
+              boxSizing: 'border-box'
+            }}
+          >
+            <OpenInNewIcon style={{ fontSize: '20px' }} />
+            詳細ページを開く
+          </a>
+        )}
       </div>
 
       {/* 訪問履歴 */}

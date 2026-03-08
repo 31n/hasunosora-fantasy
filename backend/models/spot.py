@@ -10,7 +10,7 @@ class Spot:
                  description: str = "", latitude: float = 0.0, longitude: float = 0.0,
                  detection_radius: float = 100.0, images: List[str] = None,
                  genre: List[str] = None, quiz: Optional[Dict] = None, area: Optional[str] = None,
-                 reading: Optional[str] = None,
+                 reading: Optional[str] = None, url: Optional[str] = None,
                  version: str = "", created_at: Optional[str] = None, updated_at: Optional[str] = None):
         self.spot_id = spot_id or str(uuid.uuid4())
         self.spot_name = spot_name
@@ -24,6 +24,7 @@ class Spot:
         self.quiz = quiz  # Noneも許可
         self.area = area  # エリアID（nullable）
         self.reading = reading  # ふりがな（nullable）
+        self.url = url  # 外部リンクURL（nullable）
         self.version = version or datetime.utcnow().strftime('%Y%m%d')
         self.created_at = created_at or datetime.now(timezone.utc).isoformat()
         self.updated_at = updated_at or datetime.now(timezone.utc).isoformat()
@@ -48,6 +49,7 @@ class Spot:
                 'genre': self.genre,
                 'area': self.area,
                 'reading': self.reading,
+                'url': self.url,
                 'version': self.version,
                 'created_at': self.created_at,
                 'updated_at': self.updated_at
@@ -69,6 +71,7 @@ class Spot:
                 'genre': self.genre,
                 'area': self.area,
                 'reading': self.reading,
+                'url': self.url,
                 'version': self.version,
                 'created_at': self.created_at,
                 'updated_at': self.updated_at
@@ -159,6 +162,7 @@ class Spot:
             quiz=quiz,
             area=item.get('area'),
             reading=item.get('reading'),
+            url=item.get('url'),
             version=item.get('version', ''),
             created_at=item.get('created_at'),
             updated_at=item.get('updated_at')
@@ -194,6 +198,7 @@ class Spot:
                 quiz=quiz,
                 area=item.get('area'),
                 reading=item.get('reading'),
+                url=item.get('url'),
                 version=item.get('version', ''),
                 created_at=item.get('created_at'),
                 updated_at=item.get('updated_at')

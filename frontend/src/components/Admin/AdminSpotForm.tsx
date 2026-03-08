@@ -24,6 +24,7 @@ export default function AdminSpotForm() {
   const [formData, setFormData] = useState({
     spot_name: '',
     reading: '',
+    url: '',
     description: '',
     latitude: '',
     longitude: '',
@@ -70,6 +71,7 @@ export default function AdminSpotForm() {
         setFormData({
           spot_name: spot.spot_name,
           reading: spot.reading || '',
+          url: spot.url || '',
           description: spot.description,
           latitude: spot.latitude.toString(),
           longitude: spot.longitude.toString(),
@@ -245,6 +247,7 @@ export default function AdminSpotForm() {
       const spotData: any = {
         spot_name: formData.spot_name,
         reading: formData.reading || null,
+        url: formData.url || null,
         description: formData.description,
         latitude: parseFloat(formData.latitude),
         longitude: parseFloat(formData.longitude),
@@ -351,6 +354,28 @@ export default function AdminSpotForm() {
             />
             <p style={{ marginTop: '4px', fontSize: '12px', color: '#6b7280' }}>
               名前順での並び替えに使用します（ユーザーには表示されません）
+            </p>
+          </div>
+
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+              外部リンクURL
+            </label>
+            <input
+              type="url"
+              value={formData.url}
+              onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+              placeholder="例：https://example.com"
+              style={{
+                width: '100%',
+                padding: '12px',
+                border: '2px solid #e5e7eb',
+                borderRadius: '8px',
+                fontSize: '16px'
+              }}
+            />
+            <p style={{ marginTop: '4px', fontSize: '12px', color: '#6b7280' }}>
+              スポット詳細画面にリンクボタンとして表示されます
             </p>
           </div>
 
