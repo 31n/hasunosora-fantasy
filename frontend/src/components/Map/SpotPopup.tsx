@@ -543,6 +543,8 @@ export default function SpotPopup({
               詳細ページを開く
             </a>
           )}
+        </div>
+      </div>
 
       <style>{`
         @keyframes slideUpDetail {
