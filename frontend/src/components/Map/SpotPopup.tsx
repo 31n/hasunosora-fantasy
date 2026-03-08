@@ -204,34 +204,7 @@ export default function SpotPopup({
               詳細を見る
             </button>
 
-            {/* 外部リンク */}
-            {spot.url && (
-              <a
-                href={spot.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px',
-                  width: '100%',
-                  padding: '10px',
-                  backgroundColor: 'white',
-                  color: '#6b7280',
-                  border: '2px solid #e5e7eb',
-                  borderRadius: '10px',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  textDecoration: 'none',
-                  boxSizing: 'border-box'
-                }}
-              >
-                <OpenInNewIcon fontSize="small" />
-                詳細ページを開く
-              </a>
-            )}
+
           </div>
         </div>
 
