@@ -41,6 +41,16 @@ export default function SpotPopup({
   const touchStartX = useRef<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const closeFullscreen = (idx: number) => {
+    setIsFullscreen(false);
+    setRotation(0);
+    requestAnimationFrame(() => {
+      if (scrollRef.current) {
+        scrollRef.current.scrollTo({ left: idx * scrollRef.current.offsetWidth, behavior: 'instant' as ScrollBehavior });
+      }
+    });
+  };
+
   // 経路検索（Googleマップアプリに遷移）
   const handleDirections = () => {
     const url = `https://www.google.com/maps/dir/?api=1&destination=${spot.latitude},${spot.longitude}`;
@@ -583,7 +593,7 @@ export default function SpotPopup({
       {/* フルスクリーンモーダル */}
       {isFullscreen && createPortal(
         <div
-          onClick={() => { setIsFullscreen(false); setRotation(0); }}
+          onClick={() => closeFullscreen(imageIndex)}
           style={{
             position: 'fixed', inset: 0,
             width: '100vw',
@@ -615,7 +625,7 @@ export default function SpotPopup({
               style={{ width: rotation === 90 || rotation === 270 ? '100dvh' : '100vw', height: rotation === 90 || rotation === 270 ? '100vw' : '100dvh', objectFit: 'contain', cursor: 'pointer', transition: 'transform 0.3s ease', transform: `rotate(${rotation}deg)` }}
             />
             <button
-              onClick={() => setIsFullscreen(false)}
+              onClick={() => closeFullscreen(imageIndex)}
               style={{
                 position: 'absolute', top: '16px', right: '16px',
                 background: 'rgba(0,0,0,0.6)', color: 'white', border: 'none',

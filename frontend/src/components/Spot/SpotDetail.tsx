@@ -20,6 +20,17 @@ export default function SpotDetail({ user }: SpotDetailProps) {
   const [rotation, setRotation] = useState(0);
   const touchStartX = useRef<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const closeFullscreen = (idx: number) => {
+    setIsFullscreen(false);
+    setRotation(0);
+    // カルーセルのスクロール位置をフルスクリーンで表示していた画像に合わせる
+    requestAnimationFrame(() => {
+      if (scrollRef.current) {
+        scrollRef.current.scrollTo({ left: idx * scrollRef.current.offsetWidth, behavior: 'instant' as ScrollBehavior });
+      }
+    });
+  };
   const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as { from?: string } | null)?.from;
@@ -496,7 +507,7 @@ export default function SpotDetail({ user }: SpotDetailProps) {
       {/* フルスクリーンモーダル */}
       {isFullscreen && createPortal(
         <div
-          onClick={() => { setIsFullscreen(false); setRotation(0); }}
+          onClick={() => closeFullscreen(imageIndex)}
           style={{
             position: 'fixed',
             inset: 0,
@@ -549,7 +560,7 @@ export default function SpotDetail({ user }: SpotDetailProps) {
 
             {/* 閉じるボタン */}
             <button
-              onClick={() => { setIsFullscreen(false); setRotation(0); }}
+              onClick={() => closeFullscreen(imageIndex)}
               style={{
                 position: 'absolute',
                 top: '16px',
