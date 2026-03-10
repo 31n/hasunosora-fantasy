@@ -129,60 +129,57 @@ export default function SpotDetail({ user }: SpotDetailProps) {
       {/* 画像ギャラリー */}
       {spot.images.length > 0 && (
         <div style={{ marginBottom: '24px' }}>
-          {/* スクロールコンテナ */}
-          <div
-            ref={scrollRef}
-            className="carousel-track"
-            onScroll={() => {
-              if (!scrollRef.current) return;
-              clearTimeout((scrollRef.current as any)._scrollTimer);
-              (scrollRef.current as any)._scrollTimer = setTimeout(() => {
+          {/* ラッパー: オーバーレイボタンの position 基準 */}
+          <div style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden' }}>
+            {/* スクロールコンテナ（画像のみ） */}
+            <div
+              ref={scrollRef}
+              className="carousel-track"
+              onScroll={() => {
                 if (!scrollRef.current) return;
-                const idx = Math.round(scrollRef.current.scrollLeft / scrollRef.current.offsetWidth);
-                setImageIndex(idx);
-              }, 50);
-            }}
-            style={{
-              display: 'flex',
-              overflowX: 'auto',
-              scrollSnapType: 'x mandatory',
-              scrollBehavior: 'smooth',
-              borderRadius: '12px',
-              WebkitOverflowScrolling: 'touch',
-              scrollbarWidth: 'none',
-              msOverflowStyle: 'none',
-              position: 'relative',
-              userSelect: 'none',
-            }}
-          >
-            {spot.images.map((src, idx) => (
-              <div
-                key={idx}
-                style={{
-                  flex: '0 0 100%',
-                  scrollSnapAlign: 'start',
-                  position: 'relative',
-                  overflow: 'hidden',
-                }}
-              >
-                <img
-                  src={src}
-                  alt={`${spot.spot_name} ${idx + 1}`}
-                  onClick={() => setIsFullscreen(true)}
-                  draggable={false}
+                clearTimeout((scrollRef.current as any)._scrollTimer);
+                (scrollRef.current as any)._scrollTimer = setTimeout(() => {
+                  if (!scrollRef.current) return;
+                  const idx = Math.round(scrollRef.current.scrollLeft / scrollRef.current.offsetWidth);
+                  setImageIndex(idx);
+                }, 50);
+              }}
+              style={{
+                display: 'flex',
+                overflowX: 'auto',
+                scrollSnapType: 'x mandatory',
+                scrollBehavior: 'smooth',
+                WebkitOverflowScrolling: 'touch',
+                scrollbarWidth: 'none',
+                msOverflowStyle: 'none',
+                userSelect: 'none',
+              }}
+            >
+              {spot.images.map((src, idx) => (
+                <div
+                  key={idx}
                   style={{
-                    width: '100%',
-                    height: '300px',
-                    objectFit: 'cover',
-                    display: 'block',
-                    cursor: 'zoom-in',
-                    pointerEvents: 'none',
+                    flex: '0 0 100%',
+                    scrollSnapAlign: 'start',
+                    overflow: 'hidden',
                   }}
-                />
-              </div>
-            ))}
+                >
+                  <img
+                    src={src}
+                    alt={`${spot.spot_name} ${idx + 1}`}
+                    draggable={false}
+                    style={{
+                      width: '100%',
+                      height: '300px',
+                      objectFit: 'cover',
+                      display: 'block',
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
 
-            {/* フルスクリーンボタン */}
+            {/* オーバーレイ: フルスクリーンボタン */}
             <button
               onClick={() => setIsFullscreen(true)}
               style={{
@@ -209,7 +206,7 @@ export default function SpotDetail({ user }: SpotDetailProps) {
               </svg>
             </button>
 
-            {/* 左右矢印ボタン（複数画像のとき） */}
+            {/* オーバーレイ: 左右矢印 + 枚数インジケーター（複数画像のとき） */}
             {spot.images.length > 1 && (
               <>
                 <button
