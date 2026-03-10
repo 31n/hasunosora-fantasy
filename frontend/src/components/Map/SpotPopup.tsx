@@ -39,6 +39,7 @@ export default function SpotPopup({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [rotation, setRotation] = useState(0);
   const touchStartX = useRef<number | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   // 経路検索（Googleマップアプリに遷移）
   const handleDirections = () => {
@@ -303,26 +304,60 @@ export default function SpotPopup({
         {/* メイン画像 */}
         {spot.images.length > 0 && (
           <div style={{ marginBottom: '16px' }}>
+            {/* スクロールコンテナ */}
             <div
-              style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', userSelect: 'none' }}
-              onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
-              onTouchEnd={(e) => {
-                if (touchStartX.current === null) return;
-                const diff = touchStartX.current - e.changedTouches[0].clientX;
-                if (Math.abs(diff) > 40) {
-                  if (diff > 0) setImageIndex((prev) => Math.min(prev + 1, spot.images.length - 1));
-                  else setImageIndex((prev) => Math.max(prev - 1, 0));
-                }
-                touchStartX.current = null;
+              ref={scrollRef}
+              className="carousel-track"
+              onScroll={() => {
+                if (!scrollRef.current) return;
+                clearTimeout((scrollRef.current as any)._scrollTimer);
+                (scrollRef.current as any)._scrollTimer = setTimeout(() => {
+                  if (!scrollRef.current) return;
+                  const idx = Math.round(scrollRef.current.scrollLeft / scrollRef.current.offsetWidth);
+                  setImageIndex(idx);
+                }, 50);
+              }}
+              style={{
+                display: 'flex',
+                overflowX: 'auto',
+                scrollSnapType: 'x mandatory',
+                scrollBehavior: 'smooth',
+                borderRadius: '12px',
+                WebkitOverflowScrolling: 'touch',
+                scrollbarWidth: 'none',
+                msOverflowStyle: 'none',
+                position: 'relative',
+                userSelect: 'none',
               }}
             >
-              <img
-                src={spot.images[imageIndex]}
-                alt={`${spot.spot_name} ${imageIndex + 1}`}
-                onClick={() => setIsFullscreen(true)}
-                style={{ width: '100%', height: '240px', objectFit: 'cover', display: 'block', cursor: 'zoom-in' }}
-              />
-              {/* fit_screen ボタン */}
+              {spot.images.map((src, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    flex: '0 0 100%',
+                    scrollSnapAlign: 'start',
+                    position: 'relative',
+                    overflow: 'hidden',
+                  }}
+                >
+                  <img
+                    src={src}
+                    alt={`${spot.spot_name} ${idx + 1}`}
+                    onClick={() => setIsFullscreen(true)}
+                    draggable={false}
+                    style={{
+                      width: '100%',
+                      height: '240px',
+                      objectFit: 'cover',
+                      display: 'block',
+                      cursor: 'zoom-in',
+                      pointerEvents: 'none',
+                    }}
+                  />
+                </div>
+              ))}
+
+              {/* フルスクリーンボタン */}
               <button
                 onClick={() => setIsFullscreen(true)}
                 style={{
@@ -330,6 +365,7 @@ export default function SpotPopup({
                   background: 'rgba(0,0,0,0.45)', color: 'white', border: 'none',
                   borderRadius: '6px', width: '32px', height: '32px',
                   cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0,
+                  zIndex: 1,
                 }}
                 aria-label="フルスクリーン表示"
               >
@@ -337,10 +373,15 @@ export default function SpotPopup({
                   <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
                 </svg>
               </button>
+
               {spot.images.length > 1 && (
                 <>
                   <button
-                    onClick={() => setImageIndex((prev) => Math.max(prev - 1, 0))}
+                    onClick={() => {
+                      const next = Math.max(imageIndex - 1, 0);
+                      scrollRef.current?.scrollTo({ left: next * scrollRef.current.offsetWidth, behavior: 'smooth' });
+                      setImageIndex(next);
+                    }}
                     disabled={imageIndex === 0}
                     style={{
                       position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)',
@@ -349,11 +390,16 @@ export default function SpotPopup({
                       cursor: imageIndex === 0 ? 'default' : 'pointer',
                       opacity: imageIndex === 0 ? 0.3 : 1,
                       display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1, padding: 0,
+                      zIndex: 1,
                     }}
                     aria-label="前の画像"
                   >‹</button>
                   <button
-                    onClick={() => setImageIndex((prev) => Math.min(prev + 1, spot.images.length - 1))}
+                    onClick={() => {
+                      const next = Math.min(imageIndex + 1, spot.images.length - 1);
+                      scrollRef.current?.scrollTo({ left: next * scrollRef.current.offsetWidth, behavior: 'smooth' });
+                      setImageIndex(next);
+                    }}
                     disabled={imageIndex === spot.images.length - 1}
                     style={{
                       position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)',
@@ -362,6 +408,7 @@ export default function SpotPopup({
                       cursor: imageIndex === spot.images.length - 1 ? 'default' : 'pointer',
                       opacity: imageIndex === spot.images.length - 1 ? 0.3 : 1,
                       display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1, padding: 0,
+                      zIndex: 1,
                     }}
                     aria-label="次の画像"
                   >›</button>
@@ -369,18 +416,23 @@ export default function SpotPopup({
                     position: 'absolute', bottom: '8px', right: '12px',
                     background: 'rgba(0,0,0,0.5)', color: 'white',
                     borderRadius: '12px', padding: '2px 10px', fontSize: '12px',
+                    zIndex: 1, pointerEvents: 'none',
                   }}>
                     {imageIndex + 1} / {spot.images.length}
                   </div>
                 </>
               )}
             </div>
+
             {spot.images.length > 1 && (
               <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '10px' }}>
                 {spot.images.map((_, idx) => (
                   <button
                     key={idx}
-                    onClick={() => setImageIndex(idx)}
+                    onClick={() => {
+                      scrollRef.current?.scrollTo({ left: idx * scrollRef.current.offsetWidth, behavior: 'smooth' });
+                      setImageIndex(idx);
+                    }}
                     style={{
                       width: idx === imageIndex ? '20px' : '8px', height: '8px',
                       borderRadius: '4px', border: 'none', padding: 0, cursor: 'pointer',

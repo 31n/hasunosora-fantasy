@@ -19,6 +19,7 @@ export default function SpotDetail({ user }: SpotDetailProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [rotation, setRotation] = useState(0);
   const touchStartX = useRef<number | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as { from?: string } | null)?.from;
@@ -128,41 +129,58 @@ export default function SpotDetail({ user }: SpotDetailProps) {
       {/* 画像ギャラリー */}
       {spot.images.length > 0 && (
         <div style={{ marginBottom: '24px' }}>
+          {/* スクロールコンテナ */}
           <div
+            ref={scrollRef}
+            className="carousel-track"
+            onScroll={() => {
+              if (!scrollRef.current) return;
+              clearTimeout((scrollRef.current as any)._scrollTimer);
+              (scrollRef.current as any)._scrollTimer = setTimeout(() => {
+                if (!scrollRef.current) return;
+                const idx = Math.round(scrollRef.current.scrollLeft / scrollRef.current.offsetWidth);
+                setImageIndex(idx);
+              }, 50);
+            }}
             style={{
-              position: 'relative',
+              display: 'flex',
+              overflowX: 'auto',
+              scrollSnapType: 'x mandatory',
+              scrollBehavior: 'smooth',
               borderRadius: '12px',
-              overflow: 'hidden',
+              WebkitOverflowScrolling: 'touch',
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
+              position: 'relative',
               userSelect: 'none',
             }}
-            onTouchStart={(e) => {
-              touchStartX.current = e.touches[0].clientX;
-            }}
-            onTouchEnd={(e) => {
-              if (touchStartX.current === null) return;
-              const diff = touchStartX.current - e.changedTouches[0].clientX;
-              if (Math.abs(diff) > 40) {
-                if (diff > 0) {
-                  setImageIndex((prev) => Math.min(prev + 1, spot.images.length - 1));
-                } else {
-                  setImageIndex((prev) => Math.max(prev - 1, 0));
-                }
-              }
-              touchStartX.current = null;
-            }}
           >
-            <img
-              src={spot.images[imageIndex]}
-              alt={`${spot.spot_name} ${imageIndex + 1}`}
-              onClick={() => setIsFullscreen(true)}
-              style={{
-                width: '100%',
-                height: '300px',
-                objectFit: 'cover',
-                display: 'block',
-                cursor: 'zoom-in',
-              }}
-            />
+            {spot.images.map((src, idx) => (
+              <div
+                key={idx}
+                style={{
+                  flex: '0 0 100%',
+                  scrollSnapAlign: 'start',
+                  position: 'relative',
+                  overflow: 'hidden',
+                }}
+              >
+                <img
+                  src={src}
+                  alt={`${spot.spot_name} ${idx + 1}`}
+                  onClick={() => setIsFullscreen(true)}
+                  draggable={false}
+                  style={{
+                    width: '100%',
+                    height: '300px',
+                    objectFit: 'cover',
+                    display: 'block',
+                    cursor: 'zoom-in',
+                    pointerEvents: 'none',
+                  }}
+                />
+              </div>
+            ))}
 
             {/* フルスクリーンボタン */}
             <button
@@ -182,6 +200,7 @@ export default function SpotDetail({ user }: SpotDetailProps) {
                 alignItems: 'center',
                 justifyContent: 'center',
                 padding: 0,
+                zIndex: 1,
               }}
               aria-label="フルスクリーン表示"
             >
@@ -194,7 +213,11 @@ export default function SpotDetail({ user }: SpotDetailProps) {
             {spot.images.length > 1 && (
               <>
                 <button
-                  onClick={() => setImageIndex((prev) => Math.max(prev - 1, 0))}
+                  onClick={() => {
+                    const next = Math.max(imageIndex - 1, 0);
+                    scrollRef.current?.scrollTo({ left: next * scrollRef.current.offsetWidth, behavior: 'smooth' });
+                    setImageIndex(next);
+                  }}
                   disabled={imageIndex === 0}
                   style={{
                     position: 'absolute',
@@ -214,13 +237,16 @@ export default function SpotDetail({ user }: SpotDetailProps) {
                     alignItems: 'center',
                     justifyContent: 'center',
                     lineHeight: 1,
+                    zIndex: 1,
                   }}
                   aria-label="前の画像"
-                >
-                  ‹
-                </button>
+                >‹</button>
                 <button
-                  onClick={() => setImageIndex((prev) => Math.min(prev + 1, spot.images.length - 1))}
+                  onClick={() => {
+                    const next = Math.min(imageIndex + 1, spot.images.length - 1);
+                    scrollRef.current?.scrollTo({ left: next * scrollRef.current.offsetWidth, behavior: 'smooth' });
+                    setImageIndex(next);
+                  }}
                   disabled={imageIndex === spot.images.length - 1}
                   style={{
                     position: 'absolute',
@@ -240,11 +266,10 @@ export default function SpotDetail({ user }: SpotDetailProps) {
                     alignItems: 'center',
                     justifyContent: 'center',
                     lineHeight: 1,
+                    zIndex: 1,
                   }}
                   aria-label="次の画像"
-                >
-                  ›
-                </button>
+                >›</button>
 
                 {/* 枚数インジケーター */}
                 <div
@@ -257,6 +282,8 @@ export default function SpotDetail({ user }: SpotDetailProps) {
                     borderRadius: '12px',
                     padding: '2px 10px',
                     fontSize: '12px',
+                    zIndex: 1,
+                    pointerEvents: 'none',
                   }}
                 >
                   {imageIndex + 1} / {spot.images.length}
@@ -271,7 +298,10 @@ export default function SpotDetail({ user }: SpotDetailProps) {
               {spot.images.map((_, idx) => (
                 <button
                   key={idx}
-                  onClick={() => setImageIndex(idx)}
+                  onClick={() => {
+                    scrollRef.current?.scrollTo({ left: idx * scrollRef.current.offsetWidth, behavior: 'smooth' });
+                    setImageIndex(idx);
+                  }}
                   style={{
                     width: idx === imageIndex ? '20px' : '8px',
                     height: '8px',

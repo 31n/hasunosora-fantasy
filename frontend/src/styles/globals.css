@@ -34,6 +34,11 @@ button {
   font-family: inherit;
 }
 
+/* カルーセルのスクロールバーを非表示 */
+.carousel-track::-webkit-scrollbar {
+  display: none;
+}
+
 input,
 textarea,
 select {
