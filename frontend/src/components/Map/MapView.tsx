@@ -27,6 +27,7 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
   const userLocationRef = useRef<[number, number] | null>(null); // refを追加
   const watchPositionId = useRef<number | null>(null); // watchPositionのIDを保存
   const orientationEventType = useRef<'deviceorientationabsolute' | 'deviceorientation' | null>(null); // 登録されたイベントタイプ
+  const prevSelectedAreaRef = useRef<string | null | undefined>(undefined); // エリアID変更追跡用
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [locationStatus, setLocationStatus] = useState<'loading' | 'available' | 'error'>('loading');
   const [userHeading, setUserHeading] = useState<number>(0);
@@ -518,16 +519,27 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
     };
   }, [filteredSpots, highlightQuizSpots, selectedSpot]); // selectedSpotも依存配列に追加
 
-  // エリア変更時に地図の中心を移動
+  // エリア変更時に地図の中心を移動（再読み込みによる areas 参照更新では発火しない）
   useEffect(() => {
+    const currentAreaId = user.selected_area ?? null;
+
+    // エリアIDが前回と同じなら移動しない（再読み込み時など）
+    if (prevSelectedAreaRef.current === currentAreaId) return;
+
+    const isFirstRun = prevSelectedAreaRef.current === undefined;
+    prevSelectedAreaRef.current = currentAreaId;
+
+    // 初回マウント時はマップ初期化で既に中心設定済みのため移動しない
+    if (isFirstRun) return;
+
     if (!map.current || !selectedAreaCenter) return;
-    
+
     map.current.flyTo({
       center: selectedAreaCenter,
       zoom: 15,
       duration: 1500
     });
-  }, [selectedAreaCenter]);
+  }, [user.selected_area, selectedAreaCenter]);
 
   // フィルターモーダルのEscapeキーハンドリング
   useEffect(() => {
