@@ -18,6 +18,7 @@ import AdminSpotForm from './components/Admin/AdminSpotForm';
 import AdminAreaList from './components/Admin/AdminAreaList';
 import Header from './components/Common/Header';
 import Loading from './components/Common/Loading';
+import HowToPage from './components/Common/HowToPage';
 
 import type { User, Spot, Area } from './types';
 
@@ -241,6 +242,9 @@ function AppContent({
               <Route path="*" element={<Navigate to="/" replace />} />
             </>
           )}
+
+          {/* 使い方ページ（ログイン不要） */}
+          <Route path="/howto" element={<HowToPage />} />
 
           {/* 管理画面 */}
           <Route path="/admin" element={<AdminLogin />} />
