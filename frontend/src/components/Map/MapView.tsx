@@ -593,6 +593,49 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
     <div style={{ position: 'relative', width: '100%', height: '100%', flex: 1, overflow: 'hidden' }}>
       <div ref={mapContainer} style={{ width: '100%', height: '100%' }} />
       
+      {/* 現在地ボタン */}
+      <button
+        onClick={() => {
+          if (!map.current || !userLocationRef.current) return;
+          map.current.flyTo({
+            center: userLocationRef.current,
+            zoom: 17,
+            duration: 800
+          });
+        }}
+        aria-label="現在地に移動"
+        style={{
+          position: 'absolute',
+          bottom: '80px',
+          right: '20px',
+          width: '48px',
+          height: '48px',
+          backgroundColor: userLocation ? 'white' : '#e5e7eb',
+          color: userLocation ? '#3b82f6' : '#9ca3af',
+          border: 'none',
+          borderRadius: '50%',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+          cursor: userLocation ? 'pointer' : 'default',
+          zIndex: 999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          transition: 'all 0.2s'
+        }}
+        onMouseEnter={(e) => {
+          if (userLocation) {
+            e.currentTarget.style.transform = 'scale(1.1)';
+            e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.25)';
+          }
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = 'scale(1)';
+          e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.2)';
+        }}
+      >
+        <MyLocationIcon style={{ fontSize: '22px' }} />
+      </button>
+
       {/* フィルターボタン */}
       <button
         onClick={() => setShowFilter(true)}
