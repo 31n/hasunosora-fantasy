@@ -1,5 +1,16 @@
 /// <reference types="vite/client" />
 
+// .md?raw インポートの型定義
+declare module '*.md?raw' {
+  const content: string;
+  export default content;
+}
+
+declare module '*.md' {
+  const content: string;
+  export default content;
+}
+
 interface ImportMetaEnv {
   readonly VITE_MAPBOX_TOKEN: string;
   readonly VITE_API_ENDPOINT?: string;

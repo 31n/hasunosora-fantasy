@@ -1,5 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import type { User } from '../../types';
+import HowToModal from './HowToModal';
 
 interface HeaderProps {
   user: User;
@@ -104,6 +105,9 @@ export default function Header({ user, onLogout }: HeaderProps) {
           >
             マイページ
           </button>
+
+          {/* 使い方ボタン */}
+          <HowToModal />
         </nav>
       </div>
 

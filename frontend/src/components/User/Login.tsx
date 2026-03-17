@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { userApi } from '../../services/api';
 import type { User } from '../../types';
 import PWAInstallPrompt from '../Common/PWAInstallPrompt';
+import HowToModal from '../Common/HowToModal';
 
 interface LoginProps {
   onLogin: (user: User) => void;
@@ -50,8 +51,13 @@ export default function Login({ onLogin }: LoginProps) {
         justifyContent: 'center', 
         minHeight: '100vh',
         padding: '24px',
-        backgroundColor: '#f3f4f6'
+        backgroundColor: '#f3f4f6',
+        position: 'relative'
       }}>
+        {/* 使い方ボタン（右上固定） */}
+        <div style={{ position: 'fixed', top: '16px', right: '16px', zIndex: 50 }}>
+          <HowToModal />
+        </div>
       <div style={{
         backgroundColor: 'white',
         borderRadius: '12px',
