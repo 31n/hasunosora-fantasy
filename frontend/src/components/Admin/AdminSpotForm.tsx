@@ -17,6 +17,8 @@ export default function AdminSpotForm() {
   const [referenceLocation, setReferenceLocation] = useState({ lat: '', lng: '' });
   const [isShortCode, setIsShortCode] = useState(false);
   const [areas, setAreas] = useState<Area[]>([]);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const returnSearch = (location.state as { returnSearch?: string } | null)?.returnSearch ?? '';
@@ -126,6 +128,39 @@ export default function AdminSpotForm() {
       ...prev,
       images: prev.images.filter((_, i) => i !== index)
     }));
+  };
+
+  const moveImage = (fromIndex: number, toIndex: number) => {
+    if (toIndex < 0 || toIndex >= formData.images.length) return;
+    setFormData(prev => {
+      const newImages = [...prev.images];
+      const [moved] = newImages.splice(fromIndex, 1);
+      newImages.splice(toIndex, 0, moved);
+      return { ...prev, images: newImages };
+    });
+  };
+
+  const handleDragStart = (index: number) => {
+    setDragIndex(index);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    setDragOverIndex(index);
+  };
+
+  const handleDrop = (e: React.DragEvent, toIndex: number) => {
+    e.preventDefault();
+    if (dragIndex !== null && dragIndex !== toIndex) {
+      moveImage(dragIndex, toIndex);
+    }
+    setDragIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDragIndex(null);
+    setDragOverIndex(null);
   };
 
   const handleChoiceChange = (index: number, value: string) => {
@@ -697,9 +732,29 @@ export default function AdminSpotForm() {
         }}>
           <h2 style={{ marginBottom: '16px', fontSize: '18px' }}>画像</h2>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '12px', marginBottom: '16px' }}>
+          {formData.images.length > 0 && (
+            <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '8px' }}>
+              ドラッグ&ドロップ、または ◀ ▶ ボタンで順序を変更できます
+            </p>
+          )}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '12px', marginBottom: '16px' }}>
             {formData.images.map((url, index) => (
-              <div key={index} style={{ position: 'relative' }}>
+              <div
+                key={index}
+                draggable
+                onDragStart={() => handleDragStart(index)}
+                onDragOver={(e) => handleDragOver(e, index)}
+                onDrop={(e) => handleDrop(e, index)}
+                onDragEnd={handleDragEnd}
+                style={{
+                  position: 'relative',
+                  cursor: 'grab',
+                  opacity: dragIndex === index ? 0.4 : 1,
+                  outline: dragOverIndex === index && dragIndex !== index ? '2px dashed #3b82f6' : 'none',
+                  borderRadius: '8px',
+                  transition: 'opacity 0.2s'
+                }}
+              >
                 <img
                   src={url}
                   alt={`Image ${index + 1}`}
@@ -707,17 +762,36 @@ export default function AdminSpotForm() {
                     width: '100%',
                     height: '150px',
                     objectFit: 'cover',
-                    borderRadius: '8px'
+                    borderRadius: '8px',
+                    display: 'block',
+                    userSelect: 'none',
+                    pointerEvents: 'none'
                   }}
                 />
+                {/* 順番バッジ */}
+                <div style={{
+                  position: 'absolute',
+                  top: '6px',
+                  left: '6px',
+                  backgroundColor: 'rgba(0,0,0,0.55)',
+                  color: 'white',
+                  borderRadius: '4px',
+                  fontSize: '11px',
+                  fontWeight: '700',
+                  padding: '2px 6px',
+                  userSelect: 'none'
+                }}>
+                  {index + 1}
+                </div>
+                {/* 削除ボタン */}
                 <button
                   type="button"
                   onClick={() => removeImage(index)}
                   style={{
                     position: 'absolute',
-                    top: '8px',
-                    right: '8px',
-                    padding: '4px 8px',
+                    top: '6px',
+                    right: '6px',
+                    padding: '3px 7px',
                     backgroundColor: '#ef4444',
                     color: 'white',
                     border: 'none',
@@ -728,6 +802,48 @@ export default function AdminSpotForm() {
                 >
                   削除
                 </button>
+                {/* 移動ボタン */}
+                <div style={{
+                  position: 'absolute',
+                  bottom: '6px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  display: 'flex',
+                  gap: '4px'
+                }}>
+                  <button
+                    type="button"
+                    onClick={() => moveImage(index, index - 1)}
+                    disabled={index === 0}
+                    style={{
+                      padding: '3px 8px',
+                      backgroundColor: index === 0 ? 'rgba(0,0,0,0.25)' : 'rgba(0,0,0,0.55)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      fontSize: '13px',
+                      cursor: index === 0 ? 'default' : 'pointer'
+                    }}
+                  >
+                    ◀
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => moveImage(index, index + 1)}
+                    disabled={index === formData.images.length - 1}
+                    style={{
+                      padding: '3px 8px',
+                      backgroundColor: index === formData.images.length - 1 ? 'rgba(0,0,0,0.25)' : 'rgba(0,0,0,0.55)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      fontSize: '13px',
+                      cursor: index === formData.images.length - 1 ? 'default' : 'pointer'
+                    }}
+                  >
+                    ▶
+                  </button>
+                </div>
               </div>
             ))}
           </div>
