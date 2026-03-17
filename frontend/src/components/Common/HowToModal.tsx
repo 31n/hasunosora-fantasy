@@ -1,14 +1,54 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import howtoContent from '../../content/howto.md?raw';
 
 interface HowToModalProps {
-  /** ボタンのサイズ・スタイルを調整したいときに使う追加スタイル */
   buttonStyle?: React.CSSProperties;
 }
 
+interface TocItem {
+  level: 2 | 3;
+  text: string;
+  id: string;
+}
+
+/** 見出しテキストから URL-safe な id を生成 */
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[\s\u3000]+/g, '-')
+    .replace(/[^\w\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF-]/g, '')
+    .replace(/--+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+/** マークダウン文字列から h2/h3 を抽出して TOC を作成 */
+function extractToc(markdown: string): TocItem[] {
+  const lines = markdown.split('\n');
+  const toc: TocItem[] = [];
+  for (const line of lines) {
+    const m2 = line.match(/^##\s+(.+)/);
+    const m3 = line.match(/^###\s+(.+)/);
+    if (m2) toc.push({ level: 2, text: m2[1].replace(/\*\*/g, '').trim(), id: slugify(m2[1].trim()) });
+    else if (m3) toc.push({ level: 3, text: m3[1].replace(/\*\*/g, '').trim(), id: slugify(m3[1].trim()) });
+  }
+  return toc;
+}
+
+const tocItems = extractToc(howtoContent);
+
 export default function HowToModal({ buttonStyle }: HowToModalProps) {
   const [open, setOpen] = useState(false);
+  const [tocOpen, setTocOpen] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const scrollToId = (id: string) => {
+    const el = scrollRef.current?.querySelector(`#${CSS.escape(id)}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    setTocOpen(false);
+  };
 
   return (
     <>
@@ -79,24 +119,86 @@ export default function HowToModal({ buttonStyle }: HowToModalProps) {
               <span style={{ fontWeight: 'bold', fontSize: '16px', color: '#111827' }}>
                 📖 使い方
               </span>
-              <button
-                onClick={() => setOpen(false)}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {/* 目次トグルボタン */}
+                <button
+                  onClick={() => setTocOpen((v) => !v)}
+                  title="目次"
+                  style={{
+                    padding: '4px 10px',
+                    backgroundColor: tocOpen ? '#dbeafe' : '#f3f4f6',
+                    color: tocOpen ? '#1e40af' : '#6b7280',
+                    border: '1px solid ' + (tocOpen ? '#bfdbfe' : '#e5e7eb'),
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                  }}
+                >
+                  ≡ 目次
+                </button>
+                <button
+                  onClick={() => setOpen(false)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '20px',
+                    color: '#6b7280',
+                    lineHeight: 1,
+                    padding: '4px',
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+
+            {/* 目次パネル */}
+            {tocOpen && (
+              <div
                 style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: '20px',
-                  color: '#6b7280',
-                  lineHeight: 1,
-                  padding: '4px',
+                  borderBottom: '1px solid #e5e7eb',
+                  backgroundColor: '#f8fafc',
+                  padding: '12px 20px',
+                  flexShrink: 0,
+                  maxHeight: '200px',
+                  overflowY: 'auto',
                 }}
               >
-                ×
-              </button>
-            </div>
+                <p style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '8px', fontWeight: '600', letterSpacing: '0.05em' }}>
+                  目次
+                </p>
+                <nav>
+                  {tocItems.map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => scrollToId(item.id)}
+                      style={{
+                        display: 'block',
+                        width: '100%',
+                        textAlign: 'left',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: item.level === 2 ? '4px 0' : '3px 0 3px 16px',
+                        fontSize: item.level === 2 ? '13px' : '12px',
+                        fontWeight: item.level === 2 ? '600' : '400',
+                        color: item.level === 2 ? '#1e40af' : '#4b5563',
+                        borderLeft: item.level === 3 ? '2px solid #dbeafe' : 'none',
+                        marginLeft: item.level === 3 ? '8px' : '0',
+                      }}
+                    >
+                      {item.level === 2 ? '· ' : ''}{item.text}
+                    </button>
+                  ))}
+                </nav>
+              </div>
+            )}
 
             {/* コンテンツ */}
             <div
+              ref={scrollRef}
               style={{
                 overflowY: 'auto',
                 padding: '20px',
@@ -112,16 +214,30 @@ export default function HowToModal({ buttonStyle }: HowToModalProps) {
                       {children}
                     </h1>
                   ),
-                  h2: ({ children }) => (
-                    <h2 style={{ fontSize: '16px', fontWeight: 'bold', margin: '20px 0 8px', color: '#1e40af', borderBottom: '2px solid #dbeafe', paddingBottom: '4px' }}>
-                      {children}
-                    </h2>
-                  ),
-                  h3: ({ children }) => (
-                    <h3 style={{ fontSize: '14px', fontWeight: 'bold', margin: '14px 0 6px', color: '#374151' }}>
-                      {children}
-                    </h3>
-                  ),
+                  h2: ({ children }) => {
+                    const text = String(children).replace(/\*\*/g, '').trim();
+                    const id = slugify(text);
+                    return (
+                      <h2
+                        id={id}
+                        style={{ fontSize: '16px', fontWeight: 'bold', margin: '20px 0 8px', color: '#1e40af', borderBottom: '2px solid #dbeafe', paddingBottom: '4px', scrollMarginTop: '8px' }}
+                      >
+                        {children}
+                      </h2>
+                    );
+                  },
+                  h3: ({ children }) => {
+                    const text = String(children).replace(/\*\*/g, '').trim();
+                    const id = slugify(text);
+                    return (
+                      <h3
+                        id={id}
+                        style={{ fontSize: '14px', fontWeight: 'bold', margin: '14px 0 6px', color: '#374151', scrollMarginTop: '8px' }}
+                      >
+                        {children}
+                      </h3>
+                    );
+                  },
                   p: ({ children }) => (
                     <p style={{ marginBottom: '8px' }}>{children}</p>
                   ),
