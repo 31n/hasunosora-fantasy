@@ -2,7 +2,7 @@
 
 ## 🌸 はじめに
 
-HASU Fantasy は、現実の場所を巡りながらスポットにチェックインしてポイントを獲得するゲームです。
+HASU Fantasy<span class="material-icons">home</span> は、現実の場所を巡りながらスポットにチェックインしてポイントを獲得するゲームです。
 
 ---
 

@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
+import rehypeRaw from 'rehype-raw';
 import howtoContent from '../../content/howto.md?raw';
 
 interface HowToModalProps {
@@ -208,6 +209,7 @@ export default function HowToModal({ buttonStyle }: HowToModalProps) {
               }}
             >
               <ReactMarkdown
+                rehypePlugins={[rehypeRaw]}
                 components={{
                   h1: ({ children }) => (
                     <h1 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '12px', color: '#111827' }}>

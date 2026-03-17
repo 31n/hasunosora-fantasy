@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
+import rehypeRaw from 'rehype-raw';
 import { useNavigate } from 'react-router-dom';
 import howtoContent from '../../content/howto.md?raw';
 
@@ -154,6 +155,7 @@ export default function HowToPage() {
         }}
       >
         <ReactMarkdown
+          rehypePlugins={[rehypeRaw]}
           components={{
             h1: ({ children }) => (
               <h1 style={{ fontSize: '22px', fontWeight: 'bold', marginBottom: '16px', color: '#111827' }}>
