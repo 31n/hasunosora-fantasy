@@ -597,7 +597,7 @@ export default function MyPage({ user, setUser, spots, areas }: MyPageProps) {
           </p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {history.slice(0, 10).map((item, index) => (
+            {[...history].sort((a, b) => new Date(b.checked_in_at).getTime() - new Date(a.checked_in_at).getTime()).slice(0, 10).map((item, index) => (
               <div
                 key={index}
                 onClick={() => navigate(`/spots/${item.spot_id}`, { state: { from: '/mypage' } })}
