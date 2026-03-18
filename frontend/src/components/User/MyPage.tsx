@@ -20,6 +20,7 @@ export default function MyPage({ user, setUser, spots, areas }: MyPageProps) {
   const [selectedStatArea, setSelectedStatArea] = useState<string>('all'); // 統計表示用エリア
   const [showAreaCodeInput, setShowAreaCodeInput] = useState(false);
   const [areaCode, setAreaCode] = useState('');
+  const [showAllHistory, setShowAllHistory] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -597,7 +598,7 @@ export default function MyPage({ user, setUser, spots, areas }: MyPageProps) {
           </p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {[...history].sort((a, b) => new Date(b.checked_in_at).getTime() - new Date(a.checked_in_at).getTime()).slice(0, 10).map((item, index) => (
+            {[...history].sort((a, b) => new Date(b.checked_in_at).getTime() - new Date(a.checked_in_at).getTime()).slice(0, showAllHistory ? undefined : 10).map((item, index) => (
               <div
                 key={index}
                 onClick={() => navigate(`/spots/${item.spot_id}`, { state: { from: '/mypage' } })}
@@ -639,6 +640,25 @@ export default function MyPage({ user, setUser, spots, areas }: MyPageProps) {
               </div>
             ))}
           </div>
+        )}
+        {history.length > 10 && (
+          <button
+            onClick={() => setShowAllHistory(!showAllHistory)}
+            style={{
+              width: '100%',
+              padding: '12px',
+              marginTop: '12px',
+              backgroundColor: '#f3f4f6',
+              color: '#374151',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: 'pointer'
+            }}
+          >
+            {showAllHistory ? '折りたたむ' : `すべて表示（${history.length}件）`}
+          </button>
         )}
       </div>
     </div>
