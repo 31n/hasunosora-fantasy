@@ -500,7 +500,7 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
           el.style.border = '3px solid white';
         } else {
           // 通常表示（クイズの有無に関わらず同じ色）
-          el.style.backgroundColor = '#99D2C9';
+          el.style.backgroundColor = '#76C3B7';
           el.style.border = '3px solid white';
         }
         
