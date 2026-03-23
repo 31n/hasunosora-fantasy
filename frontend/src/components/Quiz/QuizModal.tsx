@@ -20,6 +20,13 @@ export default function QuizModal({ user, spot, quizData, onClose, readOnly = fa
     score_earned: number;
   } | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [showCorrectAnswer, setShowCorrectAnswer] = useState(false);
+
+  const correctAnswerIndex = spot.quiz?.correct_answer ?? null;
+  const correctAnswerText =
+    correctAnswerIndex !== null && quizData.quiz?.choices
+      ? quizData.quiz.choices[correctAnswerIndex]
+      : null;
 
   const handleSubmit = async () => {
     if (selectedAnswer === null) {
@@ -104,11 +111,17 @@ export default function QuizModal({ user, spot, quizData, onClose, readOnly = fa
                     display: 'block',
                     padding: '12px',
                     marginBottom: '8px',
-                    border: '2px solid #e5e7eb',
+                    border: `2px solid ${showCorrectAnswer && index === correctAnswerIndex ? '#16a34a' : '#e5e7eb'}`,
                     borderRadius: '8px',
                     cursor: readOnly ? 'default' : 'pointer',
-                    backgroundColor: !readOnly && selectedAnswer === index ? '#dbeafe' : 'white',
-                    opacity: readOnly ? 0.7 : 1,
+                    backgroundColor:
+                      showCorrectAnswer && index === correctAnswerIndex
+                        ? '#dcfce7'
+                        : !readOnly && selectedAnswer === index
+                        ? '#dbeafe'
+                        : 'white',
+                    opacity: readOnly && !(showCorrectAnswer && index === correctAnswerIndex) ? 0.7 : 1,
+                    fontWeight: showCorrectAnswer && index === correctAnswerIndex ? 'bold' : 'normal',
                   }}
                 >
                   <input
@@ -121,9 +134,33 @@ export default function QuizModal({ user, spot, quizData, onClose, readOnly = fa
                     style={{ marginRight: '8px' }}
                   />
                   {choice}
+                  {showCorrectAnswer && index === correctAnswerIndex && (
+                    <span style={{ marginLeft: '8px', color: '#16a34a' }}>✓ 正解</span>
+                  )}
                 </label>
               ))}
             </div>
+
+            {readOnly && (
+              <div style={{ marginBottom: '16px' }}>
+                <button
+                  onClick={() => setShowCorrectAnswer(!showCorrectAnswer)}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    backgroundColor: showCorrectAnswer ? '#f3f4f6' : '#fef9c3',
+                    color: '#374151',
+                    border: '2px solid #fbbf24',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {showCorrectAnswer ? '正解を非表示にする' : '正解を表示する'}
+                </button>
+              </div>
+            )}
 
             <div style={{ display: 'flex', gap: '12px' }}>
               {!readOnly && (
@@ -189,6 +226,41 @@ export default function QuizModal({ user, spot, quizData, onClose, readOnly = fa
                 </p>
               )}
             </div>
+
+            {!result.correct && correctAnswerText && (
+              <div style={{ marginBottom: '16px' }}>
+                <button
+                  onClick={() => setShowCorrectAnswer(!showCorrectAnswer)}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    backgroundColor: showCorrectAnswer ? '#f3f4f6' : '#fef9c3',
+                    color: '#374151',
+                    border: '2px solid #fbbf24',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    marginBottom: showCorrectAnswer ? '8px' : '0',
+                  }}
+                >
+                  {showCorrectAnswer ? '正解を非表示にする' : '正解を表示する'}
+                </button>
+                {showCorrectAnswer && (
+                  <div style={{
+                    padding: '12px 16px',
+                    backgroundColor: '#dcfce7',
+                    border: '2px solid #16a34a',
+                    borderRadius: '8px',
+                    fontSize: '15px',
+                    fontWeight: 'bold',
+                    color: '#15803d',
+                  }}>
+                    ✓ 正解：{correctAnswerText}
+                  </div>
+                )}
+              </div>
+            )}
 
             <button
               onClick={onClose}
