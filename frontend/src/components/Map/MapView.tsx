@@ -462,6 +462,11 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
       
       // 選択されたスポットかどうかをチェック
       const isSelected = selectedSpot?.spot_id === spot.spot_id;
+
+      // チェックイン可能距離内かどうかをチェック
+      const isInRange = userLocation !== null &&
+        calculateDistance(userLocation[1], userLocation[0], spot.latitude, spot.longitude)
+          <= spot.detection_radius;
       
       if (isSelected) {
         // 選択中のスポット：目立つオレンジ色
@@ -472,6 +477,15 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
         el.style.boxShadow = '0 4px 12px rgba(249, 115, 22, 0.6)';
         el.style.transform = 'scale(1.2)';
         el.style.zIndex = '1000';
+      } else if (isInRange) {
+        // チェックイン圏内：緑 + パルスアニメーション
+        el.style.backgroundColor = '#22c55e';
+        el.style.border = '3px solid #16a34a';
+        el.style.width = '34px';
+        el.style.height = '34px';
+        el.style.transform = 'scale(1.1)';
+        el.style.zIndex = '500';
+        el.classList.add('spot-marker-in-range');
       } else {
         // 強調表示が有効でクイズありの場合のみ黄色、それ以外は全てグレー
         const isHighlighted = highlightQuizSpots && spot.quiz;
@@ -517,7 +531,7 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
     return () => {
       markers.forEach(marker => marker.remove());
     };
-  }, [filteredSpots, highlightQuizSpots, selectedSpot]); // selectedSpotも依存配列に追加
+  }, [filteredSpots, highlightQuizSpots, selectedSpot, userLocation]); // selectedSpot, userLocationも依存配列に追加
 
   // エリア変更時に地図の中心を移動（再読み込みによる areas 参照更新では発火しない）
   useEffect(() => {
