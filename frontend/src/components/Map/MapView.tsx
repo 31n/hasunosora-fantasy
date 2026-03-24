@@ -53,11 +53,9 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
 
   // スポットのチェックイン・クイズステータスを確認
   const checkSpotStatus = async (spotId: string) => {
-    setCheckinStatus('none');
-    setIsQuizOnCooldown(false);
     const normalize = (s: string) => /Z|[+-]\d{2}:?\d{2}$/.test(s) ? s : s + 'Z';
     try {
-      const historyData = await userApi.getHistory(user.user_id);
+      const historyData = await userApi.getHistory(user.user_id, 100);
       const spotHistory = historyData.checkins.filter(h => h.spot_id === spotId);
       if (spotHistory.length > 0) {
         const sorted = [...spotHistory].sort((a, b) =>
@@ -74,8 +72,12 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
           const jstCheckin = new Date(mostRecentTime.getTime() + 9 * 3600000);
           if (jstNow.toISOString().slice(0, 10) === jstCheckin.toISOString().slice(0, 10)) {
             setCheckinStatus('today');
+          } else {
+            setCheckinStatus('none');
           }
         }
+      } else {
+        setCheckinStatus('none');
       }
     } catch (error) {
       console.error('チェックインステータス確認エラー:', error);
@@ -94,6 +96,9 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
   // スポット選択時にステータスを確認
   useEffect(() => {
     if (selectedSpot) {
+      // 新しいスポットを開く前にリセット
+      setCheckinStatus('none');
+      setIsQuizOnCooldown(false);
       checkSpotStatus(selectedSpot.spot_id);
     } else {
       setCheckinStatus('none');
@@ -137,7 +142,9 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
 
       // チェックイン成功時にアニメーションを表示
       setShowCheckinAnimation(true);
-      // ステータスを再確認（クールダウン状態に更新）
+      // 即座にクールダウン状態にして連打を防ぐ
+      setCheckinStatus('cooldown');
+      // バックグラウンドでステータスを再確認（今日チェックイン済み等に更新）
       checkSpotStatus(selectedSpot.spot_id);
 
       // アラート表示前にアニメーションを確実に閉じる（モバイルのブロッキング対策）
