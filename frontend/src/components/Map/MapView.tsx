@@ -45,6 +45,11 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
   // フィルター状態
   const [highlightQuizSpots, setHighlightQuizSpots] = useState(false);
   const [selectedGenre, setSelectedGenre] = useState<string>('all');
+  const [showTodayCheckinMark, setShowTodayCheckinMark] = useState(false);
+  const [showAllCheckinMark, setShowAllCheckinMark] = useState(false);
+
+  // チェックイン履歴（マーク表示フィルター用）
+  const [allCheckinHistory, setAllCheckinHistory] = useState<import('../../types').CheckInHistory[] | null>(null);
 
   // チェックイン・クイズのクールダウン状態
   const CHECKIN_COOLDOWN_MINUTES = 5;
@@ -146,6 +151,12 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
       setCheckinStatus('cooldown');
       // バックグラウンドでステータスを再確認（今日チェックイン済み等に更新）
       checkSpotStatus(selectedSpot.spot_id);
+      // チェックインマークフィルターが有効な場合、履歴を再取得して即反映
+      if (showTodayCheckinMark || showAllCheckinMark) {
+        userApi.getHistory(user.user_id, 1000).then(data => {
+          setAllCheckinHistory(data.checkins);
+        }).catch(e => console.error('チェックイン履歴取得エラー:', e));
+      }
 
       // アラート表示前にアニメーションを確実に閉じる（モバイルのブロッキング対策）
       checkinAnimationTimer.current = window.setTimeout(() => {
@@ -279,6 +290,28 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
     
     return ['all', ...new Set(baseSpots.flatMap(s => s.genre || []))];
   }, [spots, user.selected_area, user.unlocked_areas, areas]);
+
+  // チェックイン済みスポットID（当日 / 全期間）
+  const normalize = (s: string) => /Z|[+-]\d{2}:?\d{2}$/.test(s) ? s : s + 'Z';
+  const todayCheckinSpotIds = useMemo(() => {
+    if (!allCheckinHistory) return new Set<string>();
+    const now = new Date();
+    const jstToday = new Date(now.getTime() + 9 * 3600000).toISOString().slice(0, 10);
+    return new Set(
+      allCheckinHistory
+        .filter(h => {
+          const jstCheckin = new Date(new Date(normalize(h.checked_in_at)).getTime() + 9 * 3600000)
+            .toISOString().slice(0, 10);
+          return jstCheckin === jstToday;
+        })
+        .map(h => h.spot_id)
+    );
+  }, [allCheckinHistory]);
+
+  const allCheckinSpotIds = useMemo(() => {
+    if (!allCheckinHistory) return new Set<string>();
+    return new Set(allCheckinHistory.map(h => h.spot_id));
+  }, [allCheckinHistory]);
 
   // 選択されたエリアの中心座標を取得
   const selectedAreaCenter = useMemo(() => {
@@ -573,6 +606,22 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
         el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
         el.style.transform = 'scale(1)';
       }
+
+      // チェックインマーク表示（選択中・圏内スポットは上書きしない）
+      const isTodayCheckin = showTodayCheckinMark && todayCheckinSpotIds.has(spot.spot_id);
+      const isAllTimeCheckin = showAllCheckinMark && allCheckinSpotIds.has(spot.spot_id);
+      el.style.display = 'flex';
+      el.style.alignItems = 'center';
+      el.style.justifyContent = 'center';
+      if (!isSelected && !isInRange && isTodayCheckin) {
+        el.style.backgroundColor = '#16a34a';
+        el.style.border = '3px solid #15803d';
+        el.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>`;
+      } else if (!isSelected && !isInRange && isAllTimeCheckin) {
+        el.style.backgroundColor = '#0ea5e9';
+        el.style.border = '3px solid #0284c7';
+        el.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>`;
+      }
       
       el.style.borderRadius = '50%';
       el.style.cursor = 'pointer';
@@ -595,7 +644,7 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
     return () => {
       markers.forEach(marker => marker.remove());
     };
-  }, [filteredSpots, highlightQuizSpots, selectedSpot, userLocation]); // selectedSpot, userLocationも依存配列に追加
+  }, [filteredSpots, highlightQuizSpots, selectedSpot, userLocation, showTodayCheckinMark, showAllCheckinMark, todayCheckinSpotIds, allCheckinSpotIds]); // selectedSpot, userLocationも依存配列に追加
 
   // エリア変更時に地図の中心を移動（再読み込みによる areas 参照更新では発火しない）
   useEffect(() => {
@@ -618,6 +667,15 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
       duration: 1500
     });
   }, [user.selected_area, selectedAreaCenter]);
+
+  // チェックインマークフィルターが有効になったとき履歴を取得
+  useEffect(() => {
+    if (showTodayCheckinMark || showAllCheckinMark) {
+      userApi.getHistory(user.user_id, 1000).then(data => {
+        setAllCheckinHistory(data.checkins);
+      }).catch(e => console.error('チェックイン履歴取得エラー:', e));
+    }
+  }, [showTodayCheckinMark, showAllCheckinMark]);
 
   // フィルターモーダルのEscapeキーハンドリング
   useEffect(() => {
@@ -867,7 +925,79 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
                 </div>
               )}
             </div>
-            
+
+            {/* 当日チェックインマーク */}
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#374151',
+                cursor: 'pointer',
+                padding: '12px',
+                backgroundColor: showTodayCheckinMark ? '#dcfce7' : '#f9fafb',
+                borderRadius: '8px',
+                border: '2px solid',
+                borderColor: showTodayCheckinMark ? '#16a34a' : '#e5e7eb',
+                transition: 'all 0.2s'
+              }}>
+                <input
+                  type="checkbox"
+                  checked={showTodayCheckinMark}
+                  onChange={(e) => setShowTodayCheckinMark(e.target.checked)}
+                  style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+                />
+                <span>当日チェックインしたスポットをマーク</span>
+              </label>
+              {showTodayCheckinMark && (
+                <div style={{
+                  marginTop: '8px', padding: '8px 12px',
+                  backgroundColor: '#dcfce7', borderRadius: '6px',
+                  fontSize: '12px', color: '#15803d'
+                }}>
+                  ✅ 本日チェックイン済みのスポットが緑のチェックマークで表示されます
+                </div>
+              )}
+            </div>
+
+            {/* 全期間チェックインマーク */}
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#374151',
+                cursor: 'pointer',
+                padding: '12px',
+                backgroundColor: showAllCheckinMark ? '#e0f2fe' : '#f9fafb',
+                borderRadius: '8px',
+                border: '2px solid',
+                borderColor: showAllCheckinMark ? '#0284c7' : '#e5e7eb',
+                transition: 'all 0.2s'
+              }}>
+                <input
+                  type="checkbox"
+                  checked={showAllCheckinMark}
+                  onChange={(e) => setShowAllCheckinMark(e.target.checked)}
+                  style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+                />
+                <span>過去にチェックインしたスポットをマーク</span>
+              </label>
+              {showAllCheckinMark && (
+                <div style={{
+                  marginTop: '8px', padding: '8px 12px',
+                  backgroundColor: '#e0f2fe', borderRadius: '6px',
+                  fontSize: '12px', color: '#0369a1'
+                }}>
+                  ✅ 過去にチェックインしたスポットが青のチェックマークで表示されます
+                </div>
+              )}
+            </div>
+
             {/* ジャンルフィルター */}
             <div style={{ marginBottom: '16px' }}>
               <label style={{ 
@@ -944,6 +1074,32 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
                     boxShadow: '0 1px 2px rgba(0,0,0,0.2)'
                   }} />
                   <span style={{ fontSize: '14px', color: '#374151' }}>すべてのスポット</span>
+                </div>
+              )}
+              {showTodayCheckinMark && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
+                  <div style={{
+                    width: '20px', height: '20px', borderRadius: '50%',
+                    backgroundColor: '#16a34a', border: '2px solid white',
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.2)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                  }}>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="white"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                  </div>
+                  <span style={{ fontSize: '14px', color: '#374151' }}>当日チェックイン済み</span>
+                </div>
+              )}
+              {showAllCheckinMark && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
+                  <div style={{
+                    width: '20px', height: '20px', borderRadius: '50%',
+                    backgroundColor: '#0ea5e9', border: '2px solid white',
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.2)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                  }}>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="white"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                  </div>
+                  <span style={{ fontSize: '14px', color: '#374151' }}>過去にチェックイン済み</span>
                 </div>
               )}
             </div>
