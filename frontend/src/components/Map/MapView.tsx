@@ -609,11 +609,11 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
         el.classList.add('spot-marker-in-range');
       } else {
         // 5. 通常表示
-        const isHighlighted = highlightQuizSpots && spot.quiz;
+        const isHighlighted = highlightQuizSpots && spot.quizzes?.length > 0;
         if (isHighlighted) {
           el.style.backgroundColor = '#fbbf24';
           el.style.border = '3px solid #f59e0b';
-        } else if (highlightQuizSpots && !spot.quiz) {
+        } else if (highlightQuizSpots && !spot.quizzes?.length) {
           el.style.backgroundColor = '#9ca3af';
           el.style.border = '3px solid white';
         } else {
@@ -1233,6 +1233,7 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
           quizData={quizData}
           onClose={handleQuizClose}
           readOnly={quizReadOnly}
+          quizTypeId={quizData.quiz_type_id}
         />
       )}
 

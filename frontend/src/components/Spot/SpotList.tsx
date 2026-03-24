@@ -279,7 +279,7 @@ export default function SpotList({ spots, user, areas }: SpotListProps) {
                         {formatDistance(spot.distance)}
                       </span>
                     )}
-                    {!spot.quiz && (
+                    {(!spot.quizzes || spot.quizzes.length === 0) && (
                       <span style={{
                         display: 'inline-block',
                         padding: '4px 12px',

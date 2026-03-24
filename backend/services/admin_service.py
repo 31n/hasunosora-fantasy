@@ -21,18 +21,17 @@ class AdminService:
     @staticmethod
     def create_spot(spot_data: Dict) -> Dict:
         """スポットを作成"""
-        # クイズが指定されている場合のみバリデーション
-        quiz = spot_data.get('quiz')
-        if quiz:
-            AdminService._validate_quiz(quiz)
-        
+        # クイズリストのバリデーション
+        quizzes = spot_data.get('quizzes', [])
+        for q in quizzes:
+            AdminService._validate_quiz(q)
+
         # 座標のバリデーション
         AdminService._validate_coordinates(
             spot_data.get('latitude'),
             spot_data.get('longitude')
         )
-        
-        # float値をDecimalに変換してからSpotを作成
+
         spot = Spot(
             spot_name=spot_data['spot_name'],
             description=spot_data.get('description', ''),
@@ -44,11 +43,11 @@ class AdminService:
             area=spot_data.get('area'),
             reading=spot_data.get('reading') or None,
             url=spot_data.get('url') or None,
-            quiz=quiz  # Noneでも可
+            quizzes=quizzes,
         )
-        
+
         spot.save()
-        
+
         return {
             'spot_id': spot.spot_id,
             'spot_name': spot.spot_name,
@@ -60,23 +59,23 @@ class AdminService:
     def update_spot(spot_id: str, spot_data: Dict) -> Dict:
         """スポットを更新"""
         spot = Spot.get(spot_id)
-        
+
         if not spot:
             raise ValueError('SPOT_NOT_FOUND')
-        
-        # クイズが指定されている場合のみバリデーション
-        if 'quiz' in spot_data:
-            quiz = spot_data['quiz']
-            if quiz:  # Noneまたは空でない場合のみバリデーション
-                AdminService._validate_quiz(quiz)
-        
+
+        # クイズリストのバリデーション
+        if 'quizzes' in spot_data:
+            quizzes = spot_data['quizzes'] or []
+            for q in quizzes:
+                AdminService._validate_quiz(q)
+
         # 座標のバリデーション
         if 'latitude' in spot_data or 'longitude' in spot_data:
             AdminService._validate_coordinates(
                 spot_data.get('latitude', spot.latitude),
                 spot_data.get('longitude', spot.longitude)
             )
-        
+
         # 更新
         spot.spot_name = spot_data.get('spot_name', spot.spot_name)
         spot.description = spot_data.get('description', spot.description)
@@ -90,13 +89,11 @@ class AdminService:
             spot.reading = spot_data['reading'] or None
         if 'url' in spot_data:
             spot.url = spot_data['url'] or None
-        
-        # クイズの更新（Noneも許可）
-        if 'quiz' in spot_data:
-            spot.quiz = spot_data['quiz']
-        
+        if 'quizzes' in spot_data:
+            spot.quizzes = spot_data['quizzes'] or []
+
         spot.save()
-        
+
         return {
             'spot_id': spot.spot_id,
             'updated_at': spot.updated_at,

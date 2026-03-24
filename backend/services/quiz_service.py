@@ -6,13 +6,13 @@ from models.checkin import CheckIn
 from models.cooldown import QuizCooldown
 from utils.distance import is_within_range
 from config import config
-from typing import Dict
+from typing import Dict, Optional
 
 class QuizService:
     @staticmethod
-    def answer_quiz(user_id: str, spot_id: str, answer: int) -> Dict:
+    def answer_quiz(user_id: str, spot_id: str, answer: int,
+                    quiz_type_id: Optional[str] = None) -> Dict:
         """クイズ回答処理"""
-        # ユーザーとスポットの存在確認
         user = User.get(user_id)
         if not user:
             raise ValueError('USER_NOT_FOUND')
@@ -26,14 +26,19 @@ class QuizService:
         if on_cooldown:
             raise ValueError('QUIZ_ALREADY_ANSWERED_TODAY')
 
+        # クライアントから渡された quiz_type_id でクイズを特定。
+        # 渡されない場合はユーザーの selected_quiz_type を使用。
+        effective_type = quiz_type_id if quiz_type_id is not None else user.selected_quiz_type
+        quiz = spot.get_quiz_for_type(effective_type)
+        if not quiz:
+            raise ValueError('QUIZ_NOT_AVAILABLE')
+
         # 正解判定
-        correct_answer = spot.quiz.get('correct_answer')
+        correct_answer = quiz.get('correct_answer')
         is_correct = (answer == correct_answer)
 
-        # 正解の場合
         if is_correct:
-            score = spot.quiz.get('score', 0)
-
+            score = quiz.get('score', 0)
             user.add_score(score)
 
             checkin = CheckIn(
@@ -45,7 +50,6 @@ class QuizService:
             )
             checkin.save()
 
-            # クイズ回答済み（翌日JST 0時まで）を記録
             cooldown = QuizCooldown(user_id=user_id, spot_id=spot_id)
             cooldown.save()
 
@@ -56,12 +60,9 @@ class QuizService:
                 'cooldown_until': cooldown.cooldown_until,
                 'message': '正解です！'
             }
-
-        # 不正解の場合
         else:
-            score = spot.quiz.get('score', 0)
+            score = quiz.get('score', 0)
             incorrect_score = math.ceil(score / 4)
-
             user.add_score(incorrect_score)
 
             checkin = CheckIn(
@@ -73,7 +74,6 @@ class QuizService:
             )
             checkin.save()
 
-            # クイズ回答済み（翌日JST 0時まで）を記録
             cooldown = QuizCooldown(user_id=user_id, spot_id=spot_id)
             cooldown.save()
 
@@ -90,9 +90,9 @@ class QuizService:
         """
         クイズ挑戦処理（チェックインと独立したエンドポイント）
 
-        - 範囲チェックを行う
-        - チェックインクールタイム中でもクイズを返す（記録・ポイントはスキップ）
-        - クールタイム外かつ当日未スコアであればチェックイン記録とポイントを付与
+        - ユーザーの selected_quiz_type に対応するクイズを返す
+        - 該当タイプがなければデフォルト（quiz_type_id=None）を返す
+        - チェックインクールタイム中でもクイズを返す
         - 当日クイズ回答済みなら QUIZ_ALREADY_ANSWERED_TODAY エラー
         """
         user = User.get(user_id)
@@ -103,7 +103,9 @@ class QuizService:
         if not spot:
             raise ValueError('SPOT_NOT_FOUND')
 
-        if not spot.quiz:
+        # ユーザーの selected_quiz_type に対応するクイズを取得（なければデフォルト）
+        quiz = spot.get_quiz_for_type(user.selected_quiz_type)
+        if not quiz:
             raise ValueError('QUIZ_NOT_AVAILABLE')
 
         # 距離チェック
@@ -138,10 +140,11 @@ class QuizService:
             'checkin_score_earned': checkin_score,
             'total_score': user.total_score,
             'quiz_available': True,
+            'quiz_type_id': quiz.get('quiz_type_id'),
             'quiz': {
-                'question': spot.quiz.get('question'),
-                'choices': spot.quiz.get('choices'),
-                'score': spot.quiz.get('score')
+                'question': quiz.get('question'),
+                'choices': quiz.get('choices'),
+                'score': quiz.get('score')
             }
         }
 

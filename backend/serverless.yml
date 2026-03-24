@@ -264,6 +264,65 @@ functions:
               - x-admin-password
             allowCredentials: false
 
+      # クイズタイプ (公開)
+      - http:
+          path: /quiz-types
+          method: get
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+            allowCredentials: false
+
+      # クイズタイプ (管理)
+      - http:
+          path: /admin/quiz-types
+          method: get
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - x-admin-password
+            allowCredentials: false
+      - http:
+          path: /admin/quiz-types
+          method: post
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - x-admin-password
+            allowCredentials: false
+      - http:
+          path: /admin/quiz-types/{quiz_type_id}
+          method: put
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - x-admin-password
+            allowCredentials: false
+      - http:
+          path: /admin/quiz-types/{quiz_type_id}
+          method: delete
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - x-admin-password
+            allowCredentials: false
+
+      # ユーザークイズタイプ選択
+      - http:
+          path: /users/{user_id}/quiz-type
+          method: put
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - Authorization
+            allowCredentials: false
+
 resources:
   Resources:
     # DynamoDB Tables
@@ -345,7 +404,19 @@ resources:
           - AttributeName: area_id
             KeyType: HASH
         BillingMode: PAY_PER_REQUEST
-    
+
+    QuizTypesTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.DYNAMODB_TABLE_PREFIX}quiz_types
+        AttributeDefinitions:
+          - AttributeName: quiz_type_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: quiz_type_id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+
     # S3 Bucket
     ImagesBucket:
       Type: AWS::S3::Bucket

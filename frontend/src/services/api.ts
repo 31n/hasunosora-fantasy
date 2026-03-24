@@ -11,7 +11,8 @@ import type {
   SpotsResponse,
   UnlockAreaResponse,
   Spot,
-  Area
+  Area,
+  QuizType
 } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://your-api-gateway-url';
@@ -80,6 +81,13 @@ export const userApi = {
       body: JSON.stringify({ area_code: areaCode }),
     });
   },
+
+  setSelectedQuizType: async (userId: string, selectedQuizType: string | null): Promise<User> => {
+    return fetchApi<User>(`/users/${userId}/quiz-type`, {
+      method: 'PUT',
+      body: JSON.stringify({ selected_quiz_type: selectedQuizType }),
+    });
+  },
 };
 
 // マスタ関連API
@@ -116,11 +124,12 @@ export const checkinApi = {
   answerQuiz: async (
     userId: string,
     spotId: string,
-    answer: number
+    answer: number,
+    quizTypeId?: string | null
   ): Promise<QuizAnswerResponse> => {
     return fetchApi<QuizAnswerResponse>('/quiz/answer', {
       method: 'POST',
-      body: JSON.stringify({ user_id: userId, spot_id: spotId, answer }),
+      body: JSON.stringify({ user_id: userId, spot_id: spotId, answer, quiz_type_id: quizTypeId ?? null }),
     });
   },
 
@@ -231,5 +240,42 @@ export const adminApi = {
     }
 
     return data.data as { url: string };
+  },
+
+  // クイズタイプ管理
+  getQuizTypes: async (password: string): Promise<QuizType[]> => {
+    return fetchApi<QuizType[]>('/admin/quiz-types', {
+      headers: { 'X-Admin-Password': password },
+    });
+  },
+
+  createQuizType: async (password: string, data: Partial<QuizType>): Promise<QuizType> => {
+    return fetchApi<QuizType>('/admin/quiz-types', {
+      method: 'POST',
+      headers: { 'X-Admin-Password': password },
+      body: JSON.stringify(data),
+    });
+  },
+
+  updateQuizType: async (password: string, quizTypeId: string, data: Partial<QuizType>): Promise<QuizType> => {
+    return fetchApi<QuizType>(`/admin/quiz-types/${quizTypeId}`, {
+      method: 'PUT',
+      headers: { 'X-Admin-Password': password },
+      body: JSON.stringify(data),
+    });
+  },
+
+  deleteQuizType: async (password: string, quizTypeId: string): Promise<any> => {
+    return fetchApi(`/admin/quiz-types/${quizTypeId}`, {
+      method: 'DELETE',
+      headers: { 'X-Admin-Password': password },
+    });
+  },
+};
+
+// パブリック - クイズタイプ
+export const quizTypeApi = {
+  getAll: async (): Promise<QuizType[]> => {
+    return fetchApi<QuizType[]>('/quiz-types');
   },
 };

@@ -5,9 +5,10 @@ from utils.dynamodb import get_table
 from config import config
 
 class User:
-    def __init__(self, user_id: str, nickname: Optional[str] = None, 
+    def __init__(self, user_id: str, nickname: Optional[str] = None,
                  total_score: int = 0, selected_area: Optional[str] = None,
                  unlocked_areas: Optional[list] = None,
+                 selected_quiz_type: Optional[str] = None,
                  created_at: Optional[str] = None):
         self.user_id = user_id
         self.nickname = nickname
@@ -15,6 +16,7 @@ class User:
         self.total_score = int(total_score) if isinstance(total_score, Decimal) else total_score
         self.selected_area = selected_area  # 選択中のエリアID（nullable）
         self.unlocked_areas = unlocked_areas or []  # 解放済みエリアのリスト
+        self.selected_quiz_type = selected_quiz_type  # 選択中のクイズタイプID（nullable = デフォルト）
         self.created_at = created_at or datetime.now(timezone.utc).isoformat()
     
     def to_dict(self) -> Dict:
@@ -25,6 +27,7 @@ class User:
             'total_score': int(self.total_score),  # 必ずintに変換
             'selected_area': self.selected_area,
             'unlocked_areas': self.unlocked_areas,
+            'selected_quiz_type': self.selected_quiz_type,
             'created_at': self.created_at
         }
     
@@ -49,6 +52,7 @@ class User:
             total_score=item.get('total_score', 0),
             selected_area=item.get('selected_area'),
             unlocked_areas=item.get('unlocked_areas', []),
+            selected_quiz_type=item.get('selected_quiz_type'),
             created_at=item.get('created_at')
         )
     
@@ -71,6 +75,16 @@ class User:
             ExpressionAttributeValues={':selected_area': selected_area}
         )
         self.selected_area = selected_area
+
+    def update_selected_quiz_type(self, selected_quiz_type: Optional[str]):
+        """選択中のクイズタイプを更新"""
+        table = get_table(config.USERS_TABLE)
+        table.update_item(
+            Key={'user_id': self.user_id},
+            UpdateExpression='SET selected_quiz_type = :sqt',
+            ExpressionAttributeValues={':sqt': selected_quiz_type}
+        )
+        self.selected_quiz_type = selected_quiz_type
     
     def add_score(self, score: int):
         """得点を加算"""

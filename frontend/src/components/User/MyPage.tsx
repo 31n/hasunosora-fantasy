@@ -1,17 +1,18 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { userApi } from '../../services/api';
 import { storage } from '../../services/storage';
-import type { User, CheckInHistory, Spot, Area } from '../../types';
+import { userApi } from '../../services/api';
+import type { User, CheckInHistory, Spot, Area, QuizType } from '../../types';
 
 interface MyPageProps {
   user: User;
   setUser: (user: User) => void;
   spots: Spot[];
   areas: Area[];
+  quizTypes: QuizType[];
 }
 
-export default function MyPage({ user, setUser, spots, areas }: MyPageProps) {
+export default function MyPage({ user, setUser, spots, areas, quizTypes }: MyPageProps) {
   const [nickname, setNickname] = useState('');
   const [isEditingNickname, setIsEditingNickname] = useState(false);
   const [history, setHistory] = useState<CheckInHistory[]>([]);
@@ -88,6 +89,18 @@ export default function MyPage({ user, setUser, spots, areas }: MyPageProps) {
       } else {
         alert('エラーが発生しました: ' + error.message);
       }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleQuizTypeChange = async (quizTypeId: string) => {
+    setLoading(true);
+    try {
+      const updatedUser = await userApi.setSelectedQuizType(user.user_id, quizTypeId || null);
+      setUser(updatedUser);
+    } catch (error: any) {
+      alert('エラーが発生しました: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -348,6 +361,43 @@ export default function MyPage({ user, setUser, spots, areas }: MyPageProps) {
               選択したエリアのスポットのみが地図に表示されます
             </p>
           </div>
+
+          {/* クイズタイプ選択 */}
+          {quizTypes.filter(qt => qt.is_active).length > 0 && (
+            <div style={{ marginTop: '16px' }}>
+              <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '8px' }}>
+                クイズタイプ
+              </p>
+              <select
+                value={user.selected_quiz_type || ''}
+                onChange={(e) => handleQuizTypeChange(e.target.value)}
+                disabled={loading}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '2px solid #e5e7eb',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  backgroundColor: 'white',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  opacity: loading ? 0.5 : 1
+                }}
+              >
+                <option value="">デフォルト</option>
+                {quizTypes
+                  .filter(qt => qt.is_active)
+                  .sort((a, b) => a.display_order - b.display_order)
+                  .map(qt => (
+                    <option key={qt.quiz_type_id} value={qt.quiz_type_id}>
+                      {qt.name}
+                    </option>
+                  ))}
+              </select>
+              <p style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>
+                スポット訪問時に出題されるクイズのタイプを選択できます
+              </p>
+            </div>
+          )}
 
           {/* エリアコード入力 */}
           <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid #e5e7eb' }}>

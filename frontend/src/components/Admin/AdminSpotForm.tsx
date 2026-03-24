@@ -3,14 +3,15 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { adminApi } from '../../services/api';
 import { storage } from '../../services/storage';
 import { indexedDB } from '../../services/indexedDB';
-import type { Spot, Area } from '../../types';
+import type { Spot, Area, QuizType, QuizWithType } from '../../types';
 import { OpenLocationCode } from 'open-location-code';
 
 export default function AdminSpotForm() {
   const { spotId } = useParams<{ spotId?: string }>();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [hasQuiz, setHasQuiz] = useState(true);
+  const [quizzes, setQuizzes] = useState<QuizWithType[]>([]);
+  const [quizTypes, setQuizTypes] = useState<QuizType[]>([]);
   const [inputMethod, setInputMethod] = useState<'latlong' | 'pluscode'>('latlong');
   const [plusCode, setPlusCode] = useState('');
   const [plusCodeError, setPlusCodeError] = useState('');
@@ -34,12 +35,6 @@ export default function AdminSpotForm() {
     images: [] as string[],
     genre: [] as string[],
     area: '',
-    quiz: {
-      question: '',
-      choices: ['', '', '', ''],
-      correct_answer: 0,
-      score: 10
-    }
   });
 
   useEffect(() => {
@@ -49,6 +44,7 @@ export default function AdminSpotForm() {
     }
 
     loadAreas();
+    loadQuizTypes();
 
     if (spotId) {
       loadSpot();
@@ -61,6 +57,24 @@ export default function AdminSpotForm() {
       setAreas(cachedAreas);
     } catch (error) {
       console.error('エリア取得エラー:', error);
+    }
+  };
+
+  const loadQuizTypes = async () => {
+    try {
+      const cachedTypes = await indexedDB.getAllQuizTypes();
+      if (cachedTypes.length > 0) {
+        setQuizTypes(cachedTypes.filter(t => t.is_active).sort((a, b) => a.display_order - b.display_order));
+        return;
+      }
+      // キャッシュになければ API から取得
+      const password = storage.getAdminPassword();
+      if (password) {
+        const types = await adminApi.getQuizTypes(password);
+        setQuizTypes(types.filter(t => t.is_active).sort((a, b) => a.display_order - b.display_order));
+      }
+    } catch (error) {
+      console.error('クイズタイプ取得エラー:', error);
     }
   };
 
@@ -81,14 +95,8 @@ export default function AdminSpotForm() {
           images: spot.images,
           genre: spot.genre || [],
           area: spot.area || '',
-          quiz: spot.quiz || {
-            question: '',
-            choices: ['', '', '', ''],
-            correct_answer: 0,
-            score: 10
-          }
         });
-        setHasQuiz(!!spot.quiz);
+        setQuizzes(spot.quizzes || []);
       }
     } catch (error) {
       console.error('スポット取得エラー:', error);
@@ -163,13 +171,37 @@ export default function AdminSpotForm() {
     setDragOverIndex(null);
   };
 
-  const handleChoiceChange = (index: number, value: string) => {
-    const newChoices = [...formData.quiz.choices];
-    newChoices[index] = value;
-    setFormData(prev => ({
-      ...prev,
-      quiz: { ...prev.quiz, choices: newChoices }
+  const handleChoiceChange = (quizIndex: number, choiceIndex: number, value: string) => {
+    setQuizzes(prev => prev.map((q, i) => {
+      if (i !== quizIndex) return q;
+      const newChoices = [...q.choices];
+      newChoices[choiceIndex] = value;
+      return { ...q, choices: newChoices };
     }));
+  };
+
+  const addQuiz = () => {
+    // 未使用のタイプを探す（デフォルト=null を含む）
+    const usedTypes = new Set(quizzes.map(q => q.quiz_type_id));
+    // デフォルト（null）がまだ使われていなければ先に追加
+    const newTypeId = !usedTypes.has(null)
+      ? null
+      : quizTypes.find(t => !usedTypes.has(t.quiz_type_id))?.quiz_type_id ?? null;
+    setQuizzes(prev => [...prev, {
+      quiz_type_id: newTypeId,
+      question: '',
+      choices: ['', '', '', ''],
+      correct_answer: 0,
+      score: 10,
+    }]);
+  };
+
+  const removeQuiz = (index: number) => {
+    setQuizzes(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const updateQuizField = (index: number, field: keyof QuizWithType, value: any) => {
+    setQuizzes(prev => prev.map((q, i) => i === index ? { ...q, [field]: value } : q));
   };
 
   const handlePlusCodeInput = (value: string) => {
@@ -259,18 +291,25 @@ export default function AdminSpotForm() {
       return;
     }
 
-    // クイズのバリデーション（クイズありの場合のみ）
-    if (hasQuiz) {
-      if (!formData.quiz.question.trim()) {
-        alert('クイズの問題文を入力してください');
+    // クイズのバリデーション
+    for (let i = 0; i < quizzes.length; i++) {
+      const q = quizzes[i];
+      if (!q.question.trim()) {
+        alert(`クイズ ${i + 1}: 問題文を入力してください`);
         return;
       }
-
-      const validChoices = formData.quiz.choices.filter(c => c.trim());
+      const validChoices = q.choices.filter(c => c.trim());
       if (validChoices.length < 2) {
-        alert('選択肢を2つ以上入力してください');
+        alert(`クイズ ${i + 1}: 選択肢を2つ以上入力してください`);
         return;
       }
+    }
+
+    // クイズタイプの重複チェック
+    const typeIds = quizzes.map(q => q.quiz_type_id);
+    if (new Set(typeIds).size !== typeIds.length) {
+      alert('同じクイズタイプが複数設定されています');
+      return;
     }
 
     const password = storage.getAdminPassword();
@@ -289,21 +328,15 @@ export default function AdminSpotForm() {
         detection_radius: parseFloat(formData.detection_radius),
         images: formData.images,
         genre: formData.genre,
-        area: formData.area || null
+        area: formData.area || null,
+        quizzes: quizzes.map(q => ({
+          quiz_type_id: q.quiz_type_id,
+          question: q.question,
+          choices: q.choices.filter(c => c.trim()),
+          correct_answer: q.correct_answer,
+          score: q.score,
+        })),
       };
-
-      // クイズがある場合のみ追加
-      if (hasQuiz) {
-        const validChoices = formData.quiz.choices.filter(c => c.trim());
-        spotData.quiz = {
-          question: formData.quiz.question,
-          choices: validChoices,
-          correct_answer: formData.quiz.correct_answer,
-          score: formData.quiz.score
-        };
-      } else {
-        spotData.quiz = null;
-      }
 
       if (spotId) {
         await adminApi.updateSpot(password, spotId, spotData);
@@ -880,98 +913,170 @@ export default function AdminSpotForm() {
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <h2 style={{ fontSize: '18px' }}>クイズ（任意）</h2>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={hasQuiz}
-                onChange={(e) => setHasQuiz(e.target.checked)}
-                style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-              />
-              <span style={{ fontSize: '14px', fontWeight: '600' }}>クイズを設定する</span>
-            </label>
+            <button
+              type="button"
+              onClick={addQuiz}
+              style={{
+                padding: '8px 16px',
+                backgroundColor: '#10b981',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: 'pointer',
+              }}
+            >
+              ＋ クイズを追加
+            </button>
           </div>
 
-          {hasQuiz && (
-            <>
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
-                  問題文 *
-                </label>
-                <input
-                  type="text"
-                  value={formData.quiz.question}
-                  onChange={(e) => setFormData({
-                    ...formData,
-                    quiz: { ...formData.quiz, question: e.target.value }
-                  })}
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: '2px solid #e5e7eb',
-                    borderRadius: '8px',
-                    fontSize: '16px'
-                  }}
-                />
-              </div>
-
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
-                  選択肢（2〜4個）*
-                </label>
-                {formData.quiz.choices.map((choice, index) => (
-                  <div key={index} style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-                    <input
-                      type="radio"
-                      name="correct_answer"
-                      checked={formData.quiz.correct_answer === index}
-                      onChange={() => setFormData({
-                        ...formData,
-                        quiz: { ...formData.quiz, correct_answer: index }
-                      })}
-                    />
-                    <input
-                      type="text"
-                      value={choice}
-                      onChange={(e) => handleChoiceChange(index, e.target.value)}
-                      placeholder={`選択肢 ${index + 1}`}
-                      style={{
-                        flex: 1,
-                        padding: '12px',
-                        border: '2px solid #e5e7eb',
-                        borderRadius: '8px',
-                        fontSize: '16px'
-                      }}
-                    />
-                  </div>
-                ))}
-                <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '8px' }}>
-                  ラジオボタンで正解を選択してください
-                </p>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
-                  得点
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  value={formData.quiz.score}
-                  onChange={(e) => setFormData({
-                    ...formData,
-                    quiz: { ...formData.quiz, score: parseInt(e.target.value) || 1 }
-                  })}
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: '2px solid #e5e7eb',
-                    borderRadius: '8px',
-                    fontSize: '16px'
-                  }}
-                />
-              </div>
-            </>
+          {quizzes.length === 0 && (
+            <p style={{ color: '#6b7280', fontSize: '14px' }}>クイズが設定されていません</p>
           )}
+
+          {quizzes.map((quiz, quizIndex) => {
+            // このクイズ以外で使われているタイプID一覧
+            const usedTypes = new Set(quizzes.filter((_, i) => i !== quizIndex).map(q => q.quiz_type_id));
+            return (
+              <div key={quizIndex} style={{
+                border: '2px solid #e5e7eb',
+                borderRadius: '8px',
+                padding: '16px',
+                marginBottom: '16px',
+                position: 'relative',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#374151' }}>
+                    クイズ {quizIndex + 1}
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => removeQuiz(quizIndex)}
+                    style={{
+                      padding: '4px 10px',
+                      backgroundColor: '#ef4444',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      fontSize: '13px',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    削除
+                  </button>
+                </div>
+
+                {/* クイズタイプ選択 */}
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '14px' }}>
+                    クイズタイプ
+                  </label>
+                  <select
+                    value={quiz.quiz_type_id ?? ''}
+                    onChange={(e) => {
+                      const val = e.target.value === '' ? null : e.target.value;
+                      updateQuizField(quizIndex, 'quiz_type_id', val);
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      border: '2px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '15px',
+                      backgroundColor: 'white',
+                    }}
+                  >
+                    <option value="" disabled={usedTypes.has(null)}>
+                      デフォルト（タイプ未設定）{usedTypes.has(null) ? ' ─ 使用中' : ''}
+                    </option>
+                    {quizTypes.map(qt => (
+                      <option key={qt.quiz_type_id} value={qt.quiz_type_id} disabled={usedTypes.has(qt.quiz_type_id)}>
+                        {qt.name}{usedTypes.has(qt.quiz_type_id) ? ' ─ 使用中' : ''}
+                      </option>
+                    ))}
+                  </select>
+                  {quizTypes.length === 0 && (
+                    <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+                      クイズタイプが未登録です。管理画面から先に登録してください。
+                    </p>
+                  )}
+                </div>
+
+                {/* 問題文 */}
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '14px' }}>
+                    問題文 *
+                  </label>
+                  <input
+                    type="text"
+                    value={quiz.question}
+                    onChange={(e) => updateQuizField(quizIndex, 'question', e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      border: '2px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '15px',
+                    }}
+                  />
+                </div>
+
+                {/* 選択肢 */}
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '14px' }}>
+                    選択肢（2〜4個）*
+                  </label>
+                  {quiz.choices.map((choice, choiceIndex) => (
+                    <div key={choiceIndex} style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                      <input
+                        type="radio"
+                        name={`correct_answer_${quizIndex}`}
+                        checked={quiz.correct_answer === choiceIndex}
+                        onChange={() => updateQuizField(quizIndex, 'correct_answer', choiceIndex)}
+                      />
+                      <input
+                        type="text"
+                        value={choice}
+                        onChange={(e) => handleChoiceChange(quizIndex, choiceIndex, e.target.value)}
+                        placeholder={`選択肢 ${choiceIndex + 1}`}
+                        style={{
+                          flex: 1,
+                          padding: '10px',
+                          border: '2px solid #e5e7eb',
+                          borderRadius: '8px',
+                          fontSize: '15px',
+                        }}
+                      />
+                    </div>
+                  ))}
+                  <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+                    ラジオボタンで正解を選択してください
+                  </p>
+                </div>
+
+                {/* 得点 */}
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '14px' }}>
+                    得点
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={quiz.score}
+                    onChange={(e) => updateQuizField(quizIndex, 'score', parseInt(e.target.value) || 1)}
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      border: '2px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '15px',
+                    }}
+                  />
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {/* 保存ボタン */}

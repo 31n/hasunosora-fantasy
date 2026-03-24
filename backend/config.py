@@ -41,4 +41,8 @@ class Config:
     def AREAS_TABLE(self):
         return f"{self.DYNAMODB_TABLE_PREFIX}areas"
 
+    @property
+    def QUIZ_TYPES_TABLE(self):
+        return f"{self.DYNAMODB_TABLE_PREFIX}quiz_types"
+
 config = Config()

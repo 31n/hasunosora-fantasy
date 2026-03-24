@@ -7,6 +7,7 @@ from services.checkin_service import CheckInService
 from services.quiz_service import QuizService
 from services.admin_service import AdminService
 from services.area_service import AreaService
+from services.quiz_type_service import QuizTypeService
 
 def handler(event, context):
     """メインハンドラー"""
@@ -31,7 +32,10 @@ def handler(event, context):
         
         elif path.startswith('/users/') and path.endswith('/area') and http_method == 'PUT':
             return set_user_area(event)
-        
+
+        elif path.startswith('/users/') and path.endswith('/quiz-type') and http_method == 'PUT':
+            return set_user_quiz_type(event)
+
         elif path.startswith('/users/') and path.endswith('/history') and http_method == 'GET':
             return get_history(event)
         
@@ -59,6 +63,9 @@ def handler(event, context):
         elif path.startswith('/quiz/cooldown/') and http_method == 'GET':
             return check_cooldown(event)
         
+        elif path == '/quiz-types' and http_method == 'GET':
+            return get_quiz_types(event)
+
         # 管理画面API
         elif path == '/admin/login' and http_method == 'POST':
             return admin_login(event)
@@ -89,7 +96,19 @@ def handler(event, context):
         
         elif path == '/admin/images/upload' and http_method == 'POST':
             return admin_upload_image(event)
-        
+
+        elif path == '/admin/quiz-types' and http_method == 'GET':
+            return admin_get_quiz_types(event)
+
+        elif path == '/admin/quiz-types' and http_method == 'POST':
+            return admin_create_quiz_type(event)
+
+        elif path.startswith('/admin/quiz-types/') and http_method == 'PUT':
+            return admin_update_quiz_type(event)
+
+        elif path.startswith('/admin/quiz-types/') and http_method == 'DELETE':
+            return admin_delete_quiz_type(event)
+
         else:
             return error_response('NOT_FOUND', 'Endpoint not found', 404)
     
@@ -168,6 +187,22 @@ def set_user_area(event):
         return error_response('INTERNAL_ERROR', str(e), 500)
 
 
+def set_user_quiz_type(event):
+    try:
+        path_parts = event['path'].split('/')
+        user_id = path_parts[2]
+
+        body = json.loads(event.get('body', '{}'))
+        selected_quiz_type = body.get('selected_quiz_type')
+
+        result = UserService.set_selected_quiz_type(user_id, selected_quiz_type)
+        return success_response(result)
+    except ValueError as e:
+        return error_response(str(e), str(e), 400)
+    except Exception as e:
+        return error_response('INTERNAL_ERROR', str(e), 500)
+
+
 def unlock_area(event):
     try:
         path_parts = event['path'].split('/')
@@ -239,11 +274,12 @@ def checkin(event):
 def answer_quiz(event):
     try:
         body = json.loads(event.get('body', '{}'))
-        
+
         result = QuizService.answer_quiz(
             user_id=body.get('user_id'),
             spot_id=body.get('spot_id'),
-            answer=int(body.get('answer'))
+            answer=int(body.get('answer')),
+            quiz_type_id=body.get('quiz_type_id')  # None = ユーザーの selected_quiz_type を使用
         )
         return success_response(result)
     except ValueError as e:
@@ -497,8 +533,68 @@ def admin_delete_area(event):
     try:
         path_parts = event['path'].split('/')
         area_id = path_parts[3]
-        
+
         result = AreaService.delete_area(area_id)
+        return success_response(result)
+    except ValueError as e:
+        return error_response(str(e), str(e), 400)
+    except Exception as e:
+        return error_response('INTERNAL_ERROR', str(e), 500)
+
+
+# パブリック - クイズタイプ一覧
+def get_quiz_types(event):
+    try:
+        result = QuizTypeService.get_all(include_inactive=False)
+        return success_response(result)
+    except Exception as e:
+        return error_response('INTERNAL_ERROR', str(e), 500)
+
+
+# 管理画面API - クイズタイプ関連
+def admin_get_quiz_types(event):
+    try:
+        check_admin_auth(event)
+        result = QuizTypeService.get_all(include_inactive=True)
+        return success_response(result)
+    except ValueError as e:
+        return error_response(str(e), str(e), 401)
+    except Exception as e:
+        return error_response('INTERNAL_ERROR', str(e), 500)
+
+
+def admin_create_quiz_type(event):
+    try:
+        check_admin_auth(event)
+        body = json.loads(event.get('body', '{}'))
+        result = QuizTypeService.create(body)
+        return success_response(result, 201)
+    except ValueError as e:
+        return error_response(str(e), str(e), 400)
+    except Exception as e:
+        return error_response('INTERNAL_ERROR', str(e), 500)
+
+
+def admin_update_quiz_type(event):
+    try:
+        check_admin_auth(event)
+        path_parts = event['path'].split('/')
+        quiz_type_id = path_parts[3]
+        body = json.loads(event.get('body', '{}'))
+        result = QuizTypeService.update(quiz_type_id, body)
+        return success_response(result)
+    except ValueError as e:
+        return error_response(str(e), str(e), 400)
+    except Exception as e:
+        return error_response('INTERNAL_ERROR', str(e), 500)
+
+
+def admin_delete_quiz_type(event):
+    try:
+        check_admin_auth(event)
+        path_parts = event['path'].split('/')
+        quiz_type_id = path_parts[3]
+        result = QuizTypeService.delete(quiz_type_id)
         return success_response(result)
     except ValueError as e:
         return error_response(str(e), str(e), 400)

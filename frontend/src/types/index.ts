@@ -5,6 +5,7 @@ export interface User {
   total_score: number;
   selected_area?: string;
   unlocked_areas: string[]; // 解放済みエリアのリスト
+  selected_quiz_type?: string | null; // 選択中のクイズタイプID（null = デフォルト）
   created_at: string;
 }
 
@@ -23,8 +24,20 @@ export interface Area {
   updated_at: string;
 }
 
+// quiz_type.ts
+export interface QuizType {
+  quiz_type_id: string;
+  name: string;
+  description: string;
+  display_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 // spot.ts
-export interface Quiz {
+export interface QuizWithType {
+  quiz_type_id: string | null; // null = デフォルトクイズ
   question: string;
   choices: string[];
   correct_answer: number;
@@ -42,7 +55,7 @@ export interface Spot {
   images: string[];
   genre: string[]; // ジャンル（複数可）
   area?: string; // エリアID
-  quiz?: Quiz; // クイズは任意
+  quizzes: QuizWithType[]; // クイズタイプ別クイズリスト
   url?: string; // 外部リンク（任意）
   version: string;
   created_at: string;
@@ -75,6 +88,7 @@ export interface CheckInResponse {
   total_score: number;
   already_scored_today: boolean;
   quiz_available: boolean;
+  quiz_type_id?: string | null;
   quiz?: {
     question: string;
     choices: string[];
@@ -87,6 +101,7 @@ export interface QuizChallengeResponse {
   checkin_score_earned: number;
   total_score: number;
   quiz_available: boolean;
+  quiz_type_id: string | null; // 出題されたクイズのタイプ
   quiz: {
     question: string;
     choices: string[];
@@ -117,6 +132,7 @@ export interface MasterDataResponse {
   version: string;
   areas: Area[];
   spots: Spot[];
+  quiz_types: QuizType[];
 }
 
 export interface SpotsResponse {

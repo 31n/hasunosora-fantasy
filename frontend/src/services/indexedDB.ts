@@ -1,5 +1,5 @@
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
-import type { Spot, Area } from '../types';
+import type { Spot, Area, QuizType } from '../types';
 
 interface SpotCheckinDB extends DBSchema {
   spots: {
@@ -10,6 +10,10 @@ interface SpotCheckinDB extends DBSchema {
     key: string;
     value: Area;
   };
+  quiz_types: {
+    key: string;
+    value: QuizType;
+  };
   metadata: {
     key: string;
     value: any;
@@ -17,7 +21,7 @@ interface SpotCheckinDB extends DBSchema {
 }
 
 const DB_NAME = 'spot-checkin-db';
-const DB_VERSION = 2; // バージョンアップ
+const DB_VERSION = 3; // v3: quiz_types ストア追加
 
 let dbInstance: IDBPDatabase<SpotCheckinDB> | null = null;
 
@@ -36,6 +40,11 @@ async function getDB(): Promise<IDBPDatabase<SpotCheckinDB>> {
       // Areasオブジェクトストア（v2で追加）
       if (!db.objectStoreNames.contains('areas')) {
         db.createObjectStore('areas', { keyPath: 'area_id' });
+      }
+
+      // QuizTypesオブジェクトストア（v3で追加）
+      if (!db.objectStoreNames.contains('quiz_types')) {
+        db.createObjectStore('quiz_types', { keyPath: 'quiz_type_id' });
       }
 
       // Metadataオブジェクトストア
@@ -117,11 +126,35 @@ export const indexedDB = {
     return db.get('metadata', key);
   },
 
+  // クイズタイプを全て保存
+  saveQuizTypes: async (quizTypes: QuizType[]): Promise<void> => {
+    const db = await getDB();
+    const tx = db.transaction('quiz_types', 'readwrite');
+    await tx.store.clear();
+    for (const qt of quizTypes) {
+      await tx.store.put(qt);
+    }
+    await tx.done;
+  },
+
+  // 全クイズタイプを取得
+  getAllQuizTypes: async (): Promise<QuizType[]> => {
+    const db = await getDB();
+    return db.getAll('quiz_types');
+  },
+
+  // 特定のクイズタイプを取得
+  getQuizType: async (quizTypeId: string): Promise<QuizType | undefined> => {
+    const db = await getDB();
+    return db.get('quiz_types', quizTypeId);
+  },
+
   // データベースをクリア
   clearAll: async (): Promise<void> => {
     const db = await getDB();
     await db.clear('spots');
     await db.clear('areas');
+    await db.clear('quiz_types');
     await db.clear('metadata');
   },
 };

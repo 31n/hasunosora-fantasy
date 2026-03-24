@@ -16,16 +16,19 @@ import AdminLogin from './components/Admin/AdminLogin';
 import AdminSpotList from './components/Admin/AdminSpotList';
 import AdminSpotForm from './components/Admin/AdminSpotForm';
 import AdminAreaList from './components/Admin/AdminAreaList';
+import AdminQuizTypeList from './components/Admin/AdminQuizTypeList';
+import AdminQuizTypeForm from './components/Admin/AdminQuizTypeForm';
 import Header from './components/Common/Header';
 import Loading from './components/Common/Loading';
 import HowToPage from './components/Common/HowToPage';
 
-import type { User, Spot, Area } from './types';
+import type { User, Spot, Area, QuizType } from './types';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const [spots, setSpots] = useState<Spot[]>([]);
   const [areas, setAreas] = useState<Area[]>([]);
+  const [quizTypes, setQuizTypes] = useState<QuizType[]>([]);
   const [loading, setLoading] = useState(true);
   const [reloading, setReloading] = useState(false);
 
@@ -69,6 +72,9 @@ function App() {
           // IndexedDBに保存
           await indexedDB.saveSpots(masterData.spots);
           await indexedDB.saveAreas(masterData.areas);
+          if (masterData.quiz_types.length > 0) {
+            await indexedDB.saveQuizTypes(masterData.quiz_types);
+          }
           storage.setMasterVersion(masterData.version);
         }
       }
@@ -76,15 +82,19 @@ function App() {
       // IndexedDBからデータを読み込み
       const cachedSpots = await indexedDB.getAllSpots();
       const cachedAreas = await indexedDB.getAllAreas();
+      const cachedQuizTypes = await indexedDB.getAllQuizTypes();
       setSpots(cachedSpots);
       setAreas(cachedAreas);
+      setQuizTypes(cachedQuizTypes);
     } catch (error) {
       console.error('Failed to fetch master data:', error);
       // キャッシュから読み込み
       const cachedSpots = await indexedDB.getAllSpots();
       const cachedAreas = await indexedDB.getAllAreas();
+      const cachedQuizTypes = await indexedDB.getAllQuizTypes();
       setSpots(cachedSpots);
       setAreas(cachedAreas);
+      setQuizTypes(cachedQuizTypes);
     }
   };
 
@@ -133,6 +143,7 @@ function App() {
         setUser={setUser}
         spots={spots}
         areas={areas}
+        quizTypes={quizTypes}
         loading={loading}
         reloading={reloading}
         handleLogin={handleLogin}
@@ -148,6 +159,7 @@ function AppContent({
   setUser,
   spots,
   areas,
+  quizTypes,
   loading,
   reloading,
   handleLogin,
@@ -158,6 +170,7 @@ function AppContent({
   setUser: (user: User) => void;
   spots: Spot[];
   areas: Area[];
+  quizTypes: QuizType[];
   loading: boolean;
   reloading: boolean;
   handleLogin: (userData: User) => void;
@@ -238,7 +251,7 @@ function AppContent({
               <Route path="/" element={<MapView user={user} spots={spots} areas={areas} />} />
               <Route path="/spots" element={<SpotList spots={spots} user={user} areas={areas} />} />
               <Route path="/spots/:spotId" element={<SpotDetail user={user} />} />
-              <Route path="/mypage" element={<MyPage user={user} setUser={setUser} spots={spots} areas={areas} />} />
+              <Route path="/mypage" element={<MyPage user={user} setUser={setUser} spots={spots} areas={areas} quizTypes={quizTypes} />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </>
           )}
@@ -249,6 +262,9 @@ function AppContent({
           {/* 管理画面 */}
           <Route path="/admin" element={<AdminLogin />} />
           <Route path="/admin/areas" element={<AdminAreaList />} />
+          <Route path="/admin/quiz-types" element={<AdminQuizTypeList />} />
+          <Route path="/admin/quiz-types/new" element={<AdminQuizTypeForm />} />
+          <Route path="/admin/quiz-types/:quizTypeId/edit" element={<AdminQuizTypeForm />} />
           <Route path="/admin/spots" element={<AdminSpotList />} />
           <Route path="/admin/spots/new" element={<AdminSpotForm />} />
           <Route path="/admin/spots/:spotId/edit" element={<AdminSpotForm />} />

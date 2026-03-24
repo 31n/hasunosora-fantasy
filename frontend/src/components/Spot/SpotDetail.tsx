@@ -363,7 +363,7 @@ export default function SpotDetail({ user }: SpotDetailProps) {
         {/* スポット詳細 */}
         <div style={{ 
           display: 'grid',
-          gridTemplateColumns: spot.quiz ? 'repeat(2, 1fr)' : '1fr',
+          gridTemplateColumns: spot.quizzes?.length > 0 ? 'repeat(2, 1fr)' : '1fr',
           gap: '12px',
           marginTop: '16px',
           padding: '16px',
@@ -376,12 +376,12 @@ export default function SpotDetail({ user }: SpotDetailProps) {
             </p>
             <p style={{ fontWeight: '600' }}>{spot.detection_radius}m</p>
           </div>
-          {spot.quiz ? (
+          {spot.quizzes?.length > 0 ? (
             <div>
               <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
                 クイズ得点
               </p>
-              <p style={{ fontWeight: '600' }}>{spot.quiz.score}点</p>
+              <p style={{ fontWeight: '600' }}>{Math.max(...spot.quizzes.map(q => q.score))}点</p>
             </div>
           ) : (
             <div>

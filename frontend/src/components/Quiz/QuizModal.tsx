@@ -10,9 +10,10 @@ interface QuizModalProps {
   quizData: CheckInResponse;
   onClose: () => void;
   readOnly?: boolean;
+  quizTypeId?: string | null;
 }
 
-export default function QuizModal({ user, spot, quizData, onClose, readOnly = false }: QuizModalProps) {
+export default function QuizModal({ user, spot, quizData, onClose, readOnly = false, quizTypeId }: QuizModalProps) {
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [result, setResult] = useState<{
     correct: boolean;
@@ -22,7 +23,7 @@ export default function QuizModal({ user, spot, quizData, onClose, readOnly = fa
   const [submitting, setSubmitting] = useState(false);
   const [showCorrectAnswer, setShowCorrectAnswer] = useState(false);
 
-  const correctAnswerIndex = spot.quiz?.correct_answer ?? null;
+  const correctAnswerIndex = quizData.quiz?.correct_answer ?? null;
   const correctAnswerText =
     correctAnswerIndex !== null && quizData.quiz?.choices
       ? quizData.quiz.choices[correctAnswerIndex]
@@ -40,7 +41,8 @@ export default function QuizModal({ user, spot, quizData, onClose, readOnly = fa
       const response = await checkinApi.answerQuiz(
         user.user_id,
         spot.spot_id,
-        selectedAnswer
+        selectedAnswer,
+        quizTypeId ?? undefined
       );
 
       setResult({

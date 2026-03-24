@@ -2,6 +2,7 @@ from models.user import User
 from models.checkin import CheckIn
 from models.spot import Spot
 from models.area import Area
+from models.quiz_type import QuizType
 from utils.user_id_generator import generate_user_id
 from typing import Dict, List, Optional
 
@@ -111,6 +112,26 @@ class UserService:
             'checkins': checkins
         }
     
+    @staticmethod
+    def set_selected_quiz_type(user_id: str, selected_quiz_type: Optional[str]) -> Dict:
+        """選択中のクイズタイプを設定"""
+        user = User.get(user_id)
+
+        if not user:
+            raise ValueError('USER_NOT_FOUND')
+
+        # クイズタイプIDが指定されている場合は存在チェック
+        if selected_quiz_type is not None and selected_quiz_type != '':
+            qt = QuizType.get(selected_quiz_type)
+            if not qt:
+                raise ValueError('QUIZ_TYPE_NOT_FOUND')
+            if not qt.is_active:
+                raise ValueError('QUIZ_TYPE_INACTIVE')
+
+        user.update_selected_quiz_type(selected_quiz_type or None)
+
+        return user.to_dict()
+
     @staticmethod
     def unlock_area(user_id: str, area_code: str) -> Dict:
         """エリアコードを検証してエリアを解放"""

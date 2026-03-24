@@ -95,8 +95,8 @@ export default function AdminSpotList() {
         }
       }
       if (selectedGenre && !spot.genre?.includes(selectedGenre)) return false;
-      if (selectedQuiz === 'yes' && !spot.quiz) return false;
-      if (selectedQuiz === 'no' && spot.quiz) return false;
+      if (selectedQuiz === 'yes' && !spot.quizzes?.length) return false;
+      if (selectedQuiz === 'no' && spot.quizzes?.length) return false;
       return true;
     });
   }, [spots, selectedArea, selectedGenre, selectedQuiz]);
@@ -151,6 +151,21 @@ export default function AdminSpotList() {
             }}
           >
             エリア管理
+          </button>
+          <button
+            onClick={() => navigate('/admin/quiz-types')}
+            style={{
+              padding: '12px 24px',
+              backgroundColor: '#8b5cf6',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '16px',
+              fontWeight: 'bold',
+              cursor: 'pointer'
+            }}
+          >
+            クイズタイプ管理
           </button>
           <button
             onClick={() => navigate('/admin/spots/new', { state: { returnSearch: location.search } })}
@@ -278,8 +293,8 @@ export default function AdminSpotList() {
             }}
           >
             <option value="">すべて ({spots.length}件)</option>
-            <option value="yes">クイズあり ({spots.filter(s => !!s.quiz).length}件)</option>
-            <option value="no">クイズなし ({spots.filter(s => !s.quiz).length}件)</option>
+            <option value="yes">クイズあり ({spots.filter(s => s.quizzes?.length > 0).length}件)</option>
+            <option value="no">クイズなし ({spots.filter(s => !s.quizzes?.length).length}件)</option>
           </select>
         </div>
 
@@ -413,10 +428,10 @@ export default function AdminSpotList() {
                   <LocationOnIcon style={{ fontSize: '14px' }} />
                   {spot.detection_radius}m
                 </span>
-                {spot.quiz ? (
+                {spot.quizzes?.length > 0 ? (
                   <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <EmojiEventsIcon style={{ fontSize: '14px' }} />
-                    {spot.quiz.score}点
+                    {Math.max(...spot.quizzes.map(q => q.score))}点
                   </span>
                 ) : (
                   <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
