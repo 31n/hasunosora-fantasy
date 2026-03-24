@@ -4,14 +4,31 @@
   publish = "dist"
 
 [[headers]]
-  for = "/service-worker.js"
+  for = "/sw.js"
   [headers.values]
     Content-Type = "application/javascript; charset=utf-8"
     Cache-Control = "no-cache"
 
+[[headers]]
+  for = "/registerSW.js"
+  [headers.values]
+    Content-Type = "application/javascript; charset=utf-8"
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
 [[redirects]]
-  from = "/service-worker.js"
-  to = "/service-worker.js"
+  from = "/sw.js"
+  to = "/sw.js"
+  status = 200
+  force = false
+
+[[redirects]]
+  from = "/registerSW.js"
+  to = "/registerSW.js"
   status = 200
   force = false
 
