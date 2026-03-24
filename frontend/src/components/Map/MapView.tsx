@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { checkinApi } from '../../services/api';
+import { checkinApi, userApi } from '../../services/api';
 import QuizModal from '../Quiz/QuizModal';
 import SpotPopup from './SpotPopup';
 import CheckinAnimation from '../Common/CheckinAnimation';
@@ -46,6 +46,61 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
   const [highlightQuizSpots, setHighlightQuizSpots] = useState(false);
   const [selectedGenre, setSelectedGenre] = useState<string>('all');
 
+  // チェックイン・クイズのクールダウン状態
+  const CHECKIN_COOLDOWN_MINUTES = 5;
+  const [checkinStatus, setCheckinStatus] = useState<'none' | 'cooldown' | 'today'>('none');
+  const [isQuizOnCooldown, setIsQuizOnCooldown] = useState(false);
+
+  // スポットのチェックイン・クイズステータスを確認
+  const checkSpotStatus = async (spotId: string) => {
+    setCheckinStatus('none');
+    setIsQuizOnCooldown(false);
+    const normalize = (s: string) => /Z|[+-]\d{2}:?\d{2}$/.test(s) ? s : s + 'Z';
+    try {
+      const historyData = await userApi.getHistory(user.user_id);
+      const spotHistory = historyData.checkins.filter(h => h.spot_id === spotId);
+      if (spotHistory.length > 0) {
+        const sorted = [...spotHistory].sort((a, b) =>
+          new Date(normalize(b.checked_in_at)).getTime() - new Date(normalize(a.checked_in_at)).getTime()
+        );
+        const mostRecentTime = new Date(normalize(sorted[0].checked_in_at));
+        const now = new Date();
+        const minutesSince = (now.getTime() - mostRecentTime.getTime()) / 60000;
+        if (minutesSince <= CHECKIN_COOLDOWN_MINUTES) {
+          setCheckinStatus('cooldown');
+        } else {
+          // 当日（JST）にチェックイン済みか確認
+          const jstNow = new Date(now.getTime() + 9 * 3600000);
+          const jstCheckin = new Date(mostRecentTime.getTime() + 9 * 3600000);
+          if (jstNow.toISOString().slice(0, 10) === jstCheckin.toISOString().slice(0, 10)) {
+            setCheckinStatus('today');
+          }
+        }
+      }
+    } catch (error) {
+      console.error('チェックインステータス確認エラー:', error);
+    }
+    try {
+      const spot = spots.find(s => s.spot_id === spotId);
+      if (spot?.quiz) {
+        const cooldownData = await checkinApi.checkCooldown(user.user_id, spotId);
+        setIsQuizOnCooldown(cooldownData.on_cooldown);
+      }
+    } catch (error) {
+      console.error('クイズクールダウン確認エラー:', error);
+    }
+  };
+
+  // スポット選択時にステータスを確認
+  useEffect(() => {
+    if (selectedSpot) {
+      checkSpotStatus(selectedSpot.spot_id);
+    } else {
+      setCheckinStatus('none');
+      setIsQuizOnCooldown(false);
+    }
+  }, [selectedSpot?.spot_id]);
+
   // スポットクリック処理を更新（マーカークリックでポップアップ表示のみ）
   const handleSpotClick = (spot: Spot) => {
     setSelectedSpot(spot);
@@ -82,6 +137,8 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
 
       // チェックイン成功時にアニメーションを表示
       setShowCheckinAnimation(true);
+      // ステータスを再確認（クールダウン状態に更新）
+      checkSpotStatus(selectedSpot.spot_id);
 
       // アラート表示前にアニメーションを確実に閉じる（モバイルのブロッキング対策）
       checkinAnimationTimer.current = window.setTimeout(() => {
@@ -991,6 +1048,9 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
           onCheckin={handleCheckin}
           onQuiz={handleQuizChallenge}
           onDirections={handleDirections}
+          isCheckedIn={checkinStatus === 'cooldown'}
+          isCheckedInToday={checkinStatus === 'today'}
+          isOnCooldown={isQuizOnCooldown}
           isInRange={userLocation ? calculateDistance(
             userLocation[1],
             userLocation[0],

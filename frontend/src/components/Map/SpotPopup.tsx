@@ -17,6 +17,7 @@ interface SpotPopupProps {
   onQuiz: () => void;
   onDirections: () => void;
   isCheckedIn?: boolean;
+  isCheckedInToday?: boolean;
   isQuizAvailable?: boolean;
   isInRange?: boolean;
   isOnCooldown?: boolean;
@@ -30,6 +31,7 @@ export default function SpotPopup({
   onQuiz,
   onDirections,
   isCheckedIn = false,
+  isCheckedInToday = false,
   isQuizAvailable = true,
   isInRange = true,
   isOnCooldown = false
@@ -163,22 +165,22 @@ export default function SpotPopup({
               }}
             >
               <CheckCircleIcon fontSize="small" />
-              {!isInRange ? 'スポットから離れすぎています' : isCheckedIn ? 'チェックイン済み' : 'チェックイン'}
+              {!isInRange ? 'スポットから離れすぎています' : isCheckedIn ? 'チェックイン済み' : isCheckedInToday ? '再チェックイン' : 'チェックイン'}
             </button>
 
             {/* クイズボタン */}
             {spot.quiz && (
               <button
                 onClick={onQuiz}
-                disabled={!isInRange || !isQuizAvailable || isOnCooldown}
+                disabled={!isInRange || !isQuizAvailable}
                 style={{
                   width: '100%',
                   padding: '12px',
-                  backgroundColor: !isInRange || !isQuizAvailable || isOnCooldown ? '#d1d5db' : '#f59e0b',
+                  backgroundColor: !isInRange || !isQuizAvailable ? '#d1d5db' : '#f59e0b',
                   color: 'white',
                   border: 'none',
                   borderRadius: '10px',
-                  cursor: !isInRange || !isQuizAvailable || isOnCooldown ? 'not-allowed' : 'pointer',
+                  cursor: !isInRange || !isQuizAvailable ? 'not-allowed' : 'pointer',
                   fontSize: '15px',
                   fontWeight: '700',
                   display: 'flex',
@@ -188,11 +190,11 @@ export default function SpotPopup({
                 }}
               >
                 <QuizIcon fontSize="small" />
-                {!isInRange ? 'スポットから離れすぎています' : isOnCooldown ? 'クールタイム中' : !isQuizAvailable ? 'クイズ挑戦中...' : `クイズに挑戦（${spot.quiz.score}pt）`}
+                {!isInRange ? 'スポットから離れすぎています' : isOnCooldown ? 'クイズの詳細を見る' : !isQuizAvailable ? 'クイズ挑戦中...' : `クイズに挑戦（${spot.quiz.score}pt）`}
               </button>
             )}
 
-            {/* 詳細を見るボタン */}
+            {/* 詳細を見るボタン */
             <button
               onClick={() => setShowDetail(true)}
               style={{
@@ -496,22 +498,22 @@ export default function SpotPopup({
             }}
           >
             <CheckCircleIcon fontSize="medium" />
-            {!isInRange ? 'スポットから離れすぎています' : isCheckedIn ? 'チェックイン済み' : 'チェックイン'}
+            {!isInRange ? 'スポットから離れすぎています' : isCheckedIn ? 'チェックイン済み' : isCheckedInToday ? '再チェックイン' : 'チェックイン'}
           </button>
 
           {/* クイズボタン */}
           {spot.quiz && (
             <button
               onClick={onQuiz}
-              disabled={!isInRange || !isQuizAvailable || isOnCooldown}
+              disabled={!isInRange || !isQuizAvailable}
               style={{
                 width: '100%',
                 padding: '14px',
-                backgroundColor: !isInRange || !isQuizAvailable || isOnCooldown ? '#d1d5db' : '#f59e0b',
+                backgroundColor: !isInRange || !isQuizAvailable ? '#d1d5db' : '#f59e0b',
                 color: 'white',
                 border: 'none',
                 borderRadius: '12px',
-                cursor: !isInRange || !isQuizAvailable || isOnCooldown ? 'not-allowed' : 'pointer',
+                cursor: !isInRange || !isQuizAvailable ? 'not-allowed' : 'pointer',
                 fontSize: '16px',
                 fontWeight: '700',
                 display: 'flex',
@@ -521,11 +523,11 @@ export default function SpotPopup({
               }}
             >
               <QuizIcon fontSize="medium" />
-              {!isInRange ? 'スポットから離れすぎています' : isOnCooldown ? 'クールタイム中' : !isQuizAvailable ? 'クイズ挑戦中...' : `クイズに挑戦（${spot.quiz.score}pt）`}
+              {!isInRange ? 'スポットから離れすぎています' : isOnCooldown ? 'クイズの詳細を見る' : !isQuizAvailable ? 'クイズ挑戦中...' : `クイズに挑戦（${spot.quiz.score}pt）`}
             </button>
           )}
 
-          {/* 経路検索ボタン */}
+          {/* 経路検索ボタン */
           <button
             onClick={handleDirections}
             style={{
