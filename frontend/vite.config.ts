@@ -9,7 +9,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'icons/*.png'],
       devOptions: {
-        enabled: true, // 開発環境でもPWAを有効化
+        enabled: false,
       },
       manifest: {
         name: 'スポットチェックイン',
@@ -33,8 +33,6 @@ export default defineConfig({
         ],
       },
       workbox: {
-        navigateFallback: '/index.html',
-        navigateFallbackDenylist: [/^\/assets\//, /^\/icons\//, /\.js$/, /\.css$/, /\.png$/, /\.svg$/],
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
         runtimeCaching: [
           {
