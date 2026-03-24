@@ -565,8 +565,14 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
         calculateDistance(userLocation[1], userLocation[0], spot.latitude, spot.longitude)
           <= spot.detection_radius;
       
+      const isTodayCheckin = showTodayCheckinMark && todayCheckinSpotIds.has(spot.spot_id);
+      const isAllTimeCheckin = showAllCheckinMark && allCheckinSpotIds.has(spot.spot_id);
+      el.style.display = 'flex';
+      el.style.alignItems = 'center';
+      el.style.justifyContent = 'center';
+
       if (isSelected) {
-        // 選択中のスポット：目立つオレンジ色
+        // 1. 選択中のスポット：目立つオレンジ色
         el.style.backgroundColor = '#f97316';
         el.style.border = '4px solid #ea580c';
         el.style.width = '36px';
@@ -574,8 +580,26 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
         el.style.boxShadow = '0 4px 12px rgba(249, 115, 22, 0.6)';
         el.style.transform = 'scale(1.2)';
         el.style.zIndex = '1000';
+      } else if (isTodayCheckin) {
+        // 2. 当日チェックイン済み：濃い緑 + チェックマーク
+        el.style.backgroundColor = '#16a34a';
+        el.style.border = '3px solid #15803d';
+        el.style.width = '30px';
+        el.style.height = '30px';
+        el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+        el.style.transform = 'scale(1)';
+        el.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>`;
+      } else if (isAllTimeCheckin) {
+        // 3. 過去チェックイン済み：青 + チェックマーク
+        el.style.backgroundColor = '#0ea5e9';
+        el.style.border = '3px solid #0284c7';
+        el.style.width = '30px';
+        el.style.height = '30px';
+        el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+        el.style.transform = 'scale(1)';
+        el.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>`;
       } else if (isInRange) {
-        // チェックイン圏内：緑 + パルスアニメーション
+        // 4. チェックイン圏内：緑 + パルスアニメーション
         el.style.backgroundColor = '#22c55e';
         el.style.border = '3px solid #16a34a';
         el.style.width = '34px';
@@ -584,43 +608,22 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
         el.style.zIndex = '500';
         el.classList.add('spot-marker-in-range');
       } else {
-        // 強調表示が有効でクイズありの場合のみ黄色、それ以外は全てグレー
+        // 5. 通常表示
         const isHighlighted = highlightQuizSpots && spot.quiz;
-        
         if (isHighlighted) {
-          // 強調表示中のクイズあり：黄色
           el.style.backgroundColor = '#fbbf24';
           el.style.border = '3px solid #f59e0b';
         } else if (highlightQuizSpots && !spot.quiz) {
-          // 強調表示中のクイズなし：グレー
           el.style.backgroundColor = '#9ca3af';
           el.style.border = '3px solid white';
         } else {
-          // 通常表示（クイズの有無に関わらず同じ色）
           el.style.backgroundColor = '#76C3B7';
           el.style.border = '3px solid white';
         }
-        
         el.style.width = '30px';
         el.style.height = '30px';
         el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
         el.style.transform = 'scale(1)';
-      }
-
-      // チェックインマーク表示（選択中・圏内スポットは上書きしない）
-      const isTodayCheckin = showTodayCheckinMark && todayCheckinSpotIds.has(spot.spot_id);
-      const isAllTimeCheckin = showAllCheckinMark && allCheckinSpotIds.has(spot.spot_id);
-      el.style.display = 'flex';
-      el.style.alignItems = 'center';
-      el.style.justifyContent = 'center';
-      if (!isSelected && !isInRange && isTodayCheckin) {
-        el.style.backgroundColor = '#16a34a';
-        el.style.border = '3px solid #15803d';
-        el.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>`;
-      } else if (!isSelected && !isInRange && isAllTimeCheckin) {
-        el.style.backgroundColor = '#0ea5e9';
-        el.style.border = '3px solid #0284c7';
-        el.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>`;
       }
       
       el.style.borderRadius = '50%';
