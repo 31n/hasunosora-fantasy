@@ -194,7 +194,7 @@ export default function SpotPopup({
               </button>
             )}
 
-            {/* 詳細を見るボタン */
+            {/* 詳細を見るボタン */}
             <button
               onClick={() => setShowDetail(true)}
               style={{
@@ -527,7 +527,7 @@ export default function SpotPopup({
             </button>
           )}
 
-          {/* 経路検索ボタン */
+          {/* 経路検索ボタン */}
           <button
             onClick={handleDirections}
             style={{
