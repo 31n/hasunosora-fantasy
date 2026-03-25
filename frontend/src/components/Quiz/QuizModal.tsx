@@ -23,7 +23,12 @@ export default function QuizModal({ user, spot, quizData, onClose, readOnly = fa
   const [submitting, setSubmitting] = useState(false);
   const [showCorrectAnswer, setShowCorrectAnswer] = useState(false);
 
-  const correctAnswerIndex = quizData.quiz?.correct_answer ?? null;
+  const correctAnswerIndex =
+    (quizData.quiz as any)?.correct_answer ??
+    spot.quizzes?.find(q => q.quiz_type_id === (quizTypeId ?? null))?.correct_answer ??
+    spot.quizzes?.find(q => q.quiz_type_id === null)?.correct_answer ??
+    spot.quizzes?.[0]?.correct_answer ??
+    null;
   const correctAnswerText =
     correctAnswerIndex !== null && quizData.quiz?.choices
       ? quizData.quiz.choices[correctAnswerIndex]
