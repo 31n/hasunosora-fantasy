@@ -89,7 +89,7 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
     }
     try {
       const spot = spots.find(s => s.spot_id === spotId);
-      if (spot?.quiz) {
+      if (spot?.quizzes?.length > 0) {
         const cooldownData = await checkinApi.checkCooldown(user.user_id, spotId);
         setIsQuizOnCooldown(cooldownData.on_cooldown);
       }
