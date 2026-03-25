@@ -172,15 +172,15 @@ export default function SpotPopup({
             {spot.quizzes?.length > 0 && (
               <button
                 onClick={onQuiz}
-                disabled={!isInRange || !isQuizAvailable}
+                disabled={isOnCooldown ? false : (!isInRange || !isQuizAvailable)}
                 style={{
                   width: '100%',
                   padding: '12px',
-                  backgroundColor: !isInRange || !isQuizAvailable ? '#d1d5db' : '#f59e0b',
+                  backgroundColor: isOnCooldown ? '#f59e0b' : (!isInRange || !isQuizAvailable ? '#d1d5db' : '#f59e0b'),
                   color: 'white',
                   border: 'none',
                   borderRadius: '10px',
-                  cursor: !isInRange || !isQuizAvailable ? 'not-allowed' : 'pointer',
+                  cursor: isOnCooldown ? 'pointer' : (!isInRange || !isQuizAvailable ? 'not-allowed' : 'pointer'),
                   fontSize: '15px',
                   fontWeight: '700',
                   display: 'flex',
@@ -190,7 +190,7 @@ export default function SpotPopup({
                 }}
               >
                 <QuizIcon fontSize="small" />
-                {!isInRange ? 'スポットから離れすぎています' : isOnCooldown ? 'クイズの詳細を見る' : !isQuizAvailable ? 'クイズ挑戦中...' : `クイズに挑戦（${Math.max(...spot.quizzes.map(q => q.score))}pt）`}
+                {!isInRange && !isOnCooldown ? 'スポットから離れすぎています' : isOnCooldown ? 'クイズの詳細を見る' : !isQuizAvailable ? 'クイズ挑戦中...' : `クイズに挑戦（${Math.max(...spot.quizzes.map(q => q.score))}pt）`}
               </button>
             )}
 
@@ -505,15 +505,15 @@ export default function SpotPopup({
           {spot.quizzes?.length > 0 && (
             <button
               onClick={onQuiz}
-              disabled={!isInRange || !isQuizAvailable}
+              disabled={isOnCooldown ? false : (!isInRange || !isQuizAvailable)}
               style={{
                 width: '100%',
                 padding: '14px',
-                backgroundColor: !isInRange || !isQuizAvailable ? '#d1d5db' : '#f59e0b',
+                backgroundColor: isOnCooldown ? '#f59e0b' : (!isInRange || !isQuizAvailable ? '#d1d5db' : '#f59e0b'),
                 color: 'white',
                 border: 'none',
                 borderRadius: '12px',
-                cursor: !isInRange || !isQuizAvailable ? 'not-allowed' : 'pointer',
+                cursor: isOnCooldown ? 'pointer' : (!isInRange || !isQuizAvailable ? 'not-allowed' : 'pointer'),
                 fontSize: '16px',
                 fontWeight: '700',
                 display: 'flex',
@@ -523,7 +523,7 @@ export default function SpotPopup({
               }}
             >
               <QuizIcon fontSize="medium" />
-              {!isInRange ? 'スポットから離れすぎています' : isOnCooldown ? 'クイズの詳細を見る' : !isQuizAvailable ? 'クイズ挑戦中...' : `クイズに挑戦（${Math.max(...spot.quizzes.map(q => q.score))}pt）`}
+              {!isInRange && !isOnCooldown ? 'スポットから離れすぎています' : isOnCooldown ? 'クイズの詳細を見る' : !isQuizAvailable ? 'クイズ挑戦中...' : `クイズに挑戦（${Math.max(...spot.quizzes.map(q => q.score))}pt）`}
             </button>
           )}
 

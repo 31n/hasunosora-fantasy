@@ -181,6 +181,31 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
   const handleQuizChallenge = async () => {
     if (!selectedSpot) return;
 
+    // クールタイム中の場合、APIを呼ばずに閲覧専用でクイズを表示
+    if (isQuizOnCooldown) {
+      const quiz =
+        selectedSpot.quizzes?.find(q => q.quiz_type_id === (user.selected_quiz_type ?? null)) ??
+        selectedSpot.quizzes?.find(q => q.quiz_type_id === null) ??
+        selectedSpot.quizzes?.[0];
+      if (quiz) {
+        setQuizData({
+          score_earned: 0,
+          total_score: user.total_score,
+          already_scored_today: true,
+          quiz_available: true,
+          quiz: {
+            question: quiz.question,
+            choices: quiz.choices,
+            score: quiz.score,
+            correct_answer: quiz.correct_answer,
+          } as any,
+        });
+        setQuizReadOnly(true);
+        setShowQuiz(true);
+      }
+      return;
+    }
+
     const currentLocation = userLocationRef.current;
 
     if (!currentLocation) {
@@ -211,17 +236,22 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
         alert('スポットから離れすぎています。スポットに近づいてください。');
       } else if (error.message.includes('QUIZ_ALREADY_ANSWERED_TODAY')) {
         // 選択中スポットのクイズデータを閲覧専用で表示
-        if (selectedSpot?.quiz) {
+        const quiz =
+          selectedSpot.quizzes?.find(q => q.quiz_type_id === (user.selected_quiz_type ?? null)) ??
+          selectedSpot.quizzes?.find(q => q.quiz_type_id === null) ??
+          selectedSpot.quizzes?.[0];
+        if (quiz) {
           setQuizData({
             score_earned: 0,
             total_score: user.total_score,
             already_scored_today: true,
             quiz_available: true,
             quiz: {
-              question: selectedSpot.quiz.question,
-              choices: selectedSpot.quiz.choices,
-              score: selectedSpot.quiz.score,
-            },
+              question: quiz.question,
+              choices: quiz.choices,
+              score: quiz.score,
+              correct_answer: quiz.correct_answer,
+            } as any,
           });
           setQuizReadOnly(true);
           setShowQuiz(true);
