@@ -51,16 +51,17 @@ class CheckInService:
         from models.cooldown import QuizCooldown
         quiz_answered_today, _ = QuizCooldown.is_on_cooldown(user_id, spot_id)
 
-        if spot.quiz and not quiz_answered_today:
+        quiz = spot.get_quiz_for_type(user.selected_quiz_type)
+        if quiz and not quiz_answered_today:
             return {
                 'score_earned': score_earned,
                 'total_score': user.total_score,
                 'already_scored_today': already_scored_today,
                 'quiz_available': True,
                 'quiz': {
-                    'question': spot.quiz.get('question'),
-                    'choices': spot.quiz.get('choices'),
-                    'score': spot.quiz.get('score')
+                    'question': quiz.get('question'),
+                    'choices': quiz.get('choices'),
+                    'score': quiz.get('score')
                 }
             }
         else:
