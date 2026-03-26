@@ -85,7 +85,7 @@ export default function Login({ onLogin }: LoginProps) {
               type="text"
               value={userId}
               onChange={(e) => setUserId(e.target.value)}
-              placeholder="例: A3BK7E9FH"
+              placeholder="例: ABC123XYZ"
               maxLength={9}
               style={{
                 width: '100%',
