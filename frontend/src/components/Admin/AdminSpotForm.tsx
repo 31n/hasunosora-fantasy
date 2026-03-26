@@ -339,7 +339,24 @@ export default function AdminSpotForm() {
       };
 
       if (spotId) {
-        await adminApi.updateSpot(password, spotId, spotData);
+        const result = await adminApi.updateSpot(password, spotId, spotData);
+        // IndexedDB のキャッシュを更新
+        const existing = await indexedDB.getSpot(spotId);
+        if (existing) {
+          const updatedSpot = {
+            ...existing,
+            ...spotData,
+            spot_id: spotId,
+            updated_at: result?.updated_at ?? existing.updated_at,
+            quizzes: spotData.quizzes
+              ? spotData.quizzes.map((q: any) => ({
+                  ...q,
+                  quiz_type_id: q.quiz_type_id,
+                }))
+              : existing.quizzes,
+          };
+          await indexedDB.putSpot(updatedSpot);
+        }
         alert('スポットを更新しました');
       } else {
         await adminApi.createSpot(password, spotData);

@@ -86,6 +86,12 @@ export const indexedDB = {
     return db.get('spots', spotId);
   },
 
+  // 特定のスポットを1件更新（上書き保存）
+  putSpot: async (spot: Spot): Promise<void> => {
+    const db = await getDB();
+    await db.put('spots', spot);
+  },
+
   // エリアを全て保存
   saveAreas: async (areas: Area[]): Promise<void> => {
     const db = await getDB();
