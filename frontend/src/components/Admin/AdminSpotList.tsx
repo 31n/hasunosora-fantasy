@@ -168,6 +168,21 @@ export default function AdminSpotList() {
             クイズタイプ管理
           </button>
           <button
+            onClick={() => navigate('/admin/announcements')}
+            style={{
+              padding: '12px 24px',
+              backgroundColor: '#f59e0b',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '16px',
+              fontWeight: 'bold',
+              cursor: 'pointer'
+            }}
+          >
+            お知らせ管理
+          </button>
+          <button
             onClick={() => navigate('/admin/spots/new', { state: { returnSearch: location.search } })}
             style={{
               padding: '12px 24px',

@@ -12,7 +12,8 @@ import type {
   UnlockAreaResponse,
   Spot,
   Area,
-  QuizType
+  QuizType,
+  Announcement
 } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://your-api-gateway-url';
@@ -277,5 +278,44 @@ export const adminApi = {
 export const quizTypeApi = {
   getAll: async (): Promise<QuizType[]> => {
     return fetchApi<QuizType[]>('/quiz-types');
+  },
+};
+
+// パブリック - お知らせ
+export const announcementApi = {
+  getActive: async (): Promise<{ announcements: Announcement[] }> => {
+    return fetchApi<{ announcements: Announcement[] }>('/announcements');
+  },
+};
+
+// 管理画面 - お知らせ管理
+export const adminAnnouncementApi = {
+  getAll: async (password: string): Promise<{ announcements: Announcement[] }> => {
+    return fetchApi<{ announcements: Announcement[] }>('/admin/announcements', {
+      headers: { 'X-Admin-Password': password },
+    });
+  },
+
+  create: async (password: string, data: Partial<Announcement>): Promise<Announcement> => {
+    return fetchApi<Announcement>('/admin/announcements', {
+      method: 'POST',
+      headers: { 'X-Admin-Password': password },
+      body: JSON.stringify(data),
+    });
+  },
+
+  update: async (password: string, id: string, data: Partial<Announcement>): Promise<Announcement> => {
+    return fetchApi<Announcement>(`/admin/announcements/${id}`, {
+      method: 'PUT',
+      headers: { 'X-Admin-Password': password },
+      body: JSON.stringify(data),
+    });
+  },
+
+  delete: async (password: string, id: string): Promise<any> => {
+    return fetchApi(`/admin/announcements/${id}`, {
+      method: 'DELETE',
+      headers: { 'X-Admin-Password': password },
+    });
   },
 };

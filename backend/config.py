@@ -45,4 +45,8 @@ class Config:
     def QUIZ_TYPES_TABLE(self):
         return f"{self.DYNAMODB_TABLE_PREFIX}quiz_types"
 
+    @property
+    def ANNOUNCEMENTS_TABLE(self):
+        return f"{self.DYNAMODB_TABLE_PREFIX}announcements"
+
 config = Config()

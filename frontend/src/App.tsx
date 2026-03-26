@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { storage } from './services/storage';
-import { userApi, masterApi } from './services/api';
+import { userApi, masterApi, announcementApi } from './services/api';
 import { indexedDB } from './services/indexedDB';
 import RefreshIcon from '@mui/icons-material/Refresh';
 
@@ -18,11 +18,14 @@ import AdminSpotForm from './components/Admin/AdminSpotForm';
 import AdminAreaList from './components/Admin/AdminAreaList';
 import AdminQuizTypeList from './components/Admin/AdminQuizTypeList';
 import AdminQuizTypeForm from './components/Admin/AdminQuizTypeForm';
+import AdminAnnouncementList from './components/Admin/AdminAnnouncementList';
+import AdminAnnouncementForm from './components/Admin/AdminAnnouncementForm';
 import Header from './components/Common/Header';
 import Loading from './components/Common/Loading';
 import HowToPage from './components/Common/HowToPage';
+import AnnouncementModal from './components/Common/AnnouncementModal';
 
-import type { User, Spot, Area, QuizType } from './types';
+import type { User, Spot, Area, QuizType, Announcement } from './types';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -31,6 +34,8 @@ function App() {
   const [quizTypes, setQuizTypes] = useState<QuizType[]>([]);
   const [loading, setLoading] = useState(true);
   const [reloading, setReloading] = useState(false);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
 
   useEffect(() => {
     initializeApp();
@@ -49,6 +54,17 @@ function App() {
 
       // マスタデータを取得
       await fetchMasterData();
+
+      // お知らせを取得
+      try {
+        const announcementData = await announcementApi.getActive();
+        if (announcementData.announcements.length > 0) {
+          setAnnouncements(announcementData.announcements);
+          setShowAnnouncementModal(true);
+        }
+      } catch (e) {
+        // お知らせ取得失敗はサイレントに無視
+      }
     } catch (error) {
       console.error('Initialization error:', error);
     } finally {
@@ -150,6 +166,12 @@ function App() {
         handleLogout={handleLogout}
         handleReload={handleReload}
       />
+      {showAnnouncementModal && announcements.length > 0 && (
+        <AnnouncementModal
+          announcements={announcements}
+          onClose={() => setShowAnnouncementModal(false)}
+        />
+      )}
     </BrowserRouter>
   );
 }
@@ -268,6 +290,9 @@ function AppContent({
           <Route path="/admin/spots" element={<AdminSpotList />} />
           <Route path="/admin/spots/new" element={<AdminSpotForm />} />
           <Route path="/admin/spots/:spotId/edit" element={<AdminSpotForm />} />
+          <Route path="/admin/announcements" element={<AdminAnnouncementList />} />
+          <Route path="/admin/announcements/new" element={<AdminAnnouncementForm />} />
+          <Route path="/admin/announcements/:announcementId/edit" element={<AdminAnnouncementForm />} />
         </Routes>
         </div>
       </div>

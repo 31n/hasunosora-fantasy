@@ -145,3 +145,15 @@ export interface UnlockAreaResponse {
   unlocked_area: string;
   user: User;
 }
+
+// announcement.ts
+export interface Announcement {
+  announcement_id: string;
+  title: string;
+  body: string;
+  start_date: string; // 'YYYY-MM-DD'
+  end_date: string;   // 'YYYY-MM-DD'
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}

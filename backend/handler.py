@@ -8,6 +8,7 @@ from services.quiz_service import QuizService
 from services.admin_service import AdminService
 from services.area_service import AreaService
 from services.quiz_type_service import QuizTypeService
+from services.announcement_service import AnnouncementService
 
 def handler(event, context):
     """メインハンドラー"""
@@ -108,6 +109,22 @@ def handler(event, context):
 
         elif path.startswith('/admin/quiz-types/') and http_method == 'DELETE':
             return admin_delete_quiz_type(event)
+
+        # お知らせ関連
+        elif path == '/announcements' and http_method == 'GET':
+            return get_announcements(event)
+
+        elif path == '/admin/announcements' and http_method == 'GET':
+            return admin_get_announcements(event)
+
+        elif path == '/admin/announcements' and http_method == 'POST':
+            return admin_create_announcement(event)
+
+        elif path.startswith('/admin/announcements/') and http_method == 'PUT':
+            return admin_update_announcement(event)
+
+        elif path.startswith('/admin/announcements/') and http_method == 'DELETE':
+            return admin_delete_announcement(event)
 
         else:
             return error_response('NOT_FOUND', 'Endpoint not found', 404)
@@ -595,6 +612,66 @@ def admin_delete_quiz_type(event):
         path_parts = event['path'].split('/')
         quiz_type_id = path_parts[3]
         result = QuizTypeService.delete(quiz_type_id)
+        return success_response(result)
+    except ValueError as e:
+        return error_response(str(e), str(e), 400)
+    except Exception as e:
+        return error_response('INTERNAL_ERROR', str(e), 500)
+
+
+# お知らせ関連
+def get_announcements(event):
+    """公開中のお知らせ一覧（ユーザー向け）"""
+    try:
+        result = AnnouncementService.get_active()
+        return success_response({'announcements': result})
+    except Exception as e:
+        return error_response('INTERNAL_ERROR', str(e), 500)
+
+
+def admin_get_announcements(event):
+    try:
+        check_admin_auth(event)
+        result = AnnouncementService.get_all()
+        return success_response({'announcements': result})
+    except ValueError as e:
+        return error_response(str(e), str(e), 401)
+    except Exception as e:
+        return error_response('INTERNAL_ERROR', str(e), 500)
+
+
+def admin_create_announcement(event):
+    try:
+        check_admin_auth(event)
+        body = json.loads(event.get('body', '{}'))
+        result = AnnouncementService.create(body)
+        return success_response(result, 201)
+    except ValueError as e:
+        return error_response(str(e), str(e), 400)
+    except Exception as e:
+        return error_response('INTERNAL_ERROR', str(e), 500)
+
+
+def admin_update_announcement(event):
+    try:
+        check_admin_auth(event)
+        path_parts = event['path'].split('/')
+        announcement_id = path_parts[3]
+        body = json.loads(event.get('body', '{}'))
+        result = AnnouncementService.update(announcement_id, body)
+        return success_response(result)
+    except ValueError as e:
+        return error_response(str(e), str(e), 400)
+    except Exception as e:
+        return error_response('INTERNAL_ERROR', str(e), 500)
+
+
+def admin_delete_announcement(event):
+    try:
+        check_admin_auth(event)
+        path_parts = event['path'].split('/')
+        announcement_id = path_parts[3]
+        result = AnnouncementService.delete(announcement_id)
         return success_response(result)
     except ValueError as e:
         return error_response(str(e), str(e), 400)
