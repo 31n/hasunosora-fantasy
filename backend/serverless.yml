@@ -370,6 +370,15 @@ functions:
               - Content-Type
               - x-admin-password
             allowCredentials: false
+      - http:
+          path: /admin/stats
+          method: get
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - x-admin-password
+            allowCredentials: false
 
 resources:
   Resources:
