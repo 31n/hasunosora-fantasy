@@ -28,6 +28,14 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes }: MyPag
     loadHistory();
   }, []);
 
+  useEffect(() => {
+    const activeTypes = quizTypes.filter(qt => qt.is_active);
+    if (activeTypes.length > 0 && !user.selected_quiz_type) {
+      const lowestPriority = [...activeTypes].sort((a, b) => b.display_order - a.display_order)[0];
+      handleQuizTypeChange(lowestPriority.quiz_type_id);
+    }
+  }, [quizTypes]);
+
   const loadHistory = async () => {
     try {
       const data = await userApi.getHistory(user.user_id);
@@ -383,7 +391,6 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes }: MyPag
                   opacity: loading ? 0.5 : 1
                 }}
               >
-                <option value="">デフォルト</option>
                 {quizTypes
                   .filter(qt => qt.is_active)
                   .sort((a, b) => a.display_order - b.display_order)
