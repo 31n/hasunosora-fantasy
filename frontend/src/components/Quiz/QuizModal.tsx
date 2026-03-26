@@ -56,7 +56,11 @@ export default function QuizModal({ user, spot, quizData, onClose, readOnly = fa
         score_earned: response.score_earned,
       });
     } catch (error: any) {
-      alert('エラーが発生しました: ' + error.message);
+      if (error.message.includes('QUIZ_NOT_AVAILABLE')) {
+        alert('このスポットにはクイズが登録されていません。');
+      } else {
+        alert('エラーが発生しました: ' + error.message);
+      }
     } finally {
       setSubmitting(false);
     }

@@ -82,7 +82,8 @@ class Spot:
         for q in self.quizzes:
             if q.get('quiz_type_id') is None:
                 return q
-        return None
+        # デフォルトも存在しない場合は先頭のクイズにフォールバック
+        return self.quizzes[0]
     
     def to_dict(self, for_dynamodb: bool = False) -> Dict:
         """

@@ -234,6 +234,8 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
     } catch (error: any) {
       if (error.message.includes('OUT_OF_RANGE')) {
         alert('スポットから離れすぎています。スポットに近づいてください。');
+      } else if (error.message.includes('QUIZ_NOT_AVAILABLE')) {
+        alert('このスポットにはクイズが登録されていません。');
       } else if (error.message.includes('QUIZ_ALREADY_ANSWERED_TODAY')) {
         // 選択中スポットのクイズデータを閲覧専用で表示
         const quiz =
