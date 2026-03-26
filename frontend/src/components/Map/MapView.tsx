@@ -43,11 +43,18 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
   // フィルター表示状態
   const [showFilter, setShowFilter] = useState(false);
   
-  // フィルター状態
-  const [highlightQuizSpots, setHighlightQuizSpots] = useState(false);
-  const [selectedGenre, setSelectedGenre] = useState<string>('all');
-  const [showTodayCheckinMark, setShowTodayCheckinMark] = useState(false);
-  const [showAllCheckinMark, setShowAllCheckinMark] = useState(false);
+  // フィルター状態（sessionStorage から復元）
+  const MAP_FILTER_SESSION_KEY = 'mapFilterState';
+  const _savedFilter = (() => {
+    try {
+      const s = sessionStorage.getItem(MAP_FILTER_SESSION_KEY);
+      return s ? JSON.parse(s) : null;
+    } catch { return null; }
+  })();
+  const [highlightQuizSpots, setHighlightQuizSpots] = useState<boolean>(_savedFilter?.highlightQuizSpots ?? false);
+  const [selectedGenre, setSelectedGenre] = useState<string>(_savedFilter?.selectedGenre ?? 'all');
+  const [showTodayCheckinMark, setShowTodayCheckinMark] = useState<boolean>(_savedFilter?.showTodayCheckinMark ?? false);
+  const [showAllCheckinMark, setShowAllCheckinMark] = useState<boolean>(_savedFilter?.showAllCheckinMark ?? false);
 
   // チェックイン履歴（マーク表示フィルター用）
   const [allCheckinHistory, setAllCheckinHistory] = useState<import('../../types').CheckInHistory[] | null>(null);
@@ -712,6 +719,18 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
       }).catch(e => console.error('チェックイン履歴取得エラー:', e));
     }
   }, [showTodayCheckinMark, showAllCheckinMark]);
+
+  // フィルター状態をsessionStorageに保存
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(MAP_FILTER_SESSION_KEY, JSON.stringify({
+        highlightQuizSpots,
+        selectedGenre,
+        showTodayCheckinMark,
+        showAllCheckinMark,
+      }));
+    } catch { /* ignore */ }
+  }, [highlightQuizSpots, selectedGenre, showTodayCheckinMark, showAllCheckinMark]);
 
   // フィルターモーダルのEscapeキーハンドリング
   useEffect(() => {
