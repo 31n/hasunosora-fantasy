@@ -67,23 +67,45 @@ class Spot:
         self.created_at = created_at or datetime.now(timezone.utc).isoformat()
         self.updated_at = updated_at or datetime.now(timezone.utc).isoformat()
 
-    def get_quiz_for_type(self, quiz_type_id: Optional[str]) -> Optional[Dict]:
+    def get_quiz_for_type(
+        self,
+        quiz_type_id: Optional[str],
+        allowed_quiz_type_ids: Optional[set] = None,
+    ) -> Optional[Dict]:
         """
         ユーザーの selected_quiz_type に対応するクイズを返す。
-        該当タイプが存在しない場合は quiz_type_id=None のデフォルトクイズを返す。
+
+        Args:
+            quiz_type_id: ユーザーの選択クイズタイプID（None = デフォルト）
+            allowed_quiz_type_ids: 表示を許可するクイズタイプIDのセット。
+                Noneの場合は制限なし。quiz_type_id=None（デフォルト）は常に許可。
         """
         if not self.quizzes:
             return None
+
+        # display_order 制限フィルタ（quiz_type_id=None のデフォルトクイズは常に許可）
+        if allowed_quiz_type_ids is not None:
+            available = [
+                q for q in self.quizzes
+                if q.get('quiz_type_id') is None
+                or q.get('quiz_type_id') in allowed_quiz_type_ids
+            ]
+        else:
+            available = self.quizzes
+
+        if not available:
+            return None
+
         # 指定タイプを検索
-        for q in self.quizzes:
+        for q in available:
             if q.get('quiz_type_id') == quiz_type_id:
                 return q
         # 見つからなければデフォルト（quiz_type_id=None）を返す
-        for q in self.quizzes:
+        for q in available:
             if q.get('quiz_type_id') is None:
                 return q
         # デフォルトも存在しない場合は先頭のクイズにフォールバック
-        return self.quizzes[0]
+        return available[0]
     
     def to_dict(self, for_dynamodb: bool = False) -> Dict:
         """
