@@ -6,7 +6,7 @@ import { checkinApi, userApi } from '../../services/api';
 import QuizModal from '../Quiz/QuizModal';
 import SpotPopup from './SpotPopup';
 import CheckinAnimation from '../Common/CheckinAnimation';
-import type { User, Spot, Area, CheckInResponse } from '../../types';
+import type { User, Spot, Area, CheckInResponse, QuizType } from '../../types';
 import { calculateDistance, formatDistance } from '../../utils/distance';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
 import FilterListIcon from '@mui/icons-material/FilterList';
@@ -17,9 +17,10 @@ interface MapViewProps {
   user: User;
   spots: Spot[];
   areas: Area[];
+  quizTypes?: QuizType[];
 }
 
-export default function MapView({ user, spots, areas }: MapViewProps) {
+export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -1266,6 +1267,7 @@ export default function MapView({ user, spots, areas }: MapViewProps) {
           onClose={handleQuizClose}
           readOnly={quizReadOnly}
           quizTypeId={quizData.quiz_type_id}
+          quizTypes={quizTypes}
         />
       )}
 

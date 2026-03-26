@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { checkinApi } from '../../services/api';
-import type { User, Spot, CheckInResponse } from '../../types';
+import type { User, Spot, CheckInResponse, QuizType } from '../../types';
 import CelebrationIcon from '@mui/icons-material/Celebration';
 import CloseIcon from '@mui/icons-material/Close';
 
@@ -11,9 +11,10 @@ interface QuizModalProps {
   onClose: () => void;
   readOnly?: boolean;
   quizTypeId?: string | null;
+  quizTypes?: QuizType[];
 }
 
-export default function QuizModal({ user, spot, quizData, onClose, readOnly = false, quizTypeId }: QuizModalProps) {
+export default function QuizModal({ user, spot, quizData, onClose, readOnly = false, quizTypeId, quizTypes = [] }: QuizModalProps) {
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [result, setResult] = useState<{
     correct: boolean;
@@ -92,7 +93,28 @@ export default function QuizModal({ user, spot, quizData, onClose, readOnly = fa
           overflow: 'auto',
         }}
       >
-        <h2 style={{ marginBottom: '16px' }}>{spot.spot_name}</h2>
+        <h2 style={{ marginBottom: '8px' }}>{spot.spot_name}</h2>
+
+        {(() => {
+          const quizTypeName = quizTypeId != null
+            ? quizTypes.find(t => t.quiz_type_id === quizTypeId)?.name
+            : null;
+          return (
+            <div style={{ marginBottom: '16px' }}>
+              <span style={{
+                display: 'inline-block',
+                padding: '2px 10px',
+                borderRadius: '999px',
+                fontSize: '13px',
+                fontWeight: '600',
+                backgroundColor: quizTypeName ? '#dbeafe' : '#f3f4f6',
+                color: quizTypeName ? '#1d4ed8' : '#6b7280',
+              }}>
+                {quizTypeName ?? 'デフォルト'}
+              </span>
+            </div>
+          );
+        })()}
 
         {!result ? (
           <>
