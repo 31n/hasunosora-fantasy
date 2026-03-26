@@ -272,6 +272,18 @@ export const adminApi = {
       headers: { 'X-Admin-Password': password },
     });
   },
+
+  // 統計
+  getStats: async (password: string): Promise<{
+    total_users: number;
+    active_users_7d: number;
+    daily_new_users: { date: string; count: number }[];
+    daily_active_users: { date: string; count: number }[];
+  }> => {
+    return fetchApi('/admin/stats', {
+      headers: { 'X-Admin-Password': password },
+    });
+  },
 };
 
 // パブリック - クイズタイプ

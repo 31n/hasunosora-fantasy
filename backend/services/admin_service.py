@@ -3,6 +3,8 @@ from utils.s3 import upload_image, delete_image
 from config import config
 from typing import Dict, List
 import base64
+import collections
+from datetime import datetime, timezone, timedelta
 
 class AdminService:
     @staticmethod
@@ -140,6 +142,78 @@ class AdminService:
             'uploaded_at': Spot.get_master_version()['updated_at']
         }
     
+    @staticmethod
+    def get_stats() -> Dict:
+        """ユーザー統計を取得（過去30日）"""
+        from utils.dynamodb import get_table
+
+        now = datetime.now(timezone.utc)
+        thirty_days_ago = (now - timedelta(days=30)).isoformat()
+        seven_days_ago = (now - timedelta(days=7)).isoformat()
+
+        # ユーザーテーブルをフルスキャン（created_at のみ取得）
+        users_table = get_table(config.USERS_TABLE)
+        user_items = []
+        response = users_table.scan(ProjectionExpression='created_at')
+        user_items.extend(response.get('Items', []))
+        while 'LastEvaluatedKey' in response:
+            response = users_table.scan(
+                ProjectionExpression='created_at',
+                ExclusiveStartKey=response['LastEvaluatedKey']
+            )
+            user_items.extend(response.get('Items', []))
+
+        total_users = len(user_items)
+
+        # 日別新規ユーザー数（過去30日）
+        daily_new_users_map: Dict[str, int] = collections.defaultdict(int)
+        cutoff_date = thirty_days_ago[:10]
+        for item in user_items:
+            date = (item.get('created_at') or '')[:10]
+            if date >= cutoff_date:
+                daily_new_users_map[date] += 1
+
+        # チェックインテーブルをスキャン（過去30日）
+        checkins_table = get_table(config.CHECKINS_TABLE)
+        checkin_items = []
+        response = checkins_table.scan(
+            FilterExpression='checked_in_at >= :d',
+            ExpressionAttributeValues={':d': thirty_days_ago}
+        )
+        checkin_items.extend(response.get('Items', []))
+        while 'LastEvaluatedKey' in response:
+            response = checkins_table.scan(
+                FilterExpression='checked_in_at >= :d',
+                ExpressionAttributeValues={':d': thirty_days_ago},
+                ExclusiveStartKey=response['LastEvaluatedKey']
+            )
+            checkin_items.extend(response.get('Items', []))
+
+        # 日別アクティブユーザー数（ユニーク user_id）
+        daily_active_map: Dict[str, set] = collections.defaultdict(set)
+        active_users_7d: set = set()
+        for item in checkin_items:
+            date = (item.get('checked_in_at') or '')[:10]
+            user_id = item.get('user_id', '')
+            if user_id:
+                daily_active_map[date].add(user_id)
+                if (item.get('checked_in_at') or '') >= seven_days_ago:
+                    active_users_7d.add(user_id)
+
+        # 過去30日の日付リスト（昇順）
+        dates = [(now - timedelta(days=i)).strftime('%Y-%m-%d') for i in range(29, -1, -1)]
+
+        return {
+            'total_users': total_users,
+            'active_users_7d': len(active_users_7d),
+            'daily_new_users': [
+                {'date': d, 'count': daily_new_users_map.get(d, 0)} for d in dates
+            ],
+            'daily_active_users': [
+                {'date': d, 'count': len(daily_active_map.get(d, set()))} for d in dates
+            ],
+        }
+
     @staticmethod
     def _validate_quiz(quiz: Dict):
         """クイズのバリデーション"""

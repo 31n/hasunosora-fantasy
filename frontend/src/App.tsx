@@ -20,6 +20,7 @@ import AdminQuizTypeList from './components/Admin/AdminQuizTypeList';
 import AdminQuizTypeForm from './components/Admin/AdminQuizTypeForm';
 import AdminAnnouncementList from './components/Admin/AdminAnnouncementList';
 import AdminAnnouncementForm from './components/Admin/AdminAnnouncementForm';
+import AdminStats from './components/Admin/AdminStats';
 import Header from './components/Common/Header';
 import Loading from './components/Common/Loading';
 import HowToPage from './components/Common/HowToPage';
@@ -293,6 +294,7 @@ function AppContent({
           <Route path="/admin/announcements" element={<AdminAnnouncementList />} />
           <Route path="/admin/announcements/new" element={<AdminAnnouncementForm />} />
           <Route path="/admin/announcements/:announcementId/edit" element={<AdminAnnouncementForm />} />
+          <Route path="/admin/stats" element={<AdminStats />} />
         </Routes>
         </div>
       </div>

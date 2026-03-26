@@ -183,6 +183,21 @@ export default function AdminSpotList() {
             お知らせ管理
           </button>
           <button
+            onClick={() => navigate('/admin/stats')}
+            style={{
+              padding: '12px 24px',
+              backgroundColor: '#06b6d4',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '16px',
+              fontWeight: 'bold',
+              cursor: 'pointer'
+            }}
+          >
+            統計
+          </button>
+          <button
             onClick={() => navigate('/admin/spots/new', { state: { returnSearch: location.search } })}
             style={{
               padding: '12px 24px',

@@ -137,6 +137,9 @@ def handler(event, context):
         elif path.startswith('/admin/announcements/') and http_method == 'DELETE':
             return admin_delete_announcement(event)
 
+        elif path == '/admin/stats' and http_method == 'GET':
+            return admin_get_stats(event)
+
         else:
             return error_response('NOT_FOUND', 'Endpoint not found', 404)
     
@@ -696,6 +699,17 @@ def admin_delete_announcement(event):
         path_parts = event['path'].split('/')
         announcement_id = path_parts[3]
         result = AnnouncementService.delete(announcement_id)
+        return success_response(result)
+    except ValueError as e:
+        return error_response(str(e), str(e), 400)
+    except Exception as e:
+        return internal_error_response()
+
+
+def admin_get_stats(event):
+    try:
+        check_admin_auth(event)
+        result = AdminService.get_stats()
         return success_response(result)
     except ValueError as e:
         return error_response(str(e), str(e), 400)
