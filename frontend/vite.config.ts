@@ -35,6 +35,7 @@ export default defineConfig({
       workbox: {
         cleanupOutdatedCaches: true,
         clientsClaim: true,
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024, // 3MB
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
         runtimeCaching: [
           {
@@ -63,6 +64,23 @@ export default defineConfig({
       },
     }),
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-mapbox': ['mapbox-gl'],
+          'vendor-mui': [
+            '@mui/material',
+            '@mui/icons-material',
+            '@emotion/react',
+            '@emotion/styled',
+          ],
+          'vendor-misc': ['react-markdown', 'rehype-raw', 'idb', 'open-location-code'],
+        },
+      },
+    },
+  },
   server: {
     port: 3000,
   },
