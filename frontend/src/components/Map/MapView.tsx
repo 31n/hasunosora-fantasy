@@ -546,11 +546,14 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
       const targetSpot = spots.find(s => s.spot_id === spotIdParam);
       
       if (targetSpot) {
+        // ポップアップが下から表示されるため、スポットが隠れないよう bottom padding を設定
+        const popupPadding = { top: 0, bottom: 280, left: 0, right: 0 };
         // 地図がロード完了後に移動
         if (map.current.isStyleLoaded()) {
           map.current.jumpTo({
             center: [targetSpot.longitude, targetSpot.latitude],
-            zoom: 17
+            zoom: 17,
+            padding: popupPadding
           });
           setSelectedSpot(targetSpot);
         } else {
@@ -559,7 +562,8 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
             if (map.current) {
               map.current.jumpTo({
                 center: [targetSpot.longitude, targetSpot.latitude],
-                zoom: 17
+                zoom: 17,
+                padding: popupPadding
               });
               setSelectedSpot(targetSpot);
             }
@@ -1262,6 +1266,10 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
             const params = new URLSearchParams(searchParams);
             params.delete('spotId');
             setSearchParams(params);
+            // padding をリセット
+            if (map.current) {
+              map.current.easeTo({ padding: { top: 0, bottom: 0, left: 0, right: 0 } });
+            }
           }}
           onCheckin={handleCheckin}
           onQuiz={handleQuizChallenge}
