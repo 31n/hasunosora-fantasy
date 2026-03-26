@@ -18,7 +18,7 @@ export default function CreateUser({ onLogin }: CreateUserProps) {
       onLogin(user);
       navigate('/');
     } catch (error: any) {
-      alert('エラーが発生しました: ' + error.message);
+      alert('ユーザーの作成に失敗しました。しばらく時間をおいてから再試行してください。');
     } finally {
       setLoading(false);
     }

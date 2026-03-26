@@ -180,7 +180,7 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
       } else if (error.message.includes('ALREADY_CHECKED_IN')) {
         alert('既にチェックイン済みです。');
       } else {
-        alert('エラーが発生しました: ' + error.message);
+        alert('エラーが発生しました。しばらく時間をおいてから再試行してください。');
       }
     }
   };
@@ -269,7 +269,7 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
           alert('本日はすでにクイズに回答済みです。明日また挑戦できます。');
         }
       } else {
-        alert('エラーが発生しました: ' + error.message);
+        alert('エラーが発生しました。しばらく時間をおいてから再試行してください。');
       }
     }
   };

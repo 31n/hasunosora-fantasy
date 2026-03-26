@@ -13,6 +13,9 @@ class Config:
     CHECKIN_SCORE = int(os.getenv('CHECKIN_SCORE', '10'))
     CHECKIN_COOLDOWN_MINUTES = int(os.getenv('CHECKIN_COOLDOWN_MINUTES', '5'))
     
+    # CORS
+    CORS_ORIGIN = os.getenv('CORS_ORIGIN', '*')  # 本番では https://your-domain.com を設定すること
+
     # Admin
     ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'change_me_in_production')
     

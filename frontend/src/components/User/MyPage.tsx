@@ -61,7 +61,7 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes }: MyPag
       if (error.message.includes('NICKNAME_ALREADY_SET')) {
         alert('ニックネームは既に設定済みです');
       } else {
-        alert('エラーが発生しました: ' + error.message);
+        alert('ニックネームの設定に失敗しました。しばらく時間をおいてから再試行してください。');
       }
     } finally {
       setLoading(false);
@@ -95,7 +95,7 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes }: MyPag
       } else if (error.message.includes('GENRE_ALREADY_UNLOCKED')) {
         alert('このジャンルは既に解放済みです');
       } else {
-        alert('エラーが発生しました: ' + error.message);
+        alert('エラーが発生しました。しばらく時間をおいてから再試行してください。');
       }
     } finally {
       setLoading(false);
@@ -108,7 +108,7 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes }: MyPag
       const updatedUser = await userApi.setSelectedQuizType(user.user_id, quizTypeId || null);
       setUser(updatedUser);
     } catch (error: any) {
-      alert('エラーが発生しました: ' + error.message);
+      alert('クイズタイプの変更に失敗しました。しばらく時間をおいてから再試行してください。');
     } finally {
       setLoading(false);
     }
@@ -121,7 +121,7 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes }: MyPag
       setUser(updatedUser);
       alert('エリアを変更しました');
     } catch (error: any) {
-      alert('エラーが発生しました: ' + error.message);
+      alert('エリアの変更に失敗しました。しばらく時間をおいてから再試行してください。');
     } finally {
       setLoading(false);
     }
@@ -151,7 +151,7 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes }: MyPag
       } else if (error.message.includes('AREA_ALREADY_UNLOCKED')) {
         alert('このエリアはすでに解放済みです');
       } else {
-        alert('エラーが発生しました: ' + error.message);
+        alert('エラーが発生しました。しばらく時間をおいてから再試行してください。');
       }
     } finally {
       setLoading(false);

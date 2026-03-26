@@ -1,6 +1,7 @@
 import json
+import re
 import base64
-from utils.response import success_response, error_response
+from utils.response import success_response, error_response, internal_error_response
 from services.user_service import UserService
 from services.spot_service import SpotService
 from services.checkin_service import CheckInService
@@ -9,6 +10,16 @@ from services.admin_service import AdminService
 from services.area_service import AreaService
 from services.quiz_type_service import QuizTypeService
 from services.announcement_service import AnnouncementService
+
+# ユーザーIDの許可文字（紛らわしい文字除外済み）
+_USER_ID_RE = re.compile(r'^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{9}$')
+
+
+def validate_user_id(user_id: str):
+    """ユーザーIDフォーマット検証（パストラバーサル対策）"""
+    if not user_id or not _USER_ID_RE.match(user_id):
+        raise ValueError('INVALID_USER_ID')
+
 
 def handler(event, context):
     """メインハンドラー"""
@@ -130,7 +141,7 @@ def handler(event, context):
             return error_response('NOT_FOUND', 'Endpoint not found', 404)
     
     except Exception as e:
-        return error_response('INTERNAL_ERROR', str(e), 500)
+        return internal_error_response()
 
 
 # ユーザー関連
@@ -139,27 +150,29 @@ def create_user(event):
         result = UserService.create_user()
         return success_response(result, 201)
     except Exception as e:
-        return error_response('INTERNAL_ERROR', str(e), 500)
+        return internal_error_response()
 
 
 def login(event):
     try:
         body = json.loads(event.get('body', '{}'))
         user_id = body.get('user_id')
-        
+        validate_user_id(user_id)
+
         result = UserService.login(user_id)
         return success_response(result)
     except ValueError as e:
         return error_response(str(e), str(e), 400)
     except Exception as e:
-        return error_response('INTERNAL_ERROR', str(e), 500)
+        return internal_error_response()
 
 
 def set_nickname(event):
     try:
         path_parts = event['path'].split('/')
         user_id = path_parts[2]
-        
+        validate_user_id(user_id)
+
         body = json.loads(event.get('body', '{}'))
         nickname = body.get('nickname')
         
@@ -168,14 +181,15 @@ def set_nickname(event):
     except ValueError as e:
         return error_response(str(e), str(e), 400)
     except Exception as e:
-        return error_response('INTERNAL_ERROR', str(e), 500)
+        return internal_error_response()
 
 
 def get_history(event):
     try:
         path_parts = event['path'].split('/')
         user_id = path_parts[2]
-        
+        validate_user_id(user_id)
+
         query_params = event.get('queryStringParameters') or {}
         limit = int(query_params.get('limit', 50))
         offset = int(query_params.get('offset', 0))
@@ -185,14 +199,15 @@ def get_history(event):
     except ValueError as e:
         return error_response(str(e), str(e), 400)
     except Exception as e:
-        return error_response('INTERNAL_ERROR', str(e), 500)
+        return internal_error_response()
 
 
 def set_user_area(event):
     try:
         path_parts = event['path'].split('/')
         user_id = path_parts[2]
-        
+        validate_user_id(user_id)
+
         body = json.loads(event.get('body', '{}'))
         selected_area = body.get('selected_area')
         
@@ -201,13 +216,14 @@ def set_user_area(event):
     except ValueError as e:
         return error_response(str(e), str(e), 400)
     except Exception as e:
-        return error_response('INTERNAL_ERROR', str(e), 500)
+        return internal_error_response()
 
 
 def set_user_quiz_type(event):
     try:
         path_parts = event['path'].split('/')
         user_id = path_parts[2]
+        validate_user_id(user_id)
 
         body = json.loads(event.get('body', '{}'))
         selected_quiz_type = body.get('selected_quiz_type')
@@ -217,17 +233,18 @@ def set_user_quiz_type(event):
     except ValueError as e:
         return error_response(str(e), str(e), 400)
     except Exception as e:
-        return error_response('INTERNAL_ERROR', str(e), 500)
+        return internal_error_response()
 
 
 def unlock_area(event):
     try:
         path_parts = event['path'].split('/')
         user_id = path_parts[2]
-        
+        validate_user_id(user_id)
+
         body = json.loads(event.get('body', '{}'))
         area_code = body.get('area_code')
-        
+
         if not area_code:
             return error_response('INVALID_REQUEST', 'area_code is required', 400)
         
@@ -236,7 +253,7 @@ def unlock_area(event):
     except ValueError as e:
         return error_response(str(e), str(e), 400)
     except Exception as e:
-        return error_response('INTERNAL_ERROR', str(e), 500)
+        return internal_error_response()
 
 
 # マスタ関連
@@ -245,7 +262,7 @@ def get_master_version(event):
         result = SpotService.get_master_version()
         return success_response(result)
     except Exception as e:
-        return error_response('INTERNAL_ERROR', str(e), 500)
+        return internal_error_response()
 
 
 def get_master_data(event):
@@ -256,7 +273,7 @@ def get_master_data(event):
         result = SpotService.get_master_data(client_version)
         return success_response(result)
     except Exception as e:
-        return error_response('INTERNAL_ERROR', str(e), 500)
+        return internal_error_response()
 
 
 def get_spots(event):
@@ -267,16 +284,18 @@ def get_spots(event):
         result = SpotService.get_all_spots(client_version)
         return success_response(result)
     except Exception as e:
-        return error_response('INTERNAL_ERROR', str(e), 500)
+        return internal_error_response()
 
 
 # チェックイン関連
 def checkin(event):
     try:
         body = json.loads(event.get('body', '{}'))
-        
+        user_id = body.get('user_id')
+        validate_user_id(user_id)
+
         result = CheckInService.checkin(
-            user_id=body.get('user_id'),
+            user_id=user_id,
             spot_id=body.get('spot_id'),
             latitude=float(body.get('latitude')),
             longitude=float(body.get('longitude'))
@@ -285,15 +304,17 @@ def checkin(event):
     except ValueError as e:
         return error_response(str(e), str(e), 400)
     except Exception as e:
-        return error_response('INTERNAL_ERROR', str(e), 500)
+        return internal_error_response()
 
 
 def answer_quiz(event):
     try:
         body = json.loads(event.get('body', '{}'))
+        user_id = body.get('user_id')
+        validate_user_id(user_id)
 
         result = QuizService.answer_quiz(
-            user_id=body.get('user_id'),
+            user_id=user_id,
             spot_id=body.get('spot_id'),
             answer=int(body.get('answer')),
             quiz_type_id=body.get('quiz_type_id')  # None = ユーザーの selected_quiz_type を使用
@@ -302,15 +323,17 @@ def answer_quiz(event):
     except ValueError as e:
         return error_response(str(e), str(e), 400)
     except Exception as e:
-        return error_response('INTERNAL_ERROR', str(e), 500)
+        return internal_error_response()
 
 
 def quiz_challenge(event):
     try:
         body = json.loads(event.get('body', '{}'))
+        user_id = body.get('user_id')
+        validate_user_id(user_id)
 
         result = QuizService.quiz_challenge(
-            user_id=body.get('user_id'),
+            user_id=user_id,
             spot_id=body.get('spot_id'),
             latitude=float(body.get('latitude')),
             longitude=float(body.get('longitude'))
@@ -319,7 +342,7 @@ def quiz_challenge(event):
     except ValueError as e:
         return error_response(str(e), str(e), 400)
     except Exception as e:
-        return error_response('INTERNAL_ERROR', str(e), 500)
+        return internal_error_response()
 
 
 def check_cooldown(event):
@@ -327,11 +350,12 @@ def check_cooldown(event):
         path_parts = event['path'].split('/')
         user_id = path_parts[3]
         spot_id = path_parts[4]
-        
+        validate_user_id(user_id)
+
         result = QuizService.check_cooldown(user_id, spot_id)
         return success_response(result)
     except Exception as e:
-        return error_response('INTERNAL_ERROR', str(e), 500)
+        return internal_error_response()
 
 
 # 管理画面関連
@@ -359,7 +383,7 @@ def admin_login(event):
         else:
             return error_response('INVALID_PASSWORD', 'Invalid password', 401)
     except Exception as e:
-        return error_response('INTERNAL_ERROR', str(e), 500)
+        return internal_error_response()
 
 
 def admin_get_spots(event):
@@ -370,7 +394,7 @@ def admin_get_spots(event):
     except ValueError as e:
         return error_response(str(e), str(e), 401)
     except Exception as e:
-        return error_response('INTERNAL_ERROR', str(e), 500)
+        return internal_error_response()
 
 
 def admin_create_spot(event):
@@ -383,7 +407,7 @@ def admin_create_spot(event):
     except ValueError as e:
         return error_response(str(e), str(e), 400)
     except Exception as e:
-        return error_response('INTERNAL_ERROR', str(e), 500)
+        return internal_error_response()
 
 
 def admin_update_spot(event):
@@ -399,7 +423,7 @@ def admin_update_spot(event):
     except ValueError as e:
         return error_response(str(e), str(e), 400)
     except Exception as e:
-        return error_response('INTERNAL_ERROR', str(e), 500)
+        return internal_error_response()
 
 
 def admin_delete_spot(event):
@@ -413,7 +437,7 @@ def admin_delete_spot(event):
     except ValueError as e:
         return error_response(str(e), str(e), 400)
     except Exception as e:
-        return error_response('INTERNAL_ERROR', str(e), 500)
+        return internal_error_response()
 
 
 def admin_upload_image(event):
@@ -480,7 +504,7 @@ def admin_upload_image(event):
     except Exception as e:
         print(f"Exception: {str(e)}")
         traceback.print_exc()
-        return error_response('INTERNAL_ERROR', str(e), 500)
+        return internal_error_response()
 
 
 # 管理画面API - エリア関連
@@ -489,7 +513,7 @@ def admin_get_areas(event):
         result = AreaService.get_all_areas(include_inactive=True)
         return success_response(result)
     except Exception as e:
-        return error_response('INTERNAL_ERROR', str(e), 500)
+        return internal_error_response()
 
 
 def admin_create_area(event):
@@ -518,7 +542,7 @@ def admin_create_area(event):
     except ValueError as e:
         return error_response(str(e), str(e), 400)
     except Exception as e:
-        return error_response('INTERNAL_ERROR', str(e), 500)
+        return internal_error_response()
 
 
 def admin_update_area(event):
@@ -543,7 +567,7 @@ def admin_update_area(event):
     except ValueError as e:
         return error_response(str(e), str(e), 400)
     except Exception as e:
-        return error_response('INTERNAL_ERROR', str(e), 500)
+        return internal_error_response()
 
 
 def admin_delete_area(event):
@@ -556,7 +580,7 @@ def admin_delete_area(event):
     except ValueError as e:
         return error_response(str(e), str(e), 400)
     except Exception as e:
-        return error_response('INTERNAL_ERROR', str(e), 500)
+        return internal_error_response()
 
 
 # パブリック - クイズタイプ一覧
@@ -565,7 +589,7 @@ def get_quiz_types(event):
         result = QuizTypeService.get_all(include_inactive=False)
         return success_response(result)
     except Exception as e:
-        return error_response('INTERNAL_ERROR', str(e), 500)
+        return internal_error_response()
 
 
 # 管理画面API - クイズタイプ関連
@@ -577,7 +601,7 @@ def admin_get_quiz_types(event):
     except ValueError as e:
         return error_response(str(e), str(e), 401)
     except Exception as e:
-        return error_response('INTERNAL_ERROR', str(e), 500)
+        return internal_error_response()
 
 
 def admin_create_quiz_type(event):
@@ -589,7 +613,7 @@ def admin_create_quiz_type(event):
     except ValueError as e:
         return error_response(str(e), str(e), 400)
     except Exception as e:
-        return error_response('INTERNAL_ERROR', str(e), 500)
+        return internal_error_response()
 
 
 def admin_update_quiz_type(event):
@@ -603,7 +627,7 @@ def admin_update_quiz_type(event):
     except ValueError as e:
         return error_response(str(e), str(e), 400)
     except Exception as e:
-        return error_response('INTERNAL_ERROR', str(e), 500)
+        return internal_error_response()
 
 
 def admin_delete_quiz_type(event):
@@ -616,7 +640,7 @@ def admin_delete_quiz_type(event):
     except ValueError as e:
         return error_response(str(e), str(e), 400)
     except Exception as e:
-        return error_response('INTERNAL_ERROR', str(e), 500)
+        return internal_error_response()
 
 
 # お知らせ関連
@@ -626,7 +650,7 @@ def get_announcements(event):
         result = AnnouncementService.get_active()
         return success_response({'announcements': result})
     except Exception as e:
-        return error_response('INTERNAL_ERROR', str(e), 500)
+        return internal_error_response()
 
 
 def admin_get_announcements(event):
@@ -637,7 +661,7 @@ def admin_get_announcements(event):
     except ValueError as e:
         return error_response(str(e), str(e), 401)
     except Exception as e:
-        return error_response('INTERNAL_ERROR', str(e), 500)
+        return internal_error_response()
 
 
 def admin_create_announcement(event):
@@ -649,7 +673,7 @@ def admin_create_announcement(event):
     except ValueError as e:
         return error_response(str(e), str(e), 400)
     except Exception as e:
-        return error_response('INTERNAL_ERROR', str(e), 500)
+        return internal_error_response()
 
 
 def admin_update_announcement(event):
@@ -663,7 +687,7 @@ def admin_update_announcement(event):
     except ValueError as e:
         return error_response(str(e), str(e), 400)
     except Exception as e:
-        return error_response('INTERNAL_ERROR', str(e), 500)
+        return internal_error_response()
 
 
 def admin_delete_announcement(event):
@@ -676,4 +700,4 @@ def admin_delete_announcement(event):
     except ValueError as e:
         return error_response(str(e), str(e), 400)
     except Exception as e:
-        return error_response('INTERNAL_ERROR', str(e), 500)
+        return internal_error_response()

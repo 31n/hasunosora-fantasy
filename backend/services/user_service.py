@@ -5,6 +5,12 @@ from models.area import Area
 from models.quiz_type import QuizType
 from utils.user_id_generator import generate_user_id
 from typing import Dict, List, Optional
+import re
+
+# ニックネームの制限: 1〜20文字、制御文字・HTMLタグ禁止
+_NICKNAME_MAX_LEN = 20
+_NICKNAME_MIN_LEN = 1
+_NICKNAME_NG_RE = re.compile(r'[<>&"\']|[\x00-\x1f\x7f]')  # HTMLタグ・制御文字
 
 class UserService:
     @staticmethod
@@ -35,13 +41,22 @@ class UserService:
     def set_nickname(user_id: str, nickname: str) -> Dict:
         """ニックネームを設定"""
         user = User.get(user_id)
-        
+
         if not user:
             raise ValueError('USER_NOT_FOUND')
-        
+
         if user.nickname:
             raise ValueError('NICKNAME_ALREADY_SET')
-        
+
+        # ニックネームのバリデーション
+        if not nickname or not isinstance(nickname, str):
+            raise ValueError('NICKNAME_INVALID')
+        nickname = nickname.strip()
+        if len(nickname) < _NICKNAME_MIN_LEN or len(nickname) > _NICKNAME_MAX_LEN:
+            raise ValueError(f'NICKNAME_LENGTH_ERROR: 1〜{_NICKNAME_MAX_LEN}文字で入力してください')
+        if _NICKNAME_NG_RE.search(nickname):
+            raise ValueError('NICKNAME_INVALID_CHARS')
+
         user.update_nickname(nickname)
         
         return user.to_dict()

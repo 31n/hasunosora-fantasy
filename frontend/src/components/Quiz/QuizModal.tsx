@@ -60,7 +60,7 @@ export default function QuizModal({ user, spot, quizData, onClose, readOnly = fa
       if (error.message.includes('QUIZ_NOT_AVAILABLE')) {
         alert('このスポットにはクイズが登録されていません。');
       } else {
-        alert('エラーが発生しました: ' + error.message);
+        alert('エラーが発生しました。しばらく時間をおいてから再試行してください。');
       }
     } finally {
       setSubmitting(false);

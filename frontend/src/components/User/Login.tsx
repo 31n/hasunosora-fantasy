@@ -34,7 +34,7 @@ export default function Login({ onLogin }: LoginProps) {
       if (error.message.includes('USER_NOT_FOUND')) {
         setError('ユーザーIDが見つかりません');
       } else {
-        setError('エラーが発生しました: ' + error.message);
+        setError('エラーが発生しました。しばらく時間をおいてから再試行してください。');
       }
     } finally {
       setLoading(false);
