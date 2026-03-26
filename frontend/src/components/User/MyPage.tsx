@@ -393,9 +393,18 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes }: MyPag
                     </option>
                   ))}
               </select>
-              <p style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>
-                スポット訪問時に出題されるクイズのタイプを選択できます
-              </p>
+              {(() => {
+                const selectedType = quizTypes.find(qt => qt.quiz_type_id === user.selected_quiz_type);
+                return selectedType?.description ? (
+                  <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '8px', padding: '8px', backgroundColor: '#f9fafb', borderRadius: '6px', lineHeight: '1.5' }}>
+                    {selectedType.description}
+                  </p>
+                ) : (
+                  <p style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>
+                    スポット訪問時に出題されるクイズのタイプを選択できます
+                  </p>
+                );
+              })()}
             </div>
           )}
 
