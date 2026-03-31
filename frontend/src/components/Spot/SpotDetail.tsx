@@ -363,7 +363,7 @@ export default function SpotDetail({ user }: SpotDetailProps) {
         {/* スポット詳細 */}
         <div style={{ 
           display: 'grid',
-          gridTemplateColumns: spot.quizzes?.length > 0 ? 'repeat(2, 1fr)' : '1fr',
+          gridTemplateColumns: spot.quizzes?.some(q => q.quiz_type_id === (user.selected_quiz_type ?? null)) ? 'repeat(2, 1fr)' : '1fr',
           gap: '12px',
           marginTop: '16px',
           padding: '16px',
@@ -376,21 +376,24 @@ export default function SpotDetail({ user }: SpotDetailProps) {
             </p>
             <p style={{ fontWeight: '600' }}>{spot.detection_radius}m</p>
           </div>
-          {spot.quizzes?.length > 0 ? (
-            <div>
-              <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
-                クイズ得点
-              </p>
-              <p style={{ fontWeight: '600' }}>{Math.max(...spot.quizzes.map(q => q.score))}点</p>
-            </div>
-          ) : (
-            <div>
-              <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
-                クイズ
-              </p>
-              <p style={{ fontWeight: '600', color: '#9ca3af' }}>なし</p>
-            </div>
-          )}
+          {(() => {
+            const userQuiz = spot.quizzes?.find(q => q.quiz_type_id === (user.selected_quiz_type ?? null));
+            return userQuiz ? (
+              <div>
+                <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
+                  クイズ得点
+                </p>
+                <p style={{ fontWeight: '600' }}>{userQuiz.score}点</p>
+              </div>
+            ) : (
+              <div>
+                <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
+                  クイズ
+                </p>
+                <p style={{ fontWeight: '600', color: '#9ca3af' }}>なし</p>
+              </div>
+            );
+          })()}
         </div>
 
         {/* 地図で表示ボタン */}

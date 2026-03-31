@@ -8,6 +8,7 @@ import SpotPopup from './SpotPopup';
 import CheckinAnimation from '../Common/CheckinAnimation';
 import type { User, Spot, Area, CheckInResponse, QuizType } from '../../types';
 import { calculateDistance, formatDistance } from '../../utils/distance';
+import { getQuizForUser, spotHasQuizForUser } from '../../utils/quiz';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
 import FilterListIcon from '@mui/icons-material/FilterList';
 
@@ -97,7 +98,7 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
     }
     try {
       const spot = spots.find(s => s.spot_id === spotId);
-      if (spot?.quizzes?.length > 0) {
+      if (spot && spotHasQuizForUser(spot, user)) {
         const cooldownData = await checkinApi.checkCooldown(user.user_id, spotId);
         setIsQuizOnCooldown(cooldownData.on_cooldown);
       }
@@ -191,10 +192,7 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
 
     // クールタイム中の場合、APIを呼ばずに閲覧専用でクイズを表示
     if (isQuizOnCooldown) {
-      const quiz =
-        selectedSpot.quizzes?.find(q => q.quiz_type_id === (user.selected_quiz_type ?? null)) ??
-        selectedSpot.quizzes?.find(q => q.quiz_type_id === null) ??
-        selectedSpot.quizzes?.[0];
+      const quiz = getQuizForUser(selectedSpot, user);
       if (quiz) {
         setQuizData({
           score_earned: 0,
@@ -246,10 +244,7 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
         alert('このスポットにはクイズが登録されていません。');
       } else if (error.message.includes('QUIZ_ALREADY_ANSWERED_TODAY')) {
         // 選択中スポットのクイズデータを閲覧専用で表示
-        const quiz =
-          selectedSpot.quizzes?.find(q => q.quiz_type_id === (user.selected_quiz_type ?? null)) ??
-          selectedSpot.quizzes?.find(q => q.quiz_type_id === null) ??
-          selectedSpot.quizzes?.[0];
+        const quiz = getQuizForUser(selectedSpot, user);
         if (quiz) {
           setQuizData({
             score_earned: 0,
@@ -653,11 +648,11 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
         el.classList.add('spot-marker-in-range');
       } else {
         // 5. 通常表示
-        const isHighlighted = highlightQuizSpots && spot.quizzes?.length > 0;
+        const isHighlighted = highlightQuizSpots && spotHasQuizForUser(spot, user);
         if (isHighlighted) {
           el.style.backgroundColor = '#fbbf24';
           el.style.border = '3px solid #f59e0b';
-        } else if (highlightQuizSpots && !spot.quizzes?.length) {
+        } else if (highlightQuizSpots && !spotHasQuizForUser(spot, user)) {
           el.style.backgroundColor = '#9ca3af';
           el.style.border = '3px solid white';
         } else {
@@ -1274,6 +1269,7 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
           onCheckin={handleCheckin}
           onQuiz={handleQuizChallenge}
           onDirections={handleDirections}
+          userQuizTypeId={user.selected_quiz_type ?? null}
           isCheckedIn={checkinStatus === 'cooldown'}
           isCheckedInToday={checkinStatus === 'today'}
           isOnCooldown={isQuizOnCooldown}

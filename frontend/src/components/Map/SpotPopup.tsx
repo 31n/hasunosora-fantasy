@@ -21,6 +21,8 @@ interface SpotPopupProps {
   isQuizAvailable?: boolean;
   isInRange?: boolean;
   isOnCooldown?: boolean;
+  /** ユーザーのクイズタイプID (null = デフォルト)。指定すると一致するクイズのみ表示。 */
+  userQuizTypeId?: string | null;
 }
 
 export default function SpotPopup({ 
@@ -34,7 +36,8 @@ export default function SpotPopup({
   isCheckedInToday = false,
   isQuizAvailable = true,
   isInRange = true,
-  isOnCooldown = false
+  isOnCooldown = false,
+  userQuizTypeId,
 }: SpotPopupProps) {
   const [showDetail, setShowDetail] = useState(false);
   const [imageIndex, setImageIndex] = useState(0);
@@ -42,6 +45,11 @@ export default function SpotPopup({
   const [rotation, setRotation] = useState(0);
   const touchStartX = useRef<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // ユーザーのクイズタイプに合致するクイズを取得（userQuizTypeId が指定されている場合のみフィルタ）
+  const availableQuiz = userQuizTypeId !== undefined
+    ? spot.quizzes?.find(q => q.quiz_type_id === userQuizTypeId)
+    : spot.quizzes?.[0];
 
   const closeFullscreen = (idx: number) => {
     setIsFullscreen(false);
@@ -169,7 +177,7 @@ export default function SpotPopup({
             </button>
 
             {/* クイズボタン */}
-            {spot.quizzes?.length > 0 && (
+            {availableQuiz && (
               <button
                 onClick={onQuiz}
                 disabled={isOnCooldown ? false : (!isInRange || !isQuizAvailable)}
@@ -190,7 +198,7 @@ export default function SpotPopup({
                 }}
               >
                 <QuizIcon fontSize="small" />
-                {!isInRange && !isOnCooldown ? 'スポットから離れすぎています' : isOnCooldown ? 'クイズの詳細を見る' : !isQuizAvailable ? 'クイズ挑戦中...' : `クイズに挑戦（${Math.max(...spot.quizzes.map(q => q.score))}pt）`}
+                {!isInRange && !isOnCooldown ? 'スポットから離れすぎています' : isOnCooldown ? 'クイズの詳細を見る' : !isQuizAvailable ? 'クイズ挑戦中...' : `クイズに挑戦（${availableQuiz.score}pt）`}
               </button>
             )}
 
@@ -502,7 +510,7 @@ export default function SpotPopup({
           </button>
 
           {/* クイズボタン */}
-          {spot.quizzes?.length > 0 && (
+          {availableQuiz && (
             <button
               onClick={onQuiz}
               disabled={isOnCooldown ? false : (!isInRange || !isQuizAvailable)}
@@ -523,7 +531,7 @@ export default function SpotPopup({
               }}
             >
               <QuizIcon fontSize="medium" />
-              {!isInRange && !isOnCooldown ? 'スポットから離れすぎています' : isOnCooldown ? 'クイズの詳細を見る' : !isQuizAvailable ? 'クイズ挑戦中...' : `クイズに挑戦（${Math.max(...spot.quizzes.map(q => q.score))}pt）`}
+              {!isInRange && !isOnCooldown ? 'スポットから離れすぎています' : isOnCooldown ? 'クイズの詳細を見る' : !isQuizAvailable ? 'クイズ挑戦中...' : `クイズに挑戦（${availableQuiz.score}pt）`}
             </button>
           )}
 

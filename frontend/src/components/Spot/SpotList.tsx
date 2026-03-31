@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Spot, User, Area } from '../../types';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
+import { spotHasQuizForUser } from '../../utils/quiz';
 
 interface SpotListProps {
   spots: Spot[];
@@ -279,7 +280,7 @@ export default function SpotList({ spots, user, areas }: SpotListProps) {
                         {formatDistance(spot.distance)}
                       </span>
                     )}
-                    {(!spot.quizzes || spot.quizzes.length === 0) && (
+                    {!spotHasQuizForUser(spot, user) && (
                       <span style={{
                         display: 'inline-block',
                         padding: '4px 12px',
