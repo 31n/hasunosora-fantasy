@@ -20,6 +20,7 @@ export default function AdminSpotForm() {
   const [areas, setAreas] = useState<Area[]>([]);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [quizImageUploading, setQuizImageUploading] = useState<Set<number>>(new Set());
   const navigate = useNavigate();
   const location = useLocation();
   const returnSearch = (location.state as { returnSearch?: string } | null)?.returnSearch ?? '';
@@ -190,10 +191,35 @@ export default function AdminSpotForm() {
     setQuizzes(prev => [...prev, {
       quiz_type_id: newTypeId,
       question: '',
+      question_image: null,
       choices: ['', '', '', ''],
       correct_answer: 0,
       score: 10,
     }]);
+  };
+
+  const handleQuizImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, quizIndex: number) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const password = storage.getAdminPassword();
+    if (!password) return;
+
+    setQuizImageUploading(prev => new Set(prev).add(quizIndex));
+    try {
+      const result = await adminApi.uploadImage(password, file);
+      updateQuizField(quizIndex, 'question_image', result.url);
+    } catch (error) {
+      console.error('クイズ画像アップロードエラー:', error);
+      alert('画像のアップロードに失敗しました');
+    } finally {
+      setQuizImageUploading(prev => {
+        const next = new Set(prev);
+        next.delete(quizIndex);
+        return next;
+      });
+      // input をリセットして同じファイルを再選択できるようにする
+      e.target.value = '';
+    }
   };
 
   const removeQuiz = (index: number) => {
@@ -332,6 +358,7 @@ export default function AdminSpotForm() {
         quizzes: quizzes.map(q => ({
           quiz_type_id: q.quiz_type_id,
           question: q.question,
+          question_image: q.question_image || null,
           choices: q.choices.filter(c => c.trim()),
           correct_answer: q.correct_answer,
           score: q.score,
@@ -1037,6 +1064,65 @@ export default function AdminSpotForm() {
                       fontSize: '15px',
                     }}
                   />
+                </div>
+
+                {/* 問題画像 */}
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '14px' }}>
+                    問題画像（任意）
+                  </label>
+                  {quiz.question_image && (
+                    <div style={{ marginBottom: '8px', position: 'relative', display: 'inline-block' }}>
+                      <img
+                        src={quiz.question_image}
+                        alt="問題画像"
+                        style={{
+                          maxWidth: '100%',
+                          maxHeight: '200px',
+                          borderRadius: '8px',
+                          border: '2px solid #e5e7eb',
+                          display: 'block',
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => updateQuizField(quizIndex, 'question_image', null)}
+                        style={{
+                          position: 'absolute',
+                          top: '6px',
+                          right: '6px',
+                          padding: '3px 8px',
+                          backgroundColor: '#ef4444',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          fontSize: '12px',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        削除
+                      </button>
+                    </div>
+                  )}
+                  <label style={{
+                    display: 'inline-block',
+                    padding: '8px 16px',
+                    backgroundColor: quizImageUploading.has(quizIndex) ? '#9ca3af' : '#6b7280',
+                    color: 'white',
+                    borderRadius: '8px',
+                    cursor: quizImageUploading.has(quizIndex) ? 'not-allowed' : 'pointer',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                  }}>
+                    {quizImageUploading.has(quizIndex) ? 'アップロード中...' : quiz.question_image ? '画像を変更' : '画像を追加'}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleQuizImageUpload(e, quizIndex)}
+                      disabled={quizImageUploading.has(quizIndex)}
+                      style={{ display: 'none' }}
+                    />
+                  </label>
                 </div>
 
                 {/* 選択肢 */}

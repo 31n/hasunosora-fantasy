@@ -132,9 +132,25 @@ export default function QuizModal({ user, spot, quizData, onClose, readOnly = fa
               </div>
             )}
 
-            <p style={{ fontSize: '18px', marginBottom: '24px', fontWeight: 'bold' }}>
+            <p style={{ fontSize: '18px', marginBottom: quizData.quiz?.question_image ? '12px' : '24px', fontWeight: 'bold' }}>
               {quizData.quiz?.question}
             </p>
+
+            {quizData.quiz?.question_image && (
+              <div style={{ marginBottom: '24px', textAlign: 'center' }}>
+                <img
+                  src={quizData.quiz.question_image}
+                  alt="問題画像"
+                  style={{
+                    maxWidth: '100%',
+                    maxHeight: '240px',
+                    borderRadius: '8px',
+                    border: '2px solid #e5e7eb',
+                    objectFit: 'contain',
+                  }}
+                />
+              </div>
+            )}
 
             <div style={{ marginBottom: '24px' }}>
               {quizData.quiz?.choices.map((choice, index) => (

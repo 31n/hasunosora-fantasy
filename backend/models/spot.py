@@ -11,6 +11,7 @@ def _normalize_quiz(q: Dict) -> Dict:
     return {
         'quiz_type_id': q.get('quiz_type_id'),  # None = デフォルト
         'question': q.get('question', ''),
+        'question_image': q.get('question_image') or None,  # 問題画像URL（任意）
         'choices': q.get('choices', []),
         'correct_answer': int(q['correct_answer']) if isinstance(q.get('correct_answer'), Decimal) else q.get('correct_answer', 0),
         'score': int(q['score']) if isinstance(q.get('score'), Decimal) else q.get('score', 0),
@@ -19,13 +20,16 @@ def _normalize_quiz(q: Dict) -> Dict:
 
 def _quiz_to_dynamodb(q: Dict) -> Dict:
     """クイズを DynamoDB 保存形式に変換（Decimal）"""
-    return {
+    result = {
         'quiz_type_id': q.get('quiz_type_id'),
         'question': q.get('question', ''),
         'choices': q.get('choices', []),
         'correct_answer': Decimal(str(q.get('correct_answer', 0))),
         'score': Decimal(str(q.get('score', 0))),
     }
+    if q.get('question_image'):
+        result['question_image'] = q['question_image']
+    return result
 
 
 def _migrate_legacy_quizzes(item: Dict) -> List[Dict]:

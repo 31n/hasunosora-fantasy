@@ -39,6 +39,7 @@ export interface QuizType {
 export interface QuizWithType {
   quiz_type_id: string | null; // null = デフォルトクイズ
   question: string;
+  question_image?: string | null; // 問題画像URL（任意）
   choices: string[];
   correct_answer: number;
   score: number;
@@ -91,6 +92,7 @@ export interface CheckInResponse {
   quiz_type_id?: string | null;
   quiz?: {
     question: string;
+    question_image?: string | null;
     choices: string[];
     score: number;
   };
@@ -104,6 +106,7 @@ export interface QuizChallengeResponse {
   quiz_type_id: string | null; // 出題されたクイズのタイプ
   quiz: {
     question: string;
+    question_image?: string | null;
     choices: string[];
     score: number;
   };
