@@ -272,8 +272,8 @@ function AppContent({
             <>
               {/* メイン画面 */}
               <Route path="/" element={<MapView user={user} spots={spots} areas={areas} quizTypes={quizTypes} />} />
-              <Route path="/spots" element={<SpotList spots={spots} user={user} areas={areas} />} />
-              <Route path="/spots/:spotId" element={<SpotDetail user={user} />} />
+              <Route path="/spots" element={<SpotList spots={spots} user={user} areas={areas} quizTypes={quizTypes} />} />
+              <Route path="/spots/:spotId" element={<SpotDetail user={user} quizTypes={quizTypes} />} />
               <Route path="/mypage" element={<MyPage user={user} setUser={setUser} spots={spots} areas={areas} quizTypes={quizTypes} />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </>

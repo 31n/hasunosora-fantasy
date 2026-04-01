@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import type { Spot } from '../../types';
+import type { Spot, User, QuizType } from '../../types';
+import { getQuizForUser } from '../../utils/quiz';
 import { formatDistance } from '../../utils/distance';
 import CloseIcon from '@mui/icons-material/Close';
 import InfoIcon from '@mui/icons-material/Info';
@@ -21,8 +22,9 @@ interface SpotPopupProps {
   isQuizAvailable?: boolean;
   isInRange?: boolean;
   isOnCooldown?: boolean;
-  /** ユーザーのクイズタイプID (null = デフォルト)。指定すると一致するクイズのみ表示。 */
-  userQuizTypeId?: string | null;
+  /** ユーザー情報とクイズタイプ一覧。優先度ベースでクイズを選択するために使用。 */
+  user?: User;
+  quizTypes?: QuizType[];
 }
 
 export default function SpotPopup({ 
@@ -37,7 +39,8 @@ export default function SpotPopup({
   isQuizAvailable = true,
   isInRange = true,
   isOnCooldown = false,
-  userQuizTypeId,
+  user,
+  quizTypes = [],
 }: SpotPopupProps) {
   const [showDetail, setShowDetail] = useState(false);
   const [imageIndex, setImageIndex] = useState(0);
@@ -46,9 +49,9 @@ export default function SpotPopup({
   const touchStartX = useRef<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // ユーザーのクイズタイプに合致するクイズを取得（userQuizTypeId が指定されている場合のみフィルタ）
-  const availableQuiz = userQuizTypeId !== undefined
-    ? spot.quizzes?.find(q => q.quiz_type_id === userQuizTypeId)
+  // 優先度ベースでユーザーが利用できるクイズを取得
+  const availableQuiz = user
+    ? getQuizForUser(spot, user, quizTypes)
     : spot.quizzes?.[0];
 
   const closeFullscreen = (idx: number) => {

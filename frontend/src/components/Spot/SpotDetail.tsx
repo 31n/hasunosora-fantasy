@@ -4,13 +4,15 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { indexedDB } from '../../services/indexedDB';
 import { userApi, checkinApi } from '../../services/api';
-import type { User, Spot, CheckInHistory } from '../../types';
+import type { User, Spot, CheckInHistory, QuizType } from '../../types';
+import { getQuizForUser } from '../../utils/quiz';
 
 interface SpotDetailProps {
   user: User;
+  quizTypes: QuizType[];
 }
 
-export default function SpotDetail({ user }: SpotDetailProps) {
+export default function SpotDetail({ user, quizTypes }: SpotDetailProps) {
   const { spotId } = useParams<{ spotId: string }>();
   const [spot, setSpot] = useState<Spot | null>(null);
   const [history, setHistory] = useState<CheckInHistory[]>([]);
@@ -361,40 +363,42 @@ export default function SpotDetail({ user }: SpotDetailProps) {
         </p>
 
         {/* スポット詳細 */}
-        <div style={{ 
-          display: 'grid',
-          gridTemplateColumns: spot.quizzes?.some(q => q.quiz_type_id === (user.selected_quiz_type ?? null)) ? 'repeat(2, 1fr)' : '1fr',
-          gap: '12px',
-          marginTop: '16px',
-          padding: '16px',
-          backgroundColor: '#f9fafb',
-          borderRadius: '8px'
-        }}>
-          <div>
-            <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
-              検知距離
-            </p>
-            <p style={{ fontWeight: '600' }}>{spot.detection_radius}m</p>
-          </div>
-          {(() => {
-            const userQuiz = spot.quizzes?.find(q => q.quiz_type_id === (user.selected_quiz_type ?? null));
-            return userQuiz ? (
+        {(() => {
+          const userQuiz = getQuizForUser(spot, user, quizTypes);
+          return (
+            <div style={{ 
+              display: 'grid',
+              gridTemplateColumns: userQuiz ? 'repeat(2, 1fr)' : '1fr',
+              gap: '12px',
+              marginTop: '16px',
+              padding: '16px',
+              backgroundColor: '#f9fafb',
+              borderRadius: '8px'
+            }}>
               <div>
                 <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
-                  クイズ得点
+                  検知距離
                 </p>
-                <p style={{ fontWeight: '600' }}>{userQuiz.score}点</p>
+                <p style={{ fontWeight: '600' }}>{spot.detection_radius}m</p>
               </div>
-            ) : (
-              <div>
-                <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
-                  クイズ
-                </p>
-                <p style={{ fontWeight: '600', color: '#9ca3af' }}>なし</p>
-              </div>
-            );
-          })()}
-        </div>
+              {userQuiz ? (
+                <div>
+                  <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
+                    クイズ得点
+                  </p>
+                  <p style={{ fontWeight: '600' }}>{userQuiz.score}点</p>
+                </div>
+              ) : (
+                <div>
+                  <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
+                    クイズ
+                  </p>
+                  <p style={{ fontWeight: '600', color: '#9ca3af' }}>なし</p>
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* 地図で表示ボタン */}
         <button
