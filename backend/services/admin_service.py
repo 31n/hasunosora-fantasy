@@ -203,6 +203,70 @@ class AdminService:
         # 過去30日の日付リスト（昇順）
         dates = [(now - timedelta(days=i)).strftime('%Y-%m-%d') for i in range(29, -1, -1)]
 
+        # --- スポット別統計（全期間） ---
+        # チェックインテーブルをフルスキャン（spot_id, quiz_answered, quiz_correct のみ取得）
+        spot_checkin_counts: Dict[str, int] = collections.defaultdict(int)
+        spot_quiz_answered: Dict[str, int] = collections.defaultdict(int)
+        spot_quiz_correct: Dict[str, int] = collections.defaultdict(int)
+
+        spot_stats_items = []
+        response = checkins_table.scan(
+            ProjectionExpression='spot_id, quiz_answered, quiz_correct'
+        )
+        spot_stats_items.extend(response.get('Items', []))
+        while 'LastEvaluatedKey' in response:
+            response = checkins_table.scan(
+                ProjectionExpression='spot_id, quiz_answered, quiz_correct',
+                ExclusiveStartKey=response['LastEvaluatedKey']
+            )
+            spot_stats_items.extend(response.get('Items', []))
+
+        for item in spot_stats_items:
+            sid = item.get('spot_id', '')
+            if not sid:
+                continue
+            spot_checkin_counts[sid] += 1
+            if item.get('quiz_answered'):
+                spot_quiz_answered[sid] += 1
+            if item.get('quiz_correct'):
+                spot_quiz_correct[sid] += 1
+
+        # スポット名マップを取得
+        from models.spot import Spot as SpotModel
+        all_spots = SpotModel.get_all()
+        spot_name_map = {s.spot_id: s.spot_name for s in all_spots}
+
+        # チェックインが多いスポット TOP10
+        top_checkin_spots = sorted(
+            [
+                {
+                    'spot_id': sid,
+                    'spot_name': spot_name_map.get(sid, sid),
+                    'count': cnt,
+                }
+                for sid, cnt in spot_checkin_counts.items()
+            ],
+            key=lambda x: x['count'],
+            reverse=True
+        )[:10]
+
+        # クイズ正解率ランキング（最低3回以上回答したスポットのみ）
+        MIN_QUIZ_ANSWERS = 3
+        quiz_rate_entries = [
+            {
+                'spot_id': sid,
+                'spot_name': spot_name_map.get(sid, sid),
+                'answered': spot_quiz_answered[sid],
+                'correct': spot_quiz_correct[sid],
+                'rate': round(spot_quiz_correct[sid] / spot_quiz_answered[sid] * 100, 1),
+            }
+            for sid in spot_quiz_answered
+            if spot_quiz_answered[sid] >= MIN_QUIZ_ANSWERS
+        ]
+
+        top_quiz_correct_spots = sorted(quiz_rate_entries, key=lambda x: x['rate'], reverse=True)[:10]
+        low_quiz_correct_spots = sorted(quiz_rate_entries, key=lambda x: x['rate'])[:10]
+
         return {
             'total_users': total_users,
             'active_users_7d': len(active_users_7d),
@@ -212,6 +276,9 @@ class AdminService:
             'daily_active_users': [
                 {'date': d, 'count': len(daily_active_map.get(d, set()))} for d in dates
             ],
+            'top_checkin_spots': top_checkin_spots,
+            'top_quiz_correct_spots': top_quiz_correct_spots,
+            'low_quiz_correct_spots': low_quiz_correct_spots,
         }
 
     @staticmethod

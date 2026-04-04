@@ -4,12 +4,17 @@ import { adminApi } from '../../services/api';
 import { storage } from '../../services/storage';
 
 type DailyEntry = { date: string; count: number };
+type CheckinSpot = { spot_id: string; spot_name: string; count: number };
+type QuizRateSpot = { spot_id: string; spot_name: string; answered: number; correct: number; rate: number };
 
 type Stats = {
   total_users: number;
   active_users_7d: number;
   daily_new_users: DailyEntry[];
   daily_active_users: DailyEntry[];
+  top_checkin_spots: CheckinSpot[];
+  top_quiz_correct_spots: QuizRateSpot[];
+  low_quiz_correct_spots: QuizRateSpot[];
 };
 
 function BarChart({ data, color, label }: { data: DailyEntry[]; color: string; label: string }) {
@@ -191,6 +196,71 @@ export default function AdminStats() {
               color="#10b981"
               label="日別 アクティブユーザー数（チェックインユニーク、過去30日）"
             />
+          </div>
+
+          {/* スポット別ランキング */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px', marginTop: '24px' }}>
+
+            {/* チェックインが多いスポット */}
+            <div style={{ backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '20px' }}>
+              <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#374151', marginBottom: '12px' }}>🏅 チェックインが多いスポット</h3>
+              {stats.top_checkin_spots.length === 0 ? (
+                <p style={{ fontSize: '13px', color: '#9ca3af' }}>データなし</p>
+              ) : (
+                <ol style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                  {stats.top_checkin_spots.map((s, i) => (
+                    <li key={s.spot_id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: i < stats.top_checkin_spots.length - 1 ? '1px solid #f3f4f6' : 'none' }}>
+                      <span style={{ fontSize: '13px', color: '#374151' }}>
+                        <span style={{ fontWeight: 700, color: '#6b7280', marginRight: '6px' }}>{i + 1}.</span>
+                        {s.spot_name}
+                      </span>
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: '#3b82f6', whiteSpace: 'nowrap', marginLeft: '8px' }}>{s.count.toLocaleString()} 回</span>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </div>
+
+            {/* クイズ正解率が高いスポット */}
+            <div style={{ backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '20px' }}>
+              <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#374151', marginBottom: '12px' }}>✅ クイズ正解率が高いスポット</h3>
+              {stats.top_quiz_correct_spots.length === 0 ? (
+                <p style={{ fontSize: '13px', color: '#9ca3af' }}>データなし（3回以上回答があるスポットが対象）</p>
+              ) : (
+                <ol style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                  {stats.top_quiz_correct_spots.map((s, i) => (
+                    <li key={s.spot_id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: i < stats.top_quiz_correct_spots.length - 1 ? '1px solid #f3f4f6' : 'none' }}>
+                      <span style={{ fontSize: '13px', color: '#374151' }}>
+                        <span style={{ fontWeight: 700, color: '#6b7280', marginRight: '6px' }}>{i + 1}.</span>
+                        {s.spot_name}
+                      </span>
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: '#10b981', whiteSpace: 'nowrap', marginLeft: '8px' }}>{s.rate}% <span style={{ fontSize: '11px', color: '#9ca3af', fontWeight: 400 }}>({s.correct}/{s.answered})</span></span>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </div>
+
+            {/* クイズ正解率が低いスポット */}
+            <div style={{ backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '20px' }}>
+              <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#374151', marginBottom: '12px' }}>❌ クイズ正解率が低いスポット</h3>
+              {stats.low_quiz_correct_spots.length === 0 ? (
+                <p style={{ fontSize: '13px', color: '#9ca3af' }}>データなし（3回以上回答があるスポットが対象）</p>
+              ) : (
+                <ol style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                  {stats.low_quiz_correct_spots.map((s, i) => (
+                    <li key={s.spot_id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: i < stats.low_quiz_correct_spots.length - 1 ? '1px solid #f3f4f6' : 'none' }}>
+                      <span style={{ fontSize: '13px', color: '#374151' }}>
+                        <span style={{ fontWeight: 700, color: '#6b7280', marginRight: '6px' }}>{i + 1}.</span>
+                        {s.spot_name}
+                      </span>
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: '#ef4444', whiteSpace: 'nowrap', marginLeft: '8px' }}>{s.rate}% <span style={{ fontSize: '11px', color: '#9ca3af', fontWeight: 400 }}>({s.correct}/{s.answered})</span></span>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </div>
+
           </div>
         </>
       )}

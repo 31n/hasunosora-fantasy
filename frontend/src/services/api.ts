@@ -279,6 +279,9 @@ export const adminApi = {
     active_users_7d: number;
     daily_new_users: { date: string; count: number }[];
     daily_active_users: { date: string; count: number }[];
+    top_checkin_spots: { spot_id: string; spot_name: string; count: number }[];
+    top_quiz_correct_spots: { spot_id: string; spot_name: string; answered: number; correct: number; rate: number }[];
+    low_quiz_correct_spots: { spot_id: string; spot_name: string; answered: number; correct: number; rate: number }[];
   }> => {
     return fetchApi('/admin/stats', {
       headers: { 'X-Admin-Password': password },
