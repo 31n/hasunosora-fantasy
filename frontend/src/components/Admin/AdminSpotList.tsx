@@ -101,6 +101,41 @@ export default function AdminSpotList() {
     });
   }, [spots, selectedArea, selectedGenre, selectedQuiz]);
 
+  const handleExportGeoJSON = () => {
+    const geojson = {
+      type: 'FeatureCollection',
+      features: filteredSpots.map(spot => ({
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [spot.longitude, spot.latitude]
+        },
+        properties: {
+          spot_id: spot.spot_id,
+          spot_name: spot.spot_name,
+          reading: spot.reading ?? '',
+          description: spot.description,
+          detection_radius: spot.detection_radius,
+          genre: spot.genre,
+          area: spot.area ?? '',
+          url: spot.url ?? '',
+          images: spot.images,
+          created_at: spot.created_at,
+          updated_at: spot.updated_at
+        }
+      }))
+    };
+
+    const blob = new Blob([JSON.stringify(geojson, null, 2)], { type: 'application/geo+json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const now = new Date().toISOString().slice(0, 10);
+    a.download = `spots_${now}.geojson`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const setFilter = (key: string, value: string) => {
     setSearchParams(prev => {
       const next = new URLSearchParams(prev);
@@ -349,6 +384,26 @@ export default function AdminSpotList() {
             </button>
           </div>
         )}
+
+        {/* GeoJSONエクスポートボタン */}
+        <div style={{ display: 'flex', alignItems: 'flex-end', gridColumn: '1 / -1' }}>
+          <button
+            onClick={handleExportGeoJSON}
+            disabled={filteredSpots.length === 0}
+            style={{
+              padding: '10px 20px',
+              backgroundColor: filteredSpots.length === 0 ? '#d1d5db' : '#059669',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: filteredSpots.length === 0 ? 'not-allowed' : 'pointer'
+            }}
+          >
+            GeoJSONで書き出す ({filteredSpots.length}件)
+          </button>
+        </div>
       </div>
 
       {/* スポット一覧 */}
