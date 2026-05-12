@@ -88,4 +88,4 @@ HASU Fantasyは、現実の場所を巡りながらスポットにチェック�
 
 ## お問い合わせ
 不具合の報告やご質問がある場合は、以下のフォームまでご連絡ください。
-[お問い合わせフォーム](https://forms.gle/2jLZ3x7h1X8w8s9k6)
+[お問い合わせフォーム](https://forms.gle/ZUi7K8qZ8xXmdmJ86)
