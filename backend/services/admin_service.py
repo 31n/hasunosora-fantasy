@@ -46,6 +46,23 @@ class AdminService:
             reading=spot_data.get('reading') or None,
             url=spot_data.get('url') or None,
             quizzes=quizzes,
+            # MCP用付加情報
+            address=spot_data.get('address') or None,
+            short_description=spot_data.get('short_description') or None,
+            category=spot_data.get('category') or None,
+            tags=spot_data.get('tags') or [],
+            opening_hours=spot_data.get('opening_hours') or None,
+            access_info=spot_data.get('access_info') or None,
+            historical_period=spot_data.get('historical_period') or None,
+            wikipedia_url=spot_data.get('wikipedia_url') or None,
+            estimated_visit_time=spot_data.get('estimated_visit_time') or None,
+            admission=spot_data.get('admission') or None,
+            works=spot_data.get('works') or [],
+            shooting_tips=spot_data.get('shooting_tips') or None,
+            visit_notes=spot_data.get('visit_notes') or None,
+            is_official=spot_data.get('is_official'),
+            pilgrimage_difficulty=spot_data.get('pilgrimage_difficulty') or None,
+            scene_season=spot_data.get('scene_season') or None,
         )
 
         spot.save()
@@ -93,6 +110,39 @@ class AdminService:
             spot.url = spot_data['url'] or None
         if 'quizzes' in spot_data:
             spot.quizzes = spot_data['quizzes'] or []
+        # MCP用付加情報
+        if 'address' in spot_data:
+            spot.address = spot_data['address'] or None
+        if 'short_description' in spot_data:
+            spot.short_description = spot_data['short_description'] or None
+        if 'category' in spot_data:
+            spot.category = spot_data['category'] or None
+        if 'tags' in spot_data:
+            spot.tags = spot_data['tags'] or []
+        if 'opening_hours' in spot_data:
+            spot.opening_hours = spot_data['opening_hours'] or None
+        if 'access_info' in spot_data:
+            spot.access_info = spot_data['access_info'] or None
+        if 'historical_period' in spot_data:
+            spot.historical_period = spot_data['historical_period'] or None
+        if 'wikipedia_url' in spot_data:
+            spot.wikipedia_url = spot_data['wikipedia_url'] or None
+        if 'estimated_visit_time' in spot_data:
+            spot.estimated_visit_time = spot_data['estimated_visit_time'] or None
+        if 'admission' in spot_data:
+            spot.admission = spot_data['admission'] or None
+        if 'works' in spot_data:
+            spot.works = spot_data['works'] or []
+        if 'shooting_tips' in spot_data:
+            spot.shooting_tips = spot_data['shooting_tips'] or None
+        if 'visit_notes' in spot_data:
+            spot.visit_notes = spot_data['visit_notes'] or None
+        if 'is_official' in spot_data:
+            spot.is_official = spot_data['is_official']
+        if 'pilgrimage_difficulty' in spot_data:
+            spot.pilgrimage_difficulty = spot_data['pilgrimage_difficulty'] or None
+        if 'scene_season' in spot_data:
+            spot.scene_season = spot_data['scene_season'] or None
 
         spot.save()
 

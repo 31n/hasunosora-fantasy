@@ -3,7 +3,7 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { adminApi } from '../../services/api';
 import { storage } from '../../services/storage';
 import { indexedDB } from '../../services/indexedDB';
-import type { Spot, Area, QuizType, QuizWithType } from '../../types';
+import type { Spot, Area, QuizType, QuizWithType, PilgrimageWork } from '../../types';
 import { OpenLocationCode } from 'open-location-code';
 
 export default function AdminSpotForm() {
@@ -25,6 +25,17 @@ export default function AdminSpotForm() {
   const location = useLocation();
   const returnSearch = (location.state as { returnSearch?: string } | null)?.returnSearch ?? '';
 
+  // MCP用作品情報のフォーム内部表現
+  type WorkFormItem = {
+    title: string;
+    media_type: string;
+    episode_ref: string;
+    scene_description: string;
+    character: string; // カンマ区切り
+    air_year: string;  // 入力は文字列、送信時に数値変換
+  };
+  const [works, setWorks] = useState<WorkFormItem[]>([]);
+
   const [formData, setFormData] = useState({
     spot_name: '',
     reading: '',
@@ -36,6 +47,22 @@ export default function AdminSpotForm() {
     images: [] as string[],
     genre: [] as string[],
     area: '',
+    // MCP用付加情報（任意）
+    address: '',
+    short_description: '',
+    category: '',
+    tags: '',            // カンマ区切り入力
+    opening_hours: '',
+    access_info: '',
+    historical_period: '',
+    wikipedia_url: '',
+    estimated_visit_time: '',
+    admission: '',
+    shooting_tips: '',
+    visit_notes: '',
+    is_official: false,
+    pilgrimage_difficulty: '',
+    scene_season: '',
   });
 
   useEffect(() => {
@@ -96,8 +123,32 @@ export default function AdminSpotForm() {
           images: spot.images,
           genre: spot.genre || [],
           area: spot.area || '',
+          // MCP用付加情報
+          address: spot.address || '',
+          short_description: spot.short_description || '',
+          category: spot.category || '',
+          tags: (spot.tags || []).join(', '),
+          opening_hours: spot.opening_hours || '',
+          access_info: spot.access_info || '',
+          historical_period: spot.historical_period || '',
+          wikipedia_url: spot.wikipedia_url || '',
+          estimated_visit_time: spot.estimated_visit_time || '',
+          admission: spot.admission || '',
+          shooting_tips: spot.shooting_tips || '',
+          visit_notes: spot.visit_notes || '',
+          is_official: spot.is_official ?? false,
+          pilgrimage_difficulty: spot.pilgrimage_difficulty || '',
+          scene_season: spot.scene_season || '',
         });
         setQuizzes(spot.quizzes || []);
+        setWorks((spot.works || []).map(w => ({
+          title: w.title || '',
+          media_type: w.media_type || 'anime',
+          episode_ref: w.episode_ref || '',
+          scene_description: w.scene_description || '',
+          character: (w.character || []).join(', '),
+          air_year: w.air_year != null ? String(w.air_year) : '',
+        })));
       }
     } catch (error) {
       console.error('スポット取得エラー:', error);
@@ -228,6 +279,21 @@ export default function AdminSpotForm() {
 
   const updateQuizField = (index: number, field: keyof QuizWithType, value: any) => {
     setQuizzes(prev => prev.map((q, i) => i === index ? { ...q, [field]: value } : q));
+  };
+
+  const addWork = () => {
+    setWorks(prev => [...prev, {
+      title: '', media_type: 'anime', episode_ref: '',
+      scene_description: '', character: '', air_year: '',
+    }]);
+  };
+
+  const removeWork = (index: number) => {
+    setWorks(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const updateWork = (index: number, field: string, value: string | boolean) => {
+    setWorks(prev => prev.map((w, i) => i === index ? { ...w, [field]: value } : w));
   };
 
   const handlePlusCodeInput = (value: string) => {
@@ -363,6 +429,32 @@ export default function AdminSpotForm() {
           correct_answer: q.correct_answer,
           score: q.score,
         })),
+        // MCP用付加情報（任意）
+        address: formData.address || null,
+        short_description: formData.short_description || null,
+        category: formData.category || null,
+        tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean),
+        opening_hours: formData.opening_hours || null,
+        access_info: formData.access_info || null,
+        historical_period: formData.historical_period || null,
+        wikipedia_url: formData.wikipedia_url || null,
+        estimated_visit_time: formData.estimated_visit_time || null,
+        admission: formData.admission || null,
+        works: works
+          .filter(w => w.title.trim())
+          .map(w => ({
+            title: w.title.trim(),
+            media_type: w.media_type,
+            ...(w.episode_ref.trim() && { episode_ref: w.episode_ref.trim() }),
+            ...(w.scene_description.trim() && { scene_description: w.scene_description.trim() }),
+            ...(w.character.trim() && { character: w.character.split(',').map(c => c.trim()).filter(Boolean) }),
+            ...(w.air_year.trim() && { air_year: parseInt(w.air_year, 10) }),
+          })),
+        shooting_tips: formData.shooting_tips || null,
+        visit_notes: formData.visit_notes || null,
+        is_official: formData.is_official || null,
+        pilgrimage_difficulty: formData.pilgrimage_difficulty || null,
+        scene_season: formData.scene_season || null,
       };
 
       if (spotId) {
@@ -1180,6 +1272,281 @@ export default function AdminSpotForm() {
               </div>
             );
           })}
+        </div>
+
+        {/* 聖地詳細情報（MCP用） */}
+        <div style={{
+          backgroundColor: 'white',
+          borderRadius: '12px',
+          padding: '24px',
+          marginBottom: '16px',
+          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+        }}>
+          <h2 style={{ marginBottom: '8px', fontSize: '18px' }}>聖地詳細情報</h2>
+          <div style={{
+            marginBottom: '20px',
+            padding: '12px 16px',
+            backgroundColor: '#f0f9ff',
+            border: '1px solid #bae6fd',
+            borderRadius: '8px',
+            fontSize: '13px',
+            color: '#0369a1',
+            lineHeight: '1.6'
+          }}>
+            ℹ️ このセクションはすべて<strong>任意入力</strong>です。入力した情報はMCPサーバ経由でのデータ提供に使用されます。チェックイン・クイズ等の既存アプリ動作には影響しません。
+          </div>
+
+          {/* 場所・アクセス情報 */}
+          <h3 style={{ marginBottom: '12px', fontSize: '15px', color: '#374151', borderBottom: '1px solid #e5e7eb', paddingBottom: '6px' }}>場所・アクセス情報</h3>
+
+          <div style={{ marginBottom: '14px' }}>
+            <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '14px' }}>住所</label>
+            <input type="text" value={formData.address}
+              onChange={e => setFormData({ ...formData, address: e.target.value })}
+              placeholder="例：埼玉県久喜市菖蒲町菖蒲"
+              style={{ width: '100%', padding: '10px', border: '2px solid #e5e7eb', borderRadius: '8px', fontSize: '15px' }}
+            />
+          </div>
+
+          <div style={{ marginBottom: '14px' }}>
+            <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '14px' }}>カテゴリ</label>
+            <select value={formData.category}
+              onChange={e => setFormData({ ...formData, category: e.target.value })}
+              style={{ width: '100%', padding: '10px', border: '2px solid #e5e7eb', borderRadius: '8px', fontSize: '15px', backgroundColor: 'white' }}
+            >
+              <option value="">未設定</option>
+              <option value="神社・寺院">神社・寺院</option>
+              <option value="公園・広場">公園・広場</option>
+              <option value="駅・交通施設">駅・交通施設</option>
+              <option value="商店街・繁華街">商店街・繁華街</option>
+              <option value="学校・教育施設">学校・教育施設</option>
+              <option value="海・川・湖">海・川・湖</option>
+              <option value="山・自然">山・自然</option>
+              <option value="城・史跡">城・史跡</option>
+              <option value="博物館・美術館">博物館・美術館</option>
+              <option value="住宅街">住宅街</option>
+              <option value="その他">その他</option>
+            </select>
+          </div>
+
+          <div style={{ marginBottom: '14px' }}>
+            <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '14px' }}>一言説明</label>
+            <input type="text" value={formData.short_description}
+              onChange={e => setFormData({ ...formData, short_description: e.target.value })}
+              placeholder="例：アニメのロケ地として有名な老舗神社"
+              style={{ width: '100%', padding: '10px', border: '2px solid #e5e7eb', borderRadius: '8px', fontSize: '15px' }}
+            />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '14px' }}>開館時間・営業時間</label>
+              <input type="text" value={formData.opening_hours}
+                onChange={e => setFormData({ ...formData, opening_hours: e.target.value })}
+                placeholder="例：9:00〜17:00 / 終日開放"
+                style={{ width: '100%', padding: '10px', border: '2px solid #e5e7eb', borderRadius: '8px', fontSize: '15px' }}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '14px' }}>入場料</label>
+              <input type="text" value={formData.admission}
+                onChange={e => setFormData({ ...formData, admission: e.target.value })}
+                placeholder="例：無料 / 大人500円"
+                style={{ width: '100%', padding: '10px', border: '2px solid #e5e7eb', borderRadius: '8px', fontSize: '15px' }}
+              />
+            </div>
+          </div>
+
+          <div style={{ marginBottom: '14px' }}>
+            <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '14px' }}>アクセス情報</label>
+            <input type="text" value={formData.access_info}
+              onChange={e => setFormData({ ...formData, access_info: e.target.value })}
+              placeholder="例：JR○○駅から徒歩10分"
+              style={{ width: '100%', padding: '10px', border: '2px solid #e5e7eb', borderRadius: '8px', fontSize: '15px' }}
+            />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '14px' }}>時代・年代</label>
+              <input type="text" value={formData.historical_period}
+                onChange={e => setFormData({ ...formData, historical_period: e.target.value })}
+                placeholder="例：江戸時代 / 1923年建立"
+                style={{ width: '100%', padding: '10px', border: '2px solid #e5e7eb', borderRadius: '8px', fontSize: '15px' }}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '14px' }}>見学時間目安</label>
+              <input type="text" value={formData.estimated_visit_time}
+                onChange={e => setFormData({ ...formData, estimated_visit_time: e.target.value })}
+                placeholder="例：約30分"
+                style={{ width: '100%', padding: '10px', border: '2px solid #e5e7eb', borderRadius: '8px', fontSize: '15px' }}
+              />
+            </div>
+          </div>
+
+          <div style={{ marginBottom: '14px' }}>
+            <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '14px' }}>Wikipedia URL</label>
+            <input type="url" value={formData.wikipedia_url}
+              onChange={e => setFormData({ ...formData, wikipedia_url: e.target.value })}
+              placeholder="https://ja.wikipedia.org/wiki/..."
+              style={{ width: '100%', padding: '10px', border: '2px solid #e5e7eb', borderRadius: '8px', fontSize: '15px' }}
+            />
+          </div>
+
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '14px' }}>タグ（カンマ区切り）</label>
+            <input type="text" value={formData.tags}
+              onChange={e => setFormData({ ...formData, tags: e.target.value })}
+              placeholder="例：桜の名所, 国宝, 撮影スポット"
+              style={{ width: '100%', padding: '10px', border: '2px solid #e5e7eb', borderRadius: '8px', fontSize: '15px' }}
+            />
+          </div>
+
+          {/* 聖地巡礼情報 */}
+          <h3 style={{ marginBottom: '12px', fontSize: '15px', color: '#374151', borderBottom: '1px solid #e5e7eb', paddingBottom: '6px' }}>聖地巡礼情報</h3>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '14px' }}>アクセス難易度</label>
+              <select value={formData.pilgrimage_difficulty}
+                onChange={e => setFormData({ ...formData, pilgrimage_difficulty: e.target.value })}
+                style={{ width: '100%', padding: '10px', border: '2px solid #e5e7eb', borderRadius: '8px', fontSize: '15px', backgroundColor: 'white' }}
+              >
+                <option value="">未設定</option>
+                <option value="easy">気軽に行ける</option>
+                <option value="moderate">やや難しい</option>
+                <option value="hard">難しい</option>
+              </select>
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '14px' }}>劇中の季節</label>
+              <select value={formData.scene_season}
+                onChange={e => setFormData({ ...formData, scene_season: e.target.value })}
+                style={{ width: '100%', padding: '10px', border: '2px solid #e5e7eb', borderRadius: '8px', fontSize: '15px', backgroundColor: 'white' }}
+              >
+                <option value="">未設定</option>
+                <option value="春">春（3〜5月）</option>
+                <option value="夏">夏（6〜8月）</option>
+                <option value="秋">秋（9〜11月）</option>
+                <option value="冬">冬（12〜2月）</option>
+              </select>
+            </div>
+          </div>
+
+          <div style={{ marginBottom: '14px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: '600', fontSize: '14px' }}>
+              <input type="checkbox" checked={formData.is_official}
+                onChange={e => setFormData({ ...formData, is_official: e.target.checked })}
+                style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+              />
+              公式聖地認定（制作会社・自治体等が公式に認定している場合）
+            </label>
+          </div>
+
+          <div style={{ marginBottom: '14px' }}>
+            <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '14px' }}>撮影ヒント</label>
+            <textarea value={formData.shooting_tips}
+              onChange={e => setFormData({ ...formData, shooting_tips: e.target.value })}
+              rows={2}
+              placeholder="例：北側の石段から撮影すると劇中カットに近くなります"
+              style={{ width: '100%', padding: '10px', border: '2px solid #e5e7eb', borderRadius: '8px', fontSize: '15px', resize: 'vertical' }}
+            />
+          </div>
+
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '14px' }}>巡礼時の注意事項</label>
+            <textarea value={formData.visit_notes}
+              onChange={e => setFormData({ ...formData, visit_notes: e.target.value })}
+              rows={2}
+              placeholder="例：境内は撮影禁止エリアあり。住宅街のため大声禁止"
+              style={{ width: '100%', padding: '10px', border: '2px solid #e5e7eb', borderRadius: '8px', fontSize: '15px', resize: 'vertical' }}
+            />
+          </div>
+
+          {/* 登場作品 */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <h3 style={{ fontSize: '15px', color: '#374151', margin: 0 }}>登場作品</h3>
+            <button type="button" onClick={addWork}
+              style={{ padding: '7px 14px', backgroundColor: '#7c3aed', color: 'white', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}
+            >
+              ＋ 作品を追加
+            </button>
+          </div>
+          {works.length === 0 && (
+            <p style={{ color: '#6b7280', fontSize: '14px', marginBottom: '8px' }}>作品が登録されていません</p>
+          )}
+          {works.map((work, idx) => (
+            <div key={idx} style={{ border: '2px solid #e5e7eb', borderRadius: '8px', padding: '14px', marginBottom: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                <span style={{ fontWeight: '600', fontSize: '14px', color: '#374151' }}>作品 {idx + 1}</span>
+                <button type="button" onClick={() => removeWork(idx)}
+                  style={{ padding: '3px 10px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', fontSize: '13px', cursor: 'pointer' }}
+                >
+                  削除
+                </button>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px', fontWeight: '600' }}>タイトル *</label>
+                  <input type="text" value={work.title}
+                    onChange={e => updateWork(idx, 'title', e.target.value)}
+                    placeholder="例：ラブライブ！スーパースター!!"
+                    style={{ width: '100%', padding: '8px', border: '2px solid #e5e7eb', borderRadius: '6px', fontSize: '14px' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px', fontWeight: '600' }}>メディア種別</label>
+                  <select value={work.media_type} onChange={e => updateWork(idx, 'media_type', e.target.value)}
+                    style={{ width: '100%', padding: '8px', border: '2px solid #e5e7eb', borderRadius: '6px', fontSize: '14px', backgroundColor: 'white' }}
+                  >
+                    <option value="anime">アニメ</option>
+                    <option value="manga">マンガ</option>
+                    <option value="game">ゲーム</option>
+                    <option value="novel">小説・ラノベ</option>
+                    <option value="vtuber">VTuber</option>
+                    <option value="live_action">実写</option>
+                    <option value="other">その他</option>
+                  </select>
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px', fontWeight: '600' }}>登場エピソード</label>
+                  <input type="text" value={work.episode_ref}
+                    onChange={e => updateWork(idx, 'episode_ref', e.target.value)}
+                    placeholder="例：第3話, 1巻3章"
+                    style={{ width: '100%', padding: '8px', border: '2px solid #e5e7eb', borderRadius: '6px', fontSize: '14px' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px', fontWeight: '600' }}>放送・発表年</label>
+                  <input type="number" value={work.air_year}
+                    onChange={e => updateWork(idx, 'air_year', e.target.value)}
+                    placeholder="例：2022"
+                    min="1900" max="2100"
+                    style={{ width: '100%', padding: '8px', border: '2px solid #e5e7eb', borderRadius: '6px', fontSize: '14px' }}
+                  />
+                </div>
+              </div>
+              <div style={{ marginBottom: '10px' }}>
+                <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px', fontWeight: '600' }}>シーン説明</label>
+                <input type="text" value={work.scene_description}
+                  onChange={e => updateWork(idx, 'scene_description', e.target.value)}
+                  placeholder="例：主人公が初めて部員を勧誘するシーン"
+                  style={{ width: '100%', padding: '8px', border: '2px solid #e5e7eb', borderRadius: '6px', fontSize: '14px' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px', fontWeight: '600' }}>登場キャラクター（カンマ区切り）</label>
+                <input type="text" value={work.character}
+                  onChange={e => updateWork(idx, 'character', e.target.value)}
+                  placeholder="例：澁谷かのん, 唐可可"
+                  style={{ width: '100%', padding: '8px', border: '2px solid #e5e7eb', borderRadius: '6px', fontSize: '14px' }}
+                />
+              </div>
+            </div>
+          ))}
         </div>
 
         {/* 保存ボタン */}

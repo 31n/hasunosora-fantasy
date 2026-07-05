@@ -45,6 +45,16 @@ export interface QuizWithType {
   score: number;
 }
 
+// MCPサーバ用: 登場作品情報
+export interface PilgrimageWork {
+  title: string;
+  media_type: string; // 'anime' | 'manga' | 'game' | 'novel' | 'vtuber' | 'live_action' | 'other'
+  episode_ref?: string;       // 登場エピソード・巻・章
+  scene_description?: string; // どのシーンか
+  character?: string[];       // 登場キャラクター
+  air_year?: number;          // 放送・発表年
+}
+
 export interface Spot {
   spot_id: string;
   spot_name: string;
@@ -61,6 +71,23 @@ export interface Spot {
   version: string;
   created_at: string;
   updated_at: string;
+  // --- 以下はMCPサーバ用付加情報（任意）。既存アプリ動作には影響しない ---
+  address?: string;              // 住所
+  short_description?: string;   // 一言説明
+  category?: string;            // スポットカテゴリ
+  tags?: string[];              // 追加キーワード
+  opening_hours?: string;       // 開館時間
+  access_info?: string;         // アクセス情報（最寄り駅・バス停など）
+  historical_period?: string;   // 時代・年代
+  wikipedia_url?: string;       // Wikipedia URL
+  estimated_visit_time?: string; // 見学時間目安
+  admission?: string;           // 入場料
+  works?: PilgrimageWork[];     // 登場作品情報
+  shooting_tips?: string;       // 撮影アングル・立ち位置ヒント
+  visit_notes?: string;         // 巡礼時の注意事項
+  is_official?: boolean;        // 公式聖地認定フラグ
+  pilgrimage_difficulty?: string; // アクセス難易度 ('easy'|'moderate'|'hard')
+  scene_season?: string;        // 劇中の季節
 }
 
 export interface CheckInHistory {
