@@ -59,10 +59,10 @@ export const userApi = {
     });
   },
 
-  setSelectedArea: async (userId: string, selectedArea: string | null): Promise<User> => {
+  setSelectedAreas: async (userId: string, selectedAreas: string[]): Promise<User> => {
     return fetchApi<User>(`/users/${userId}/area`, {
       method: 'PUT',
-      body: JSON.stringify({ selected_area: selectedArea }),
+      body: JSON.stringify({ selected_areas: selectedAreas }),
     });
   },
 

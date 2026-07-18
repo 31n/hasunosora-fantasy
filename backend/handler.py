@@ -212,9 +212,11 @@ def set_user_area(event):
         validate_user_id(user_id)
 
         body = json.loads(event.get('body', '{}'))
-        selected_area = body.get('selected_area')
+        selected_areas = body.get('selected_areas', [])
+        if not isinstance(selected_areas, list):
+            return error_response('INVALID_REQUEST', 'selected_areas must be a list', 400)
         
-        result = UserService.set_selected_area(user_id, selected_area)
+        result = UserService.set_selected_areas(user_id, selected_areas)
         return success_response(result)
     except ValueError as e:
         return error_response(str(e), str(e), 400)

@@ -62,22 +62,22 @@ class UserService:
         return user.to_dict()
     
     @staticmethod
-    def set_selected_area(user_id: str, selected_area: Optional[str]) -> Dict:
-        """選択中のエリアを設定"""
+    def set_selected_areas(user_id: str, selected_areas: List[str]) -> Dict:
+        """選択中のエリアリストを設定"""
         user = User.get(user_id)
         
         if not user:
             raise ValueError('USER_NOT_FOUND')
         
-        # エリアIDが指定されている場合は存在チェック
-        if selected_area is not None and selected_area != '':
-            area = Area.get(selected_area)
+        # 各エリアIDの存在チェック
+        for area_id in selected_areas:
+            area = Area.get(area_id)
             if not area:
                 raise ValueError('AREA_NOT_FOUND')
             if not area.is_active:
                 raise ValueError('AREA_INACTIVE')
         
-        user.update_selected_area(selected_area)
+        user.update_selected_areas(selected_areas)
         
         return user.to_dict()
     

@@ -114,12 +114,15 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes }: MyPag
     }
   };
 
-  const handleAreaChange = async (areaId: string) => {
+  const handleAreaChange = async (areaId: string, checked: boolean) => {
     setLoading(true);
     try {
-      const updatedUser = await userApi.setSelectedArea(user.user_id, areaId || null);
+      const current = user.selected_areas || [];
+      const updated = checked
+        ? [...current, areaId]
+        : current.filter(id => id !== areaId);
+      const updatedUser = await userApi.setSelectedAreas(user.user_id, updated);
       setUser(updatedUser);
-      alert('エリアを変更しました');
     } catch (error: any) {
       alert('エリアの変更に失敗しました。しばらく時間をおいてから再試行してください。');
     } finally {
@@ -334,39 +337,43 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes }: MyPag
           {/* エリア選択 */}
           <div style={{ marginTop: '16px' }}>
             <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '8px' }}>
-              選択中のエリア
+              表示エリア（複数選択可）
             </p>
-            <select
-              value={user.selected_area || ''}
-              onChange={(e) => handleAreaChange(e.target.value)}
-              disabled={loading}
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '2px solid #e5e7eb',
-                borderRadius: '8px',
-                fontSize: '16px',
-                backgroundColor: 'white',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                opacity: loading ? 0.5 : 1
-              }}
-            >
-              <option value="">全エリア</option>
+            <div style={{
+              border: '2px solid #e5e7eb',
+              borderRadius: '8px',
+              padding: '8px',
+              backgroundColor: 'white',
+              opacity: loading ? 0.5 : 1
+            }}>
               {areas.filter(a => {
                 if (!a.is_active) return false;
-                // 制限エリアは解放済みの場合のみ表示
                 if (a.is_restricted) {
                   return user.unlocked_areas?.includes(a.area_id);
                 }
                 return true;
               }).map(area => (
-                <option key={area.area_id} value={area.area_id}>
-                  {area.area_name}
-                </option>
+                <label key={area.area_id} style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '8px',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  borderRadius: '6px',
+                }}>
+                  <input
+                    type="checkbox"
+                    checked={(user.selected_areas || []).includes(area.area_id)}
+                    onChange={(e) => handleAreaChange(area.area_id, e.target.checked)}
+                    disabled={loading}
+                    style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                  />
+                  <span style={{ fontSize: '16px' }}>{area.area_name}</span>
+                </label>
               ))}
-            </select>
+            </div>
             <p style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>
-              選択したエリアのスポットのみが地図に表示されます
+              選択したエリアのスポットのみが地図に表示されます（未選択時は全エリア表示）
             </p>
           </div>
 

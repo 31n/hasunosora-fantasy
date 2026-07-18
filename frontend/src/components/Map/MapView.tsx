@@ -291,8 +291,9 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
     });
     
     // エリアフィルター
-    if (user.selected_area) {
-      filtered = filtered.filter(spot => spot.area === user.selected_area);
+    const selectedAreas = user.selected_areas || [];
+    if (selectedAreas.length > 0) {
+      filtered = filtered.filter(spot => spot.area && selectedAreas.includes(spot.area));
     }
     
     // ジャンルフィルター
@@ -301,7 +302,7 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
     }
     
     return filtered;
-  }, [spots, user.selected_area, selectedGenre, user.unlocked_areas, areas]);
+  }, [spots, user.selected_areas, selectedGenre, user.unlocked_areas, areas];
   
   // ジャンル一覧を取得（エリアでフィルタリングされたスポットから）
   const availableGenres = useMemo(() => {
@@ -319,12 +320,13 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
       return true;
     });
     
-    if (user.selected_area) {
-      baseSpots = baseSpots.filter(spot => spot.area === user.selected_area);
+    const selectedAreas = user.selected_areas || [];
+    if (selectedAreas.length > 0) {
+      baseSpots = baseSpots.filter(spot => spot.area && selectedAreas.includes(spot.area));
     }
     
     return ['all', ...new Set(baseSpots.flatMap(s => s.genre || []))];
-  }, [spots, user.selected_area, user.unlocked_areas, areas]);
+  }, [spots, user.selected_areas, user.unlocked_areas, areas]);
 
   // チェックイン済みスポットID（当日 / 全期間）
   const normalize = (s: string) => /Z|[+-]\d{2}:?\d{2}$/.test(s) ? s : s + 'Z';

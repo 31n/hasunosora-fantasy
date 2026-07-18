@@ -29,8 +29,9 @@ export default function SpotList({ spots, user, areas, quizTypes }: SpotListProp
   const navigate = useNavigate();
 
   // ユーザーの選択エリアに基づいてスポットをフィルタリング
-  const filteredByArea = user.selected_area
-    ? spots.filter(spot => spot.area === user.selected_area)
+  const selectedAreas = user.selected_areas || [];
+  const filteredByArea = selectedAreas.length > 0
+    ? spots.filter(spot => spot.area && selectedAreas.includes(spot.area))
     : spots;
 
   useEffect(() => {

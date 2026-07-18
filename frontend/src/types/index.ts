@@ -3,7 +3,7 @@ export interface User {
   user_id: string;
   nickname?: string;
   total_score: number;
-  selected_area?: string;
+  selected_areas?: string[]; // 選択中のエリアIDリスト
   unlocked_areas: string[]; // 解放済みエリアのリスト
   selected_quiz_type?: string | null; // 選択中のクイズタイプID（null = デフォルト）
   created_at: string;

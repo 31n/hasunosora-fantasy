@@ -1324,7 +1324,16 @@ export default function AdminSpotForm() {
               <option value="山・自然">山・自然</option>
               <option value="城・史跡">城・史跡</option>
               <option value="博物館・美術館">博物館・美術館</option>
+              <option value="展示施設・記念館">展示施設・記念館</option>
               <option value="住宅街">住宅街</option>
+              <option value="飲食店・カフェ">飲食店・カフェ</option>
+              <option value="宿泊施設・旅館">宿泊施設・旅館</option>
+              <option value="店舗・ショップ">店舗・ショップ</option>
+              <option value="橋・道路">橋・道路</option>
+              <option value="温泉・銭湯">温泉・銭湯</option>
+              <option value="競技場・スポーツ施設">競技場・スポーツ施設</option>
+              <option value="港・海岸施設">港・海岸施設</option>
+              <option value="イベント会場・ホール">イベント会場・ホール</option>
               <option value="その他">その他</option>
             </select>
           </div>
