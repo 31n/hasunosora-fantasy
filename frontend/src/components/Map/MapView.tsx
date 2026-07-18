@@ -302,7 +302,7 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
     }
     
     return filtered;
-  }, [spots, user.selected_areas, selectedGenre, user.unlocked_areas, areas];
+  }, [spots, user.selected_areas, selectedGenre, user.unlocked_areas, areas]);
   
   // ジャンル一覧を取得（エリアでフィルタリングされたスポットから）
   const availableGenres = useMemo(() => {
