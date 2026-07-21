@@ -89,9 +89,9 @@ export default function AdminSpotList() {
     return spots.filter(spot => {
       if (selectedArea) {
         if (selectedArea === 'unassigned') {
-          if (spot.area) return false;
+          if (spot.areas?.length) return false;
         } else {
-          if (spot.area !== selectedArea) return false;
+          if (!spot.areas?.includes(selectedArea)) return false;
         }
       }
       if (selectedGenre && !spot.genre?.includes(selectedGenre)) return false;
@@ -117,7 +117,7 @@ export default function AdminSpotList() {
           description: spot.description,
           detection_radius: spot.detection_radius,
           genre: spot.genre,
-          area: spot.area ?? '',
+          area: (spot.areas ?? []).join(', '),
           url: spot.url ?? '',
           images: spot.images,
           created_at: spot.created_at,

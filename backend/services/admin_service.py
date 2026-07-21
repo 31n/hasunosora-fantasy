@@ -42,7 +42,7 @@ class AdminService:
             detection_radius=float(spot_data.get('detection_radius', 100)),
             images=spot_data.get('images', []),
             genre=spot_data.get('genre', []),
-            area=spot_data.get('area'),
+            areas=spot_data.get('areas', []),
             reading=spot_data.get('reading') or None,
             url=spot_data.get('url') or None,
             quizzes=quizzes,
@@ -103,7 +103,7 @@ class AdminService:
         spot.detection_radius = float(spot_data.get('detection_radius', spot.detection_radius))
         spot.images = spot_data.get('images', spot.images)
         spot.genre = spot_data.get('genre', spot.genre)
-        spot.area = spot_data.get('area', spot.area)
+        spot.areas = spot_data.get('areas', spot.areas)
         if 'reading' in spot_data:
             spot.reading = spot_data['reading'] or None
         if 'url' in spot_data:

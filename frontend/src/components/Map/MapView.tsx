@@ -280,20 +280,20 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
     // 制限エリアのフィルタリング（解放済みエリアのみ表示）
     const userUnlockedAreas = user.unlocked_areas || [];
     filtered = filtered.filter(spot => {
-      if (!spot.area) return true; // エリアが設定されていないスポットは表示
-      const area = areas.find(a => a.area_id === spot.area);
-      if (!area) return true;
-      // 制限ありのエリアで、解放済みでない場合は非表示
-      if (area.is_restricted && !userUnlockedAreas.includes(area.area_id)) {
-        return false;
-      }
-      return true;
+      if (!spot.areas?.length) return true; // エリア未設定は表示
+      // 1つでもアクセス可能なエリアがあれば表示
+      return spot.areas.some(areaId => {
+        const area = areas.find(a => a.area_id === areaId);
+        if (!area) return true;
+        if (!area.is_restricted) return true;
+        return userUnlockedAreas.includes(areaId);
+      });
     });
     
     // エリアフィルター
     const selectedAreas = user.selected_areas || [];
     if (selectedAreas.length > 0) {
-      filtered = filtered.filter(spot => spot.area && selectedAreas.includes(spot.area));
+      filtered = filtered.filter(spot => spot.areas?.some(a => selectedAreas.includes(a)));
     }
     
     // ジャンルフィルター
@@ -311,18 +311,18 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
     // 制限エリアのフィルタリング
     const userUnlockedAreas = user.unlocked_areas || [];
     baseSpots = baseSpots.filter(spot => {
-      if (!spot.area) return true;
-      const area = areas.find(a => a.area_id === spot.area);
-      if (!area) return true;
-      if (area.is_restricted && !userUnlockedAreas.includes(area.area_id)) {
-        return false;
-      }
-      return true;
+      if (!spot.areas?.length) return true;
+      return spot.areas.some(areaId => {
+        const area = areas.find(a => a.area_id === areaId);
+        if (!area) return true;
+        if (!area.is_restricted) return true;
+        return userUnlockedAreas.includes(areaId);
+      });
     });
     
     const selectedAreas = user.selected_areas || [];
     if (selectedAreas.length > 0) {
-      baseSpots = baseSpots.filter(spot => spot.area && selectedAreas.includes(spot.area));
+      baseSpots = baseSpots.filter(spot => spot.areas?.some(a => selectedAreas.includes(a)));
     }
     
     return ['all', ...new Set(baseSpots.flatMap(s => s.genre || []))];

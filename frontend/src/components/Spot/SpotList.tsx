@@ -31,7 +31,7 @@ export default function SpotList({ spots, user, areas, quizTypes }: SpotListProp
   // ユーザーの選択エリアに基づいてスポットをフィルタリング
   const selectedAreas = user.selected_areas || [];
   const filteredByArea = selectedAreas.length > 0
-    ? spots.filter(spot => spot.area && selectedAreas.includes(spot.area))
+    ? spots.filter(spot => spot.areas?.some(a => selectedAreas.includes(a)))
     : spots;
 
   useEffect(() => {
@@ -55,13 +55,13 @@ export default function SpotList({ spots, user, areas, quizTypes }: SpotListProp
     // 制限エリアをフィルタリング
     const userUnlockedAreas = user.unlocked_areas || [];
     const unlockedSpots = filteredByArea.filter(spot => {
-      if (!spot.area) return true;
-      const area = areas.find(a => a.area_id === spot.area);
-      if (!area) return true;
-      if (area.is_restricted && !userUnlockedAreas.includes(area.area_id)) {
-        return false;
-      }
-      return true;
+      if (!spot.areas?.length) return true;
+      return spot.areas.some(areaId => {
+        const area = areas.find(a => a.area_id === areaId);
+        if (!area) return true;
+        if (!area.is_restricted) return true;
+        return userUnlockedAreas.includes(areaId);
+      });
     });
     
     // ジャンル一覧を制限フィルタリング後のスポットから取得

@@ -65,7 +65,7 @@ export interface Spot {
   detection_radius: number;
   images: string[];
   genre: string[]; // ジャンル（複数可）
-  area?: string; // エリアID
+  areas?: string[]; // エリアIDリスト
   quizzes: QuizWithType[]; // クイズタイプ別クイズリスト
   url?: string; // 外部リンク（任意）
   version: string;

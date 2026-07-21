@@ -46,7 +46,7 @@ export default function AdminSpotForm() {
     detection_radius: '100',
     images: [] as string[],
     genre: [] as string[],
-    area: '',
+    areas: [] as string[],
     // MCP用付加情報（任意）
     address: '',
     short_description: '',
@@ -122,7 +122,7 @@ export default function AdminSpotForm() {
           detection_radius: spot.detection_radius.toString(),
           images: spot.images,
           genre: spot.genre || [],
-          area: spot.area || '',
+          areas: spot.areas || [],
           // MCP用付加情報
           address: spot.address || '',
           short_description: spot.short_description || '',
@@ -420,7 +420,7 @@ export default function AdminSpotForm() {
         detection_radius: parseFloat(formData.detection_radius),
         images: formData.images,
         genre: formData.genre,
-        area: formData.area || null,
+        areas: formData.areas,
         quizzes: quizzes.map(q => ({
           quiz_type_id: q.quiz_type_id,
           question: q.question,
@@ -604,9 +604,9 @@ export default function AdminSpotForm() {
 
           <div style={{ marginBottom: '16px' }}>
             <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
-              ジャンル（複数選択可）
+                          ジャンル（複数選択可）
             </label>
-            {!formData.area ? (
+            {formData.areas.length === 0 ? (
               <div style={{
                 padding: '12px',
                 border: '2px solid #fbbf24',
@@ -618,8 +618,14 @@ export default function AdminSpotForm() {
                 先にエリアを選択してください
               </div>
             ) : (() => {
-              const selectedArea = areas.find(a => a.area_id === formData.area);
-              const availableGenres = selectedArea?.available_genres || [];
+              const availableGenres = [
+                ...new Set(
+                  formData.areas.flatMap(aId => {
+                    const a = areas.find(a => a.area_id === aId);
+                    return a?.available_genres || [];
+                  })
+                )
+              ];
               
               return availableGenres.length === 0 ? (
                 <div style={{
@@ -673,40 +679,42 @@ export default function AdminSpotForm() {
 
           <div style={{ marginBottom: '16px' }}>
             <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
-              エリア
+              エリア（複数選択可）
             </label>
-            <select
-              value={formData.area}
-              onChange={(e) => {
-                const newAreaId = e.target.value;
-                const newArea = areas.find(a => a.area_id === newAreaId);
-                const availableGenres = newArea?.available_genres || [];
-                
-                // エリア変更時、新しいエリアで利用できないジャンルを除外
-                const validGenres = formData.genre.filter(g => availableGenres.includes(g));
-                
-                setFormData({ 
-                  ...formData, 
-                  area: newAreaId,
-                  genre: validGenres
-                });
-              }}
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '2px solid #e5e7eb',
-                borderRadius: '8px',
-                fontSize: '16px',
-                backgroundColor: 'white'
-              }}
-            >
-              <option value="">エリア未設定</option>
+            <div style={{
+              padding: '8px',
+              border: '2px solid #e5e7eb',
+              borderRadius: '8px',
+              backgroundColor: '#f9fafb'
+            }}>
               {areas.filter(a => a.is_active).map(area => (
-                <option key={area.area_id} value={area.area_id}>
-                  {area.area_name}
-                </option>
+                <label key={area.area_id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={formData.areas.includes(area.area_id)}
+                    onChange={(e) => {
+                      const newAreas = e.target.checked
+                        ? [...formData.areas, area.area_id]
+                        : formData.areas.filter(id => id !== area.area_id);
+                      // エリア変更時、新しいエリアで利用できないジャンルを除外
+                      const nextAvailableGenres = new Set(
+                        newAreas.flatMap(aId => {
+                          const a = areas.find(a => a.area_id === aId);
+                          return a?.available_genres || [];
+                        })
+                      );
+                      const validGenres = formData.genre.filter(g => nextAvailableGenres.has(g));
+                      setFormData({ ...formData, areas: newAreas, genre: validGenres });
+                    }}
+                    style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                  />
+                  <span>{area.area_name}</span>
+                </label>
               ))}
-            </select>
+              {areas.filter(a => a.is_active).length === 0 && (
+                <p style={{ color: '#9ca3af', fontSize: '14px', padding: '4px' }}>エリアが未登録です</p>
+              )}
+            </div>
           </div>
 
           <div style={{ marginBottom: '16px' }}>

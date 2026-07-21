@@ -67,7 +67,7 @@ class Spot:
                  detection_radius: float = 100.0, images: List[str] = None,
                  genre: List[str] = None,
                  quizzes: Optional[List[Dict]] = None,
-                 area: Optional[str] = None,
+                 areas: Optional[List[str]] = None,
                  reading: Optional[str] = None, url: Optional[str] = None,
                  version: str = "", created_at: Optional[str] = None, updated_at: Optional[str] = None,
                  # MCP用付加情報（任意）
@@ -97,7 +97,7 @@ class Spot:
         self.images = images or []
         self.genre = genre or []
         self.quizzes: List[Dict] = quizzes or []  # クイズタイプ別クイズリスト
-        self.area = area  # エリアID（nullable）
+        self.areas: List[str] = areas or []  # エリアIDリスト
         self.reading = reading  # ふりがな（nullable）
         self.url = url  # 外部リンクURL（nullable）
         self.version = version or datetime.utcnow().strftime('%Y%m%d')
@@ -178,7 +178,7 @@ class Spot:
                 'detection_radius': Decimal(str(self.detection_radius)),
                 'images': self.images,
                 'genre': self.genre,
-                'area': self.area,
+                'areas': self.areas,
                 'reading': self.reading,
                 'url': self.url,
                 'version': self.version,
@@ -215,7 +215,7 @@ class Spot:
                 'detection_radius': float(self.detection_radius),
                 'images': self.images,
                 'genre': self.genre,
-                'area': self.area,
+                'areas': self.areas,
                 'reading': self.reading,
                 'url': self.url,
                 'version': self.version,
@@ -263,6 +263,13 @@ class Spot:
         quizzes = _migrate_legacy_quizzes(item)
         raw_works = item.get('works', [])
         works = [_normalize_work(w) for w in raw_works] if raw_works else []
+        # マイグレーション: 旧 area (str) → 新 areas (list)
+        if 'areas' in item:
+            areas = list(item['areas'])
+        elif item.get('area'):
+            areas = [item['area']]
+        else:
+            areas = []
         return Spot(
             spot_id=item['spot_id'],
             spot_name=item['spot_name'],
@@ -273,7 +280,7 @@ class Spot:
             images=item.get('images', []),
             genre=item.get('genre', []),
             quizzes=quizzes,
-            area=item.get('area'),
+            areas=areas,
             reading=item.get('reading'),
             url=item.get('url'),
             version=item.get('version', ''),
