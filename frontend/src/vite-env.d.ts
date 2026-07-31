@@ -14,6 +14,8 @@ declare module '*.md' {
 interface ImportMetaEnv {
   readonly VITE_MAPBOX_TOKEN: string;
   readonly VITE_API_ENDPOINT?: string;
+  /** 日本語ラベルのMapbox StudioスタイルID（例: username/style-id）省略時は mapbox/streets-v12 */
+  readonly VITE_MAPBOX_STATIC_STYLE?: string;
 }
 
 interface ImportMeta {

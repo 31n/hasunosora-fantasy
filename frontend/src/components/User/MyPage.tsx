@@ -267,7 +267,10 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes }: MyPag
       return true;
     });
 
-    const token = (import.meta as unknown as { env: { VITE_MAPBOX_TOKEN: string } }).env.VITE_MAPBOX_TOKEN;
+    const env = (import.meta as unknown as { env: { VITE_MAPBOX_TOKEN: string; VITE_MAPBOX_STATIC_STYLE?: string } }).env;
+    const token = env.VITE_MAPBOX_TOKEN;
+    // VITE_MAPBOX_STATIC_STYLE に日本語Mapbox Studioスタイルを指定すると地図が日本語表示になる
+    const mapStyle = env.VITE_MAPBOX_STATIC_STYLE ?? 'mapbox/streets-v12';
     const overlayParts: string[] = [];
 
     // ルートライン（path は pins より先に追加して下層に描画）
@@ -282,7 +285,7 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes }: MyPag
 
     if (overlayParts.length === 0) { alert('地図に表示できるスポットがありません'); return; }
 
-    const staticUrl = `https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/${overlayParts.join(',')}/auto/1200x630?padding=60&access_token=${token}`;
+    const staticUrl = `https://api.mapbox.com/styles/v1/${mapStyle}/static/${overlayParts.join(',')}/auto/1200x630?padding=60&access_token=${token}`;
 
     setIsGeneratingMap(true);
     try {
