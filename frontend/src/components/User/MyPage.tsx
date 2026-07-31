@@ -398,7 +398,7 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes }: MyPag
                         )}
                         {(area.start_date || area.end_date) && (
                           <div>
-                            期間: {area.start_date ?? '?'} 〜 {area.end_date ?? '?'}
+                            期間: {area.start_date ?? '未定'} 〜 {area.end_date ?? '未定'}
                           </div>
                         )}
                         {area.external_url && (
