@@ -12,6 +12,30 @@ interface MyPageProps {
   quizTypes: QuizType[];
 }
 
+// JST日付文字列（YYYY-MM-DD）を返す純粋関数
+const toJstDate = (utcStr: string): string => {
+  const normalized = /Z|[+-]\d{2}:?\d{2}$/.test(utcStr) ? utcStr : utcStr + 'Z';
+  return new Date(new Date(normalized).getTime() + 9 * 3600000).toISOString().slice(0, 10);
+};
+
+// Google Polyline encoding（Mapbox Static API路線オーバーレイ用）
+const encodePolyline = (coords: [number, number][]): string => {
+  const enc = (v: number): string => {
+    let n = v < 0 ? ~(v << 1) : (v << 1);
+    let s = '';
+    while (n >= 0x20) { s += String.fromCharCode((0x20 | (n & 0x1f)) + 63); n >>= 5; }
+    return s + String.fromCharCode(n + 63);
+  };
+  let pLat = 0, pLng = 0;
+  return coords.map(([lng, lat]) => {
+    const dLat = Math.round((lat - pLat) * 1e5);
+    const dLng = Math.round((lng - pLng) * 1e5);
+    const r = enc(dLat) + enc(dLng);
+    pLat = lat; pLng = lng;
+    return r;
+  }).join('');
+};
+
 export default function MyPage({ user, setUser, spots, areas, quizTypes }: MyPageProps) {
   const [nickname, setNickname] = useState('');
   const [isEditingNickname, setIsEditingNickname] = useState(false);
@@ -22,6 +46,14 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes }: MyPag
   const [showAreaCodeInput, setShowAreaCodeInput] = useState(false);
   const [areaCode, setAreaCode] = useState('');
   const [showAllHistory, setShowAllHistory] = useState(false);
+  // マップ画像生成用
+  const [mapDateFrom, setMapDateFrom] = useState(() =>
+    new Date(Date.now() + 9 * 3600000 - 6 * 24 * 3600000).toISOString().slice(0, 10)
+  );
+  const [mapDateTo, setMapDateTo] = useState(() =>
+    new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10)
+  );
+  const [isGeneratingMap, setIsGeneratingMap] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -193,6 +225,93 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes }: MyPag
       totalScore: filteredHistory.reduce((sum, h) => sum + h.score_earned, 0)
     };
   }, [history, spots, selectedStatArea]);
+
+  // マップ画像生成用フィルター集計（リアルタイムプレビュー）
+  const mapFilteredCount = useMemo(() => {
+    if (!mapDateFrom || !mapDateTo) return { visits: 0, spots: 0 };
+    const filtered = history.filter(h => {
+      const d = toJstDate(h.checked_in_at);
+      return d >= mapDateFrom && d <= mapDateTo;
+    });
+    return {
+      visits: filtered.length,
+      spots: new Set(filtered.map(h => h.spot_id)).size
+    };
+  }, [history, mapDateFrom, mapDateTo]);
+
+  const generateAndShareMap = async () => {
+    if (!mapDateFrom || !mapDateTo) { alert('日付を指定してください'); return; }
+    if (mapDateFrom > mapDateTo) { alert('開始日は終了日以前にしてください'); return; }
+
+    const filtered = [...history]
+      .filter(h => { const d = toJstDate(h.checked_in_at); return d >= mapDateFrom && d <= mapDateTo; })
+      .sort((a, b) => new Date(a.checked_in_at).getTime() - new Date(b.checked_in_at).getTime());
+
+    if (filtered.length === 0) { alert('指定した期間の訪問履歴がありません'); return; }
+
+    const getCoords = (spotId: string): [number, number] | null => {
+      const s = spots.find(sp => sp.spot_id === spotId);
+      return s ? [s.longitude, s.latitude] : null;
+    };
+
+    // ルート用座標（訪問時系列順）
+    const routeCoords: [number, number][] = filtered
+      .map(h => getCoords(h.spot_id))
+      .filter((c): c is [number, number] => c !== null);
+
+    // ピン用（ユニークスポット、最大79個）
+    const seenSpots = new Set<string>();
+    const uniqueVisits = filtered.filter(h => {
+      if (seenSpots.has(h.spot_id)) return false;
+      seenSpots.add(h.spot_id);
+      return true;
+    });
+
+    const token = (import.meta as unknown as { env: { VITE_MAPBOX_TOKEN: string } }).env.VITE_MAPBOX_TOKEN;
+    const overlayParts: string[] = [];
+
+    // ルートライン（path は pins より先に追加して下層に描画）
+    if (routeCoords.length >= 2) {
+      overlayParts.push(`path-3+3b82f6-0.8(${encodeURIComponent(encodePolyline(routeCoords))})`);
+    }
+    // ピン
+    uniqueVisits.slice(0, 79).forEach(h => {
+      const c = getCoords(h.spot_id);
+      if (c) overlayParts.push(`pin-s+f59e0b(${c[0]},${c[1]})`);
+    });
+
+    if (overlayParts.length === 0) { alert('地図に表示できるスポットがありません'); return; }
+
+    const staticUrl = `https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/${overlayParts.join(',')}/auto/1200x630?padding=60&access_token=${token}`;
+
+    setIsGeneratingMap(true);
+    try {
+      const res = await fetch(staticUrl);
+      if (!res.ok) throw new Error(`Mapbox API error: ${res.status}`);
+      const blob = await res.blob();
+      const fileName = `hasunosora-map-${mapDateFrom}-to-${mapDateTo}.png`;
+      const file = new File([blob], fileName, { type: 'image/png' });
+      const shareText = `${mapDateFrom}〜${mapDateTo}の巡礼記録（${uniqueVisits.length}スポット）`;
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: '巡礼マップ', text: shareText });
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+    } catch (err) {
+      console.error('マップ生成エラー:', err);
+      alert('地図画像の生成に失敗しました。しばらく時間をおいて再試行してください。');
+    } finally {
+      setIsGeneratingMap(false);
+    }
+  };
 
   return (
     <div style={{ 
@@ -710,7 +829,77 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes }: MyPag
         boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
       }}>
         <h2 style={{ fontSize: '20px', marginBottom: '16px' }}>最近の訪問</h2>
-        
+
+        {/* 訪問マップ生成 */}
+        <div style={{
+          padding: '16px',
+          backgroundColor: '#f0f9ff',
+          borderRadius: '10px',
+          marginBottom: '16px',
+          border: '1px solid #bae6fd'
+        }}>
+          <p style={{ fontSize: '14px', fontWeight: '600', color: '#0369a1', marginBottom: '10px' }}>
+            🗺️ 訪問マップを生成
+          </p>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap' }}>
+            <input
+              type="date"
+              value={mapDateFrom}
+              max={mapDateTo}
+              onChange={(e) => setMapDateFrom(e.target.value)}
+              style={{
+                padding: '8px',
+                border: '1px solid #bae6fd',
+                borderRadius: '6px',
+                fontSize: '14px',
+                backgroundColor: 'white'
+              }}
+            />
+            <span style={{ color: '#6b7280', fontSize: '14px' }}>〜</span>
+            <input
+              type="date"
+              value={mapDateTo}
+              min={mapDateFrom}
+              onChange={(e) => setMapDateTo(e.target.value)}
+              style={{
+                padding: '8px',
+                border: '1px solid #bae6fd',
+                borderRadius: '6px',
+                fontSize: '14px',
+                backgroundColor: 'white'
+              }}
+            />
+          </div>
+          {mapFilteredCount.visits > 0 ? (
+            <p style={{ fontSize: '12px', color: '#0369a1', marginBottom: '10px' }}>
+              {mapFilteredCount.visits}件の訪問 / {mapFilteredCount.spots}スポット
+              {mapFilteredCount.spots > 79 && (
+                <span style={{ color: '#d97706', marginLeft: '6px' }}>（ピンは上位79スポットのみ表示）</span>
+              )}
+            </p>
+          ) : (
+            <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '10px' }}>
+              この期間の訪問はありません
+            </p>
+          )}
+          <button
+            onClick={generateAndShareMap}
+            disabled={isGeneratingMap || mapFilteredCount.visits === 0}
+            style={{
+              padding: '10px 20px',
+              backgroundColor: isGeneratingMap || mapFilteredCount.visits === 0 ? '#93c5fd' : '#3b82f6',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: isGeneratingMap || mapFilteredCount.visits === 0 ? 'not-allowed' : 'pointer'
+            }}
+          >
+            {isGeneratingMap ? '生成中...' : '📸 マップ画像を保存 / シェア'}
+          </button>
+        </div>
+
         {history.length === 0 ? (
           <p style={{ textAlign: 'center', color: '#6b7280', padding: '24px 0' }}>
             まだ訪問履歴がありません
