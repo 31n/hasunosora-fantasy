@@ -18,7 +18,12 @@ export default function AdminAreaList() {
     is_active: true,
     available_genres: [] as string[],
     is_restricted: false,
-    access_code: ''
+    access_code: '',
+    area_type: 'normal' as 'normal' | 'campaign',
+    start_date: '',
+    end_date: '',
+    external_url: '',
+    description: ''
   });
   const navigate = useNavigate();
 
@@ -79,7 +84,12 @@ export default function AdminAreaList() {
       is_active: area.is_active,
       available_genres: area.available_genres || [],
       is_restricted: area.is_restricted || false,
-      access_code: area.access_code || ''
+      access_code: area.access_code || '',
+      area_type: area.area_type || 'normal',
+      start_date: area.start_date || '',
+      end_date: area.end_date || '',
+      external_url: area.external_url || '',
+      description: area.description || ''
     });
     setShowForm(true);
   };
@@ -112,7 +122,12 @@ export default function AdminAreaList() {
       is_active: true,
       available_genres: [],
       is_restricted: false,
-      access_code: ''
+      access_code: '',
+      area_type: 'normal',
+      start_date: '',
+      end_date: '',
+      external_url: '',
+      description: ''
     });
   };
 
@@ -397,6 +412,119 @@ export default function AdminAreaList() {
               )}
             </div>
 
+            {/* エリア種別 */}
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                エリア種別
+              </label>
+              <select
+                value={formData.area_type}
+                onChange={(e) => setFormData({ ...formData, area_type: e.target.value as 'normal' | 'campaign' })}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '2px solid #e5e7eb',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  backgroundColor: 'white'
+                }}
+              >
+                <option value="normal">通常</option>
+                <option value="campaign">キャンペーン</option>
+              </select>
+            </div>
+
+            {/* キャンペーン詳細（area_type === 'campaign' のときのみ表示） */}
+            {formData.area_type === 'campaign' && (
+              <div style={{
+                marginBottom: '16px',
+                padding: '16px',
+                border: '2px solid #fbbf24',
+                borderRadius: '8px',
+                backgroundColor: '#fffbeb'
+              }}>
+                <p style={{ fontWeight: '600', marginBottom: '12px', color: '#92400e' }}>
+                  🎟️ キャンペーン情報
+                </p>
+
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '14px' }}>
+                    詳細説明
+                  </label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    rows={3}
+                    placeholder="キャンペーンの概要や参加方法など"
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      border: '2px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      resize: 'vertical'
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '14px' }}>
+                      開始日
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.start_date}
+                      onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                      style={{
+                        width: '100%',
+                        padding: '10px',
+                        border: '2px solid #e5e7eb',
+                        borderRadius: '8px',
+                        fontSize: '14px'
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '14px' }}>
+                      終了日
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.end_date}
+                      onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                      style={{
+                        width: '100%',
+                        padding: '10px',
+                        border: '2px solid #e5e7eb',
+                        borderRadius: '8px',
+                        fontSize: '14px'
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '14px' }}>
+                    公式ページURL
+                  </label>
+                  <input
+                    type="url"
+                    value={formData.external_url}
+                    onChange={(e) => setFormData({ ...formData, external_url: e.target.value })}
+                    placeholder="https://example.com/campaign"
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      border: '2px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '14px'
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
             {/* エリア制限設定 */}
             <div style={{ marginBottom: '16px' }}>
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
@@ -517,7 +645,23 @@ export default function AdminAreaList() {
               <tr key={area.area_id} style={{ borderBottom: '1px solid #e5e7eb' }}>
                 <td style={{ padding: '16px' }}>{area.display_order}</td>
                 <td style={{ padding: '16px', fontFamily: 'monospace' }}>{area.area_id}</td>
-                <td style={{ padding: '16px', fontWeight: '600' }}>{area.area_name}</td>
+                <td style={{ padding: '16px', fontWeight: '600' }}>
+                  {area.area_name}
+                  {area.area_type === 'campaign' && (
+                    <span style={{
+                      marginLeft: '8px',
+                      padding: '2px 8px',
+                      borderRadius: '10px',
+                      fontSize: '11px',
+                      fontWeight: '700',
+                      backgroundColor: '#fef3c7',
+                      color: '#92400e',
+                      verticalAlign: 'middle'
+                    }}>
+                      CP
+                    </span>
+                  )}
+                </td>
                 <td style={{ padding: '16px', fontSize: '14px', color: '#6b7280' }}>
                   {area.center_latitude.toFixed(6)}, {area.center_longitude.toFixed(6)}
                 </td>

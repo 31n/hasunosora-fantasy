@@ -11,6 +11,11 @@ class Area:
                  available_genres: List[str] = None,
                  is_restricted: bool = False,
                  access_code: Optional[str] = None,
+                 area_type: str = 'normal',
+                 start_date: Optional[str] = None,
+                 end_date: Optional[str] = None,
+                 external_url: Optional[str] = None,
+                 description: Optional[str] = None,
                  created_at: Optional[str] = None, updated_at: Optional[str] = None):
         self.area_id = area_id
         self.area_name = area_name
@@ -22,6 +27,11 @@ class Area:
         self.available_genres = available_genres or []
         self.is_restricted = bool(is_restricted)  # このエリアが制限されているか
         self.access_code = access_code  # アクセスコード（制限ありの場合）
+        self.area_type = area_type  # 'normal' | 'campaign'
+        self.start_date = start_date  # キャンペーン開始日 (YYYY-MM-DD)
+        self.end_date = end_date      # キャンペーン終了日 (YYYY-MM-DD)
+        self.external_url = external_url  # 公式ページURL
+        self.description = description    # エリア詳細説明
         self.created_at = created_at or datetime.now(timezone.utc).isoformat()
         self.updated_at = updated_at or datetime.now(timezone.utc).isoformat()
     
@@ -44,6 +54,11 @@ class Area:
                 'available_genres': self.available_genres,
                 'is_restricted': self.is_restricted,
                 'access_code': self.access_code,
+                'area_type': self.area_type,
+                'start_date': self.start_date,
+                'end_date': self.end_date,
+                'external_url': self.external_url,
+                'description': self.description,
                 'created_at': self.created_at,
                 'updated_at': self.updated_at
             }
@@ -59,6 +74,11 @@ class Area:
                 'available_genres': self.available_genres,
                 'is_restricted': self.is_restricted,
                 'access_code': self.access_code,
+                'area_type': self.area_type,
+                'start_date': self.start_date,
+                'end_date': self.end_date,
+                'external_url': self.external_url,
+                'description': self.description,
                 'created_at': self.created_at,
                 'updated_at': self.updated_at
             }
@@ -89,6 +109,11 @@ class Area:
             available_genres=item.get('available_genres', []),
             is_restricted=item.get('is_restricted', False),
             access_code=item.get('access_code'),
+            area_type=item.get('area_type', 'normal'),
+            start_date=item.get('start_date'),
+            end_date=item.get('end_date'),
+            external_url=item.get('external_url'),
+            description=item.get('description'),
             created_at=item.get('created_at'),
             updated_at=item.get('updated_at')
         )
@@ -111,6 +136,11 @@ class Area:
                 available_genres=item.get('available_genres', []),
                 is_restricted=item.get('is_restricted', False),
                 access_code=item.get('access_code'),
+                area_type=item.get('area_type', 'normal'),
+                start_date=item.get('start_date'),
+                end_date=item.get('end_date'),
+                external_url=item.get('external_url'),
+                description=item.get('description'),
                 created_at=item.get('created_at'),
                 updated_at=item.get('updated_at')
             )

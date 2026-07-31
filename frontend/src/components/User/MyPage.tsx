@@ -352,25 +352,71 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes }: MyPag
                   return user.unlocked_areas?.includes(a.area_id);
                 }
                 return true;
-              }).map(area => (
-                <label key={area.area_id} style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '8px',
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  borderRadius: '6px',
-                }}>
-                  <input
-                    type="checkbox"
-                    checked={(user.selected_areas || []).includes(area.area_id)}
-                    onChange={(e) => handleAreaChange(area.area_id, e.target.checked)}
-                    disabled={loading}
-                    style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-                  />
-                  <span style={{ fontSize: '16px' }}>{area.area_name}</span>
-                </label>
-              ))}
+              }).map(area => {
+                const isCampaign = area.area_type === 'campaign';
+                const today = new Date().toISOString().slice(0, 10);
+                const isExpired = isCampaign && area.end_date ? area.end_date < today : false;
+                const notStarted = isCampaign && area.start_date ? area.start_date > today : false;
+                return (
+                  <label key={area.area_id} style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '2px',
+                    padding: '8px',
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                    borderRadius: '6px',
+                    backgroundColor: isCampaign ? '#fffbeb' : undefined,
+                    border: isCampaign ? '1px solid #fde68a' : undefined
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <input
+                        type="checkbox"
+                        checked={(user.selected_areas || []).includes(area.area_id)}
+                        onChange={(e) => handleAreaChange(area.area_id, e.target.checked)}
+                        disabled={loading}
+                        style={{ width: '16px', height: '16px', cursor: 'pointer', flexShrink: 0 }}
+                      />
+                      <span style={{ fontSize: '16px' }}>{area.area_name}</span>
+                      {isCampaign && (
+                        <span style={{
+                          padding: '1px 7px',
+                          borderRadius: '10px',
+                          fontSize: '11px',
+                          fontWeight: '700',
+                          backgroundColor: isExpired ? '#e5e7eb' : '#fef3c7',
+                          color: isExpired ? '#6b7280' : '#92400e',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          {isExpired ? '終了' : notStarted ? '公開前' : '開催中'}
+                        </span>
+                      )}
+                    </div>
+                    {isCampaign && (
+                      <div style={{ paddingLeft: '24px', fontSize: '12px', color: '#6b7280', lineHeight: '1.6' }}>
+                        {area.description && (
+                          <div>{area.description}</div>
+                        )}
+                        {(area.start_date || area.end_date) && (
+                          <div>
+                            期間: {area.start_date ?? '?'} 〜 {area.end_date ?? '?'}
+                          </div>
+                        )}
+                        {area.external_url && (
+                          <a
+                            href={area.external_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ color: '#3b82f6', textDecoration: 'underline' }}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            公式ページを見る →
+                          </a>
+                        )}
+                      </div>
+                    )}
+                  </label>
+                );
+              })}
             </div>
             <p style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>
               選択したエリアのスポットのみが地図に表示されます（未選択時は全エリア表示）

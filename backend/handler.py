@@ -532,6 +532,11 @@ def admin_create_area(event):
         available_genres = body.get('available_genres', [])
         is_restricted = body.get('is_restricted', False)
         access_code = body.get('access_code')
+        area_type = body.get('area_type', 'normal')
+        start_date = body.get('start_date') or None
+        end_date = body.get('end_date') or None
+        external_url = body.get('external_url') or None
+        description = body.get('description') or None
         
         result = AreaService.create_area(
             area_id=area_id,
@@ -541,7 +546,12 @@ def admin_create_area(event):
             display_order=display_order,
             available_genres=available_genres,
             is_restricted=is_restricted,
-            access_code=access_code
+            access_code=access_code,
+            area_type=area_type,
+            start_date=start_date,
+            end_date=end_date,
+            external_url=external_url,
+            description=description
         )
         return success_response(result, 201)
     except ValueError as e:
@@ -566,7 +576,12 @@ def admin_update_area(event):
             is_active=body.get('is_active'),
             available_genres=body.get('available_genres'),
             is_restricted=body.get('is_restricted'),
-            access_code=body.get('access_code')
+            access_code=body.get('access_code'),
+            area_type=body.get('area_type'),
+            start_date=body.get('start_date') or None,
+            end_date=body.get('end_date') or None,
+            external_url=body.get('external_url') or None,
+            description=body.get('description') or None
         )
         return success_response(result)
     except ValueError as e:

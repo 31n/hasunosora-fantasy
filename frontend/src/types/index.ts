@@ -20,6 +20,11 @@ export interface Area {
   available_genres: string[]; // このエリアで利用可能なジャンル
   is_restricted: boolean; // このエリアが制限されているか
   access_code?: string; // アクセスコード
+  area_type: 'normal' | 'campaign'; // エリア種別
+  start_date?: string | null; // キャンペーン開始日 (YYYY-MM-DD)
+  end_date?: string | null;   // キャンペーン終了日 (YYYY-MM-DD)
+  external_url?: string | null; // 公式ページURL
+  description?: string | null;  // エリア詳細説明
   created_at: string;
   updated_at: string;
 }
