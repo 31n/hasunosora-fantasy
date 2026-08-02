@@ -26,6 +26,8 @@ export default function SpotList({ spots, user, areas, quizTypes }: SpotListProp
     const saved = sessionStorage.getItem('spotList_selectedGenre');
     return saved || 'all';
   });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchDescription, setSearchDescription] = useState(false);
   const navigate = useNavigate();
 
   // ユーザーの選択エリアに基づいてスポットをフィルタリング
@@ -110,7 +112,21 @@ export default function SpotList({ spots, user, areas, quizTypes }: SpotListProp
     let filtered = selectedGenre === 'all' 
       ? [...spotsWithDistance]
       : spotsWithDistance.filter(s => s.genre && s.genre.includes(selectedGenre));
-    
+
+    // キーワード検索
+    if (searchQuery.trim()) {
+      const query = searchQuery.trim().toLowerCase();
+      filtered = filtered.filter(s => {
+        const nameMatch =
+          s.spot_name.toLowerCase().includes(query) ||
+          (s.reading || '').toLowerCase().includes(query);
+        if (searchDescription) {
+          return nameMatch || s.description.toLowerCase().includes(query);
+        }
+        return nameMatch;
+      });
+    }
+
     // ソート
     if (sortBy === 'distance' && userLocation) {
       filtered.sort((a, b) => (a.distance || 0) - (b.distance || 0));
@@ -136,6 +152,61 @@ export default function SpotList({ spots, user, areas, quizTypes }: SpotListProp
       boxSizing: 'border-box'
     }}>
       <h1 style={{ marginBottom: '24px' }}>スポット一覧</h1>
+
+      {/* 検索ボックス */}
+      <div style={{ marginBottom: '16px' }}>
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="スポット名で検索..."
+            style={{
+              width: '100%',
+              padding: '8px 36px 8px 12px',
+              border: '2px solid #e5e7eb',
+              borderRadius: '8px',
+              fontSize: '14px',
+              boxSizing: 'border-box'
+            }}
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              style={{
+                position: 'absolute',
+                right: '8px',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: '#9ca3af',
+                fontSize: '18px',
+                padding: '0',
+                lineHeight: '1'
+              }}
+              aria-label="検索をクリア"
+            >
+              ×
+            </button>
+          )}
+        </div>
+        <label style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '6px',
+          marginTop: '8px',
+          fontSize: '13px',
+          color: '#6b7280',
+          cursor: 'pointer'
+        }}>
+          <input
+            type="checkbox"
+            checked={searchDescription}
+            onChange={(e) => setSearchDescription(e.target.checked)}
+          />
+          説明文も検索する
+        </label>
+      </div>
 
       {/* フィルター・ソート */}
       <div style={{ 
