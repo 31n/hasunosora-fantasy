@@ -621,6 +621,7 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
         el.style.backgroundImage = `url(/member-icons/${spot.member_icon})`;
         el.style.backgroundSize = 'cover';
         el.style.backgroundPosition = 'center';
+        el.style.backgroundColor = 'rgba(255, 255, 255, 0.75)';
         el.style.overflow = 'hidden';
         if (isSelected) {
           el.style.border = '4px solid #f97316';
@@ -1120,7 +1121,7 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
                   backgroundColor: '#fdf4ff', borderRadius: '6px',
                   fontSize: '12px', color: '#7e22ce'
                 }}>
-                  🖼️ メンバーアイコンが設定されているスポットがアイコン画像で表示されます
+                  パネルが設置されているスポットがメンバーアイコンで表示されます
                 </div>
               )}
             </div>
