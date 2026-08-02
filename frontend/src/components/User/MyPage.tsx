@@ -872,7 +872,7 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes }: MyPag
           >
             <option value="all">全エリア</option>
             {areas.filter(a => a.is_active).sort((a, b) => a.display_order - b.display_order).map(area => (
-              <option key={area.area_id} value={area.area_id}>{
+              <option key={area.area_id} value={area.area_id}>
                 {area.area_name}
               </option>
             ))}
