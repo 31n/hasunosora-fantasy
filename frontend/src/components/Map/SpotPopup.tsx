@@ -58,11 +58,30 @@ export default function SpotPopup({
     ? getQuizForUser(spot, user, quizTypes)
     : spot.quizzes?.[0];
 
-  // このスポットが属するキャンペーンエリアを取得
+  // ユーザーが選択中のエリアを考慮した実効エリアIDリスト
+  const effectiveAreaIds = (() => {
+    const selected = user?.selected_areas ?? [];
+    if (selected.length === 0) return spot.areas ?? [];
+    return (spot.areas ?? []).filter(id => selected.includes(id));
+  })();
+
+  // このスポットが属するキャンペーンエリアを取得（選択中エリアのみ）
   const today = new Date().toISOString().slice(0, 10);
   const campaignAreas = areas.filter(a =>
-    a.area_type === 'campaign' && spot.areas?.includes(a.area_id)
+    a.area_type === 'campaign' && effectiveAreaIds.includes(a.area_id)
   );
+
+  // 選択中エリアに応じて表示するジャンルを絞り込む
+  const visibleGenres = (() => {
+    if (!spot.genre?.length) return [];
+    const selected = user?.selected_areas ?? [];
+    if (selected.length === 0) return spot.genre;
+    const effectiveAreas = areas.filter(a => effectiveAreaIds.includes(a.area_id));
+    const effectiveGenres = new Set(effectiveAreas.flatMap(a => a.available_genres ?? []));
+    if (effectiveGenres.size === 0) return spot.genre;
+    const allAreaGenres = new Set(areas.flatMap(a => a.available_genres ?? []));
+    return spot.genre.filter(g => effectiveGenres.has(g) || !allAreaGenres.has(g));
+  })();
 
   const closeFullscreen = (idx: number) => {
     setIsFullscreen(false);
@@ -164,9 +183,9 @@ export default function SpotPopup({
           )}
 
           {/* ジャンルタグ */}
-          {spot.genre && spot.genre.length > 0 && (
+          {visibleGenres.length > 0 && (
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '12px' }}>
-              {spot.genre.map((g, idx) => (
+              {visibleGenres.map((g, idx) => (
                 <span key={idx} style={{
                   display: 'inline-block',
                   padding: '4px 12px',
@@ -335,9 +354,9 @@ export default function SpotPopup({
         </div>
 
         {/* ジャンルタグ */}
-        {spot.genre && spot.genre.length > 0 && (
+        {visibleGenres.length > 0 && (
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
-            {spot.genre.map((g, idx) => (
+            {visibleGenres.map((g, idx) => (
               <span key={idx} style={{
                 display: 'inline-block',
                 padding: '6px 16px',
