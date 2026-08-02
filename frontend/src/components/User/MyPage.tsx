@@ -580,7 +580,7 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes }: MyPag
                   return user.unlocked_areas?.includes(a.area_id);
                 }
                 return true;
-              }).map(area => {
+              }).sort((a, b) => a.display_order - b.display_order).map(area => {
                 const isCampaign = area.area_type === 'campaign';
                 const today = new Date().toISOString().slice(0, 10);
                 const isExpired = isCampaign && area.end_date ? area.end_date < today : false;
@@ -871,8 +871,8 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes }: MyPag
             }}
           >
             <option value="all">全エリア</option>
-            {areas.filter(a => a.is_active).map(area => (
-              <option key={area.area_id} value={area.area_id}>
+            {areas.filter(a => a.is_active).sort((a, b) => a.display_order - b.display_order).map(area => (
+              <option key={area.area_id} value={area.area_id}>{
                 {area.area_name}
               </option>
             ))}
