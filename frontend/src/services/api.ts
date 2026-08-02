@@ -10,6 +10,7 @@ import type {
   MasterDataResponse,
   SpotsResponse,
   UnlockAreaResponse,
+  UnlockGenreResponse,
   Spot,
   Area,
   QuizType,
@@ -80,6 +81,13 @@ export const userApi = {
     return fetchApi<UnlockAreaResponse>(`/users/${userId}/unlock-area`, {
       method: 'POST',
       body: JSON.stringify({ area_code: areaCode }),
+    });
+  },
+
+  unlockGenre: async (userId: string, genreCode: string): Promise<UnlockGenreResponse> => {
+    return fetchApi<UnlockGenreResponse>(`/users/${userId}/unlock-genre`, {
+      method: 'POST',
+      body: JSON.stringify({ genre_code: genreCode }),
     });
   },
 

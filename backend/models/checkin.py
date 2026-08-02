@@ -108,7 +108,7 @@ class CheckIn:
         """チェックインクールタイム中か確認（CHECKIN_COOLDOWN_MINUTES以内に同スポットをチェックイン済みか）"""
         table = get_table(config.CHECKINS_TABLE)
 
-        cutoff = (datetime.utcnow() - timedelta(minutes=config.CHECKIN_COOLDOWN_MINUTES)).isoformat()
+        cutoff = (datetime.now(timezone.utc) - timedelta(minutes=config.CHECKIN_COOLDOWN_MINUTES)).isoformat()
 
         response = table.query(
             KeyConditionExpression='user_id = :uid AND spot_id_timestamp BETWEEN :start AND :end',

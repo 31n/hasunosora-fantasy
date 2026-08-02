@@ -182,6 +182,12 @@ export interface UnlockAreaResponse {
   user: User;
 }
 
+export interface UnlockGenreResponse {
+  success: boolean;
+  unlocked_genre: string;
+  user: User;
+}
+
 // announcement.ts
 export interface Announcement {
   announcement_id: string;

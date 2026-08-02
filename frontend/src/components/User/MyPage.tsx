@@ -59,6 +59,8 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes }: MyPag
   const [selectedStatArea, setSelectedStatArea] = useState<string>('all'); // 統計表示用エリア
   const [showAreaCodeInput, setShowAreaCodeInput] = useState(false);
   const [areaCode, setAreaCode] = useState('');
+  const [showGenreCodeInput, setShowGenreCodeInput] = useState(false);
+  const [genreCode, setGenreCode] = useState('');
   const [showAllHistory, setShowAllHistory] = useState(false);
   // マップ画像生成用
   const [mapDateFrom, setMapDateFrom] = useState(() =>
@@ -229,7 +231,7 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes }: MyPag
       ? history 
       : history.filter(h => {
           const spot = spots.find(s => s.spot_id === h.spot_id);
-          return spot?.area === selectedStatArea;
+          return spot?.areas?.includes(selectedStatArea);
         });
 
     return {
