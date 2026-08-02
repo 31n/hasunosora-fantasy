@@ -9,6 +9,8 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import QuizIcon from '@mui/icons-material/Quiz';
 import DirectionsIcon from '@mui/icons-material/Directions';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import CampaignIcon from '@mui/icons-material/Campaign';
+import type { Area } from '../../types';
 
 interface SpotPopupProps {
   spot: Spot;
@@ -25,6 +27,7 @@ interface SpotPopupProps {
   /** ユーザー情報とクイズタイプ一覧。優先度ベースでクイズを選択するために使用。 */
   user?: User;
   quizTypes?: QuizType[];
+  areas?: Area[];
 }
 
 export default function SpotPopup({ 
@@ -41,6 +44,7 @@ export default function SpotPopup({
   isOnCooldown = false,
   user,
   quizTypes = [],
+  areas = [],
 }: SpotPopupProps) {
   const [showDetail, setShowDetail] = useState(false);
   const [imageIndex, setImageIndex] = useState(0);
@@ -53,6 +57,12 @@ export default function SpotPopup({
   const availableQuiz = user
     ? getQuizForUser(spot, user, quizTypes)
     : spot.quizzes?.[0];
+
+  // このスポットが属するキャンペーンエリアを取得
+  const today = new Date().toISOString().slice(0, 10);
+  const campaignAreas = areas.filter(a =>
+    a.area_type === 'campaign' && spot.areas?.includes(a.area_id)
+  );
 
   const closeFullscreen = (idx: number) => {
     setIsFullscreen(false);
@@ -91,7 +101,12 @@ export default function SpotPopup({
           {/* ヘッダー */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
             <div style={{ flex: 1 }}>
-              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700' }}>{spot.spot_name}</h3>
+              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                {spot.spot_name}
+                {campaignAreas.length > 0 && (
+                  <CampaignIcon fontSize="small" style={{ color: '#d97706', flexShrink: 0 }} />
+                )}
+              </h3>
               <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: '#6b7280' }}>
                 📍 {formatDistance(distance)}
               </p>
@@ -323,6 +338,64 @@ export default function SpotPopup({
             ))}
           </div>
         )}
+
+        {/* キャンペーンバナー */}
+        {campaignAreas.map(area => {
+          const isExpired = area.end_date ? area.end_date < today : false;
+          const notStarted = area.start_date ? area.start_date > today : false;
+          const statusLabel = isExpired ? '終了' : notStarted ? '公開前' : '開催中';
+          const statusColor = isExpired ? '#6b7280' : '#d97706';
+          return (
+            <div key={area.area_id} style={{
+              marginBottom: '16px',
+              padding: '12px 14px',
+              borderRadius: '10px',
+              backgroundColor: isExpired ? '#f9fafb' : '#fffbeb',
+              border: `1px solid ${isExpired ? '#e5e7eb' : '#fde68a'}`,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '4px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <CampaignIcon fontSize="small" style={{ color: statusColor }} />
+                <span style={{ fontWeight: '700', fontSize: '14px', color: statusColor }}>
+                  {area.area_name}
+                </span>
+                <span style={{
+                  marginLeft: 'auto',
+                  padding: '1px 8px',
+                  borderRadius: '10px',
+                  fontSize: '11px',
+                  fontWeight: '700',
+                  backgroundColor: isExpired ? '#e5e7eb' : '#fef3c7',
+                  color: statusColor
+                }}>
+                  {statusLabel}
+                </span>
+              </div>
+              {area.description && (
+                <p style={{ margin: 0, fontSize: '12px', color: '#6b7280', lineHeight: '1.5' }}>
+                  {area.description}
+                </p>
+              )}
+              {(area.start_date || area.end_date) && (
+                <p style={{ margin: 0, fontSize: '12px', color: '#6b7280' }}>
+                  期間: {area.start_date ?? '未定'} 〜 {area.end_date ?? '未定'}
+                </p>
+              )}
+              {area.external_url && (
+                <a
+                  href={area.external_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ fontSize: '12px', color: '#3b82f6', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '2px' }}
+                >
+                  公式ページを見る <OpenInNewIcon style={{ fontSize: '12px' }} />
+                </a>
+              )}
+            </div>
+          );
+        })}
 
         {/* メイン画像 */}
         {spot.images.length > 0 && (

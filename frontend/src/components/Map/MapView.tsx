@@ -1345,6 +1345,7 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
           onDirections={handleDirections}
           user={user}
           quizTypes={quizTypes}
+          areas={areas}
           isCheckedIn={checkinStatus === 'cooldown'}
           isCheckedInToday={checkinStatus === 'today'}
           isOnCooldown={isQuizOnCooldown}

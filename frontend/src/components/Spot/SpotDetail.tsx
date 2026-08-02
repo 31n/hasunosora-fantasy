@@ -2,17 +2,19 @@ import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import CampaignIcon from '@mui/icons-material/Campaign';
 import { indexedDB } from '../../services/indexedDB';
 import { userApi, checkinApi } from '../../services/api';
-import type { User, Spot, CheckInHistory, QuizType } from '../../types';
+import type { User, Spot, CheckInHistory, QuizType, Area } from '../../types';
 import { getQuizForUser } from '../../utils/quiz';
 
 interface SpotDetailProps {
   user: User;
   quizTypes: QuizType[];
+  areas?: Area[];
 }
 
-export default function SpotDetail({ user, quizTypes }: SpotDetailProps) {
+export default function SpotDetail({ user, quizTypes, areas = [] }: SpotDetailProps) {
   const { spotId } = useParams<{ spotId: string }>();
   const [spot, setSpot] = useState<Spot | null>(null);
   const [history, setHistory] = useState<CheckInHistory[]>([]);
@@ -357,6 +359,71 @@ export default function SpotDetail({ user, quizTypes }: SpotDetailProps) {
             ))}
           </div>
         )}
+
+        {/* キャンペーンバナー */}
+        {(() => {
+          const today = new Date().toISOString().slice(0, 10);
+          const campaignAreas = areas.filter(a =>
+            a.area_type === 'campaign' && spot.areas?.includes(a.area_id)
+          );
+          if (campaignAreas.length === 0) return null;
+          return campaignAreas.map(area => {
+            const isExpired = area.end_date ? area.end_date < today : false;
+            const notStarted = area.start_date ? area.start_date > today : false;
+            const statusLabel = isExpired ? '終了' : notStarted ? '公開前' : '開催中';
+            const statusColor = isExpired ? '#6b7280' : '#d97706';
+            return (
+              <div key={area.area_id} style={{
+                marginBottom: '16px',
+                padding: '14px 16px',
+                borderRadius: '10px',
+                backgroundColor: isExpired ? '#f9fafb' : '#fffbeb',
+                border: `1px solid ${isExpired ? '#e5e7eb' : '#fde68a'}`,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '6px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <CampaignIcon style={{ color: statusColor, fontSize: '20px' }} />
+                  <span style={{ fontWeight: '700', fontSize: '15px', color: statusColor }}>
+                    {area.area_name}
+                  </span>
+                  <span style={{
+                    marginLeft: 'auto',
+                    padding: '2px 10px',
+                    borderRadius: '10px',
+                    fontSize: '12px',
+                    fontWeight: '700',
+                    backgroundColor: isExpired ? '#e5e7eb' : '#fef3c7',
+                    color: statusColor
+                  }}>
+                    {statusLabel}
+                  </span>
+                </div>
+                {area.description && (
+                  <p style={{ margin: 0, fontSize: '13px', color: '#6b7280', lineHeight: '1.6' }}>
+                    {area.description}
+                  </p>
+                )}
+                {(area.start_date || area.end_date) && (
+                  <p style={{ margin: 0, fontSize: '13px', color: '#6b7280' }}>
+                    期間: {area.start_date ?? '未定'} 〜 {area.end_date ?? '未定'}
+                  </p>
+                )}
+                {area.external_url && (
+                  <a
+                    href={area.external_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ fontSize: '13px', color: '#3b82f6', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                  >
+                    公式ページを見る <OpenInNewIcon style={{ fontSize: '14px' }} />
+                  </a>
+                )}
+              </div>
+            );
+          });
+        })()}
         
         <p style={{ color: '#6b7280', lineHeight: '1.6', marginBottom: '16px' }}>
           {spot.description}
