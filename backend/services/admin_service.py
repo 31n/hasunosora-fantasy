@@ -63,6 +63,7 @@ class AdminService:
             is_official=spot_data.get('is_official'),
             pilgrimage_difficulty=spot_data.get('pilgrimage_difficulty') or None,
             scene_season=spot_data.get('scene_season') or None,
+            member_icon=spot_data.get('member_icon') or None,
         )
 
         spot.save()
@@ -143,6 +144,8 @@ class AdminService:
             spot.pilgrimage_difficulty = spot_data['pilgrimage_difficulty'] or None
         if 'scene_season' in spot_data:
             spot.scene_season = spot_data['scene_season'] or None
+        if 'member_icon' in spot_data:
+            spot.member_icon = spot_data['member_icon'] or None
 
         spot.save()
 

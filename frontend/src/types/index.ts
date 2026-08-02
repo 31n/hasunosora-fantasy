@@ -93,6 +93,7 @@ export interface Spot {
   is_official?: boolean;        // 公式聖地認定フラグ
   pilgrimage_difficulty?: string; // アクセス難易度 ('easy'|'moderate'|'hard')
   scene_season?: string;        // 劇中の季節
+  member_icon?: string | null;  // メンバーアイコンファイル名 (例: icon_alice.png)
 }
 
 export interface CheckInHistory {

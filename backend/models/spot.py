@@ -86,7 +86,8 @@ class Spot:
                  visit_notes: Optional[str] = None,
                  is_official: Optional[bool] = None,
                  pilgrimage_difficulty: Optional[str] = None,
-                 scene_season: Optional[str] = None):
+                 scene_season: Optional[str] = None,
+                 member_icon: Optional[str] = None):
         self.spot_id = spot_id or str(uuid.uuid4())
         self.spot_name = spot_name
         self.description = description
@@ -118,6 +119,7 @@ class Spot:
         self.is_official = is_official
         self.pilgrimage_difficulty = pilgrimage_difficulty
         self.scene_season = scene_season
+        self.member_icon = member_icon
         self.created_at = created_at or datetime.now(timezone.utc).isoformat()
         self.updated_at = updated_at or datetime.now(timezone.utc).isoformat()
 
@@ -200,6 +202,7 @@ class Spot:
                 'is_official': self.is_official,
                 'pilgrimage_difficulty': self.pilgrimage_difficulty,
                 'scene_season': self.scene_season,
+                'member_icon': self.member_icon,
             }
             if self.quizzes:
                 result['quizzes'] = [_quiz_to_dynamodb(q) for q in self.quizzes]
@@ -239,6 +242,7 @@ class Spot:
                 'is_official': self.is_official,
                 'pilgrimage_difficulty': self.pilgrimage_difficulty,
                 'scene_season': self.scene_season,
+                'member_icon': self.member_icon,
             }
         return result
 
@@ -303,6 +307,7 @@ class Spot:
             is_official=item.get('is_official'),
             pilgrimage_difficulty=item.get('pilgrimage_difficulty'),
             scene_season=item.get('scene_season'),
+            member_icon=item.get('member_icon'),
         )
 
     @staticmethod

@@ -63,6 +63,7 @@ export default function AdminSpotForm() {
     is_official: false,
     pilgrimage_difficulty: '',
     scene_season: '',
+    member_icon: '',
   });
 
   useEffect(() => {
@@ -139,6 +140,7 @@ export default function AdminSpotForm() {
           is_official: spot.is_official ?? false,
           pilgrimage_difficulty: spot.pilgrimage_difficulty || '',
           scene_season: spot.scene_season || '',
+          member_icon: spot.member_icon || '',
         });
         setQuizzes(spot.quizzes || []);
         setWorks((spot.works || []).map(w => ({
@@ -455,6 +457,7 @@ export default function AdminSpotForm() {
         is_official: formData.is_official || null,
         pilgrimage_difficulty: formData.pilgrimage_difficulty || null,
         scene_season: formData.scene_season || null,
+        member_icon: formData.member_icon || null,
       };
 
       if (spotId) {
@@ -580,6 +583,28 @@ export default function AdminSpotForm() {
             />
             <p style={{ marginTop: '4px', fontSize: '12px', color: '#6b7280' }}>
               スポット詳細画面にリンクボタンとして表示されます
+            </p>
+          </div>
+
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+              メンバーアイコン
+            </label>
+            <input
+              type="text"
+              value={formData.member_icon}
+              onChange={(e) => setFormData({ ...formData, member_icon: e.target.value })}
+              placeholder="例：icon_alice.png"
+              style={{
+                width: '100%',
+                padding: '12px',
+                border: '2px solid #e5e7eb',
+                borderRadius: '8px',
+                fontSize: '16px'
+              }}
+            />
+            <p style={{ marginTop: '4px', fontSize: '12px', color: '#6b7280' }}>
+              public/member-icons/ に配置した画像ファイル名を入力。地図でメンバーアイコン表示ON時に使用されます
             </p>
           </div>
 

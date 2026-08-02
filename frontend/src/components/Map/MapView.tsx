@@ -56,6 +56,7 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
   const [selectedGenre, setSelectedGenre] = useState<string>(_savedFilter?.selectedGenre ?? 'all');
   const [showTodayCheckinMark, setShowTodayCheckinMark] = useState<boolean>(_savedFilter?.showTodayCheckinMark ?? false);
   const [showAllCheckinMark, setShowAllCheckinMark] = useState<boolean>(_savedFilter?.showAllCheckinMark ?? false);
+  const [showMemberIcons, setShowMemberIcons] = useState<boolean>(_savedFilter?.showMemberIcons ?? false);
 
   // チェックイン履歴（マーク表示フィルター用）
   const [allCheckinHistory, setAllCheckinHistory] = useState<import('../../types').CheckInHistory[] | null>(null);
@@ -608,11 +609,44 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
       
       const isTodayCheckin = showTodayCheckinMark && todayCheckinSpotIds.has(spot.spot_id);
       const isAllTimeCheckin = showAllCheckinMark && allCheckinSpotIds.has(spot.spot_id);
+      const hasMemberIcon = showMemberIcons && !!spot.member_icon;
       el.style.display = 'flex';
       el.style.alignItems = 'center';
       el.style.justifyContent = 'center';
 
-      if (isSelected) {
+      if (hasMemberIcon) {
+        // メンバーアイコン画像で表示（状態は枠線の色で表現）
+        el.style.width = '44px';
+        el.style.height = '44px';
+        el.style.backgroundImage = `url(/member-icons/${spot.member_icon})`;
+        el.style.backgroundSize = 'cover';
+        el.style.backgroundPosition = 'center';
+        el.style.overflow = 'hidden';
+        if (isSelected) {
+          el.style.border = '4px solid #f97316';
+          el.style.boxShadow = '0 4px 12px rgba(249, 115, 22, 0.6)';
+          el.style.transform = 'scale(1.2)';
+          el.style.zIndex = '1000';
+        } else if (isTodayCheckin) {
+          el.style.border = '4px solid #16a34a';
+          el.style.boxShadow = '0 2px 6px rgba(22, 163, 74, 0.5)';
+          el.style.transform = 'scale(1)';
+        } else if (isAllTimeCheckin) {
+          el.style.border = '4px solid #0ea5e9';
+          el.style.boxShadow = '0 2px 6px rgba(14, 165, 233, 0.5)';
+          el.style.transform = 'scale(1)';
+        } else if (isInRange) {
+          el.style.border = '4px solid #22c55e';
+          el.style.boxShadow = '0 2px 6px rgba(34, 197, 94, 0.5)';
+          el.style.transform = 'scale(1.1)';
+          el.style.zIndex = '500';
+          el.classList.add('spot-marker-in-range');
+        } else {
+          el.style.border = '3px solid white';
+          el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+          el.style.transform = 'scale(1)';
+        }
+      } else if (isSelected) {
         // 1. 選択中のスポット：目立つオレンジ色
         el.style.backgroundColor = '#f97316';
         el.style.border = '4px solid #ea580c';
@@ -688,7 +722,7 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
     return () => {
       markers.forEach(marker => marker.remove());
     };
-  }, [filteredSpots, highlightQuizSpots, selectedSpot, userLocation, showTodayCheckinMark, showAllCheckinMark, todayCheckinSpotIds, allCheckinSpotIds]); // selectedSpot, userLocationも依存配列に追加
+  }, [filteredSpots, highlightQuizSpots, selectedSpot, userLocation, showTodayCheckinMark, showAllCheckinMark, todayCheckinSpotIds, allCheckinSpotIds, showMemberIcons]); // selectedSpot, userLocationも依存配列に追加
 
   // エリア変更時に地図の中心を移動（再読み込みによる areas 参照更新では発火しない）
   useEffect(() => {
@@ -729,9 +763,10 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
         selectedGenre,
         showTodayCheckinMark,
         showAllCheckinMark,
+        showMemberIcons,
       }));
     } catch { /* ignore */ }
-  }, [highlightQuizSpots, selectedGenre, showTodayCheckinMark, showAllCheckinMark]);
+  }, [highlightQuizSpots, selectedGenre, showTodayCheckinMark, showAllCheckinMark, showMemberIcons]);
 
   // フィルターモーダルのEscapeキーハンドリング
   useEffect(() => {
@@ -1050,6 +1085,42 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
                   fontSize: '12px', color: '#0369a1'
                 }}>
                   ✅ 過去にチェックインしたスポットが青のチェックマークで表示されます
+                </div>
+              )}
+            </div>
+
+            {/* メンバーアイコン表示 */}
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#374151',
+                cursor: 'pointer',
+                padding: '12px',
+                backgroundColor: showMemberIcons ? '#fdf4ff' : '#f9fafb',
+                borderRadius: '8px',
+                border: '2px solid',
+                borderColor: showMemberIcons ? '#a855f7' : '#e5e7eb',
+                transition: 'all 0.2s'
+              }}>
+                <input
+                  type="checkbox"
+                  checked={showMemberIcons}
+                  onChange={(e) => setShowMemberIcons(e.target.checked)}
+                  style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+                />
+                <span>メンバーアイコン表示</span>
+              </label>
+              {showMemberIcons && (
+                <div style={{
+                  marginTop: '8px', padding: '8px 12px',
+                  backgroundColor: '#fdf4ff', borderRadius: '6px',
+                  fontSize: '12px', color: '#7e22ce'
+                }}>
+                  🖼️ メンバーアイコンが設定されているスポットがアイコン画像で表示されます
                 </div>
               )}
             </div>
