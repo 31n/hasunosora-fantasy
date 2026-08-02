@@ -36,6 +36,20 @@ const encodePolyline = (coords: [number, number][]): string => {
   }).join('');
 };
 
+// 日付ごとの色パレット（Mapbox pin/path color: 6桁HEX, # なし）
+const DATE_COLORS = [
+  'F8B500', '5383C3', '68BE8D', 'BA2636',
+  'E7609E', 'C8C2C6', 'A2D7DD', 'FAD764',
+  '9D8DE2', 'F56455', '1EBECD'
+] as const;
+
+// 凡例用短縮日付（例: "7/1(月)"）
+const formatLegendDate = (dateStr: string): string => {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dow = ['日', '月', '火', '水', '木', '金', '土'][new Date(y, m - 1, d).getDay()];
+  return `${m}/${d}(${dow})`;
+};
+
 export default function MyPage({ user, setUser, spots, areas, quizTypes }: MyPageProps) {
   const [nickname, setNickname] = useState('');
   const [isEditingNickname, setIsEditingNickname] = useState(false);
@@ -254,12 +268,13 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes }: MyPag
       return s ? [s.longitude, s.latitude] : null;
     };
 
-    // ルート用座標（訪問時系列順）
-    const routeCoords: [number, number][] = filtered
-      .map(h => getCoords(h.spot_id))
-      .filter((c): c is [number, number] => c !== null);
+    // 日付ごとに色を割り当て
+    const uniqueDates = [...new Set(filtered.map(h => toJstDate(h.checked_in_at)))].sort();
+    const dateColorMap = new Map(
+      uniqueDates.map((d, i) => [d, DATE_COLORS[i % DATE_COLORS.length]])
+    );
 
-    // ピン用（ユニークスポット、最大79個）
+    // ユニークスポット（初訪問時系列順）
     const seenSpots = new Set<string>();
     const uniqueVisits = filtered.filter(h => {
       if (seenSpots.has(h.spot_id)) return false;
@@ -273,15 +288,28 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes }: MyPag
     const mapStyle = env.VITE_MAPBOX_STATIC_STYLE ?? 'mapbox/streets-v12';
     const overlayParts: string[] = [];
 
-    // ルートライン（path は pins より先に追加して下層に描画）
-    if (routeCoords.length >= 2) {
-      overlayParts.push(`path-3+3b82f6-0.8(${encodeURIComponent(encodePolyline(routeCoords))})`);
-    }
-    // ピン
-    uniqueVisits.slice(0, 79).forEach(h => {
-      const c = getCoords(h.spot_id);
-      if (c) overlayParts.push(`pin-s+f59e0b(${c[0]},${c[1]})`);
+    // 日付ごとのルートライン（paths を pins より先に追加して下層描画）
+    uniqueDates.forEach(date => {
+      const dayCoords: [number, number][] = filtered
+        .filter(h => toJstDate(h.checked_in_at) === date)
+        .map(h => getCoords(h.spot_id))
+        .filter((c): c is [number, number] => c !== null);
+      if (dayCoords.length >= 2) {
+        const color = dateColorMap.get(date)!;
+        overlayParts.push(`path-4+${color}-0.85(${encodeURIComponent(encodePolyline(dayCoords))})`);
+      }
     });
+
+    // 日付色対応のピン（80オブジェクト上限に合わせた最大数）
+    const maxPins = Math.max(1, 79 - overlayParts.length);
+    let pinCount = 0;
+    for (const h of uniqueVisits) {
+      if (pinCount >= maxPins) break;
+      const c = getCoords(h.spot_id);
+      if (!c) continue;
+      overlayParts.push(`pin-s+${dateColorMap.get(toJstDate(h.checked_in_at))!}(${c[0]},${c[1]})`);
+      pinCount++;
+    }
 
     if (overlayParts.length === 0) { alert('地図に表示できるスポットがありません'); return; }
 
@@ -289,17 +317,93 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes }: MyPag
 
     setIsGeneratingMap(true);
     try {
-      const res = await fetch(staticUrl);
-      if (!res.ok) throw new Error(`Mapbox API error: ${res.status}`);
-      const blob = await res.blob();
+      const mapRes = await fetch(staticUrl);
+      if (!mapRes.ok) throw new Error(`Mapbox API error: ${mapRes.status}`);
+      const mapBlob = await mapRes.blob();
+
+      // フッター高さを日付数から計算
+      const SIDE_PAD = 20;
+      const ITEM_W = 130;
+      const ITEMS_PER_ROW = Math.max(1, Math.floor((1200 - SIDE_PAD * 2) / ITEM_W));
+      const legendRows = Math.ceil(uniqueDates.length / ITEMS_PER_ROW);
+      const FOOTER_H = 14 + 26 + 8 + legendRows * 26 + 14;
+
+      // Canvas 生成
+      const canvas = document.createElement('canvas');
+      canvas.width = 1200;
+      canvas.height = 630 + FOOTER_H;
+      const ctx = canvas.getContext('2d')!;
+
+      // 地図画像を描画
+      await new Promise<void>((resolve, reject) => {
+        const img = new Image();
+        const objUrl = URL.createObjectURL(mapBlob);
+        img.onload = () => { ctx.drawImage(img, 0, 0, 1200, 630); URL.revokeObjectURL(objUrl); resolve(); };
+        img.onerror = () => { URL.revokeObjectURL(objUrl); reject(new Error('地図画像の読み込みに失敗')); };
+        img.src = objUrl;
+      });
+
+      // フッター背景
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(0, 630, 1200, FOOTER_H);
+      // セパレーター
+      ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(0, 630.5); ctx.lineTo(1200, 630.5); ctx.stroke();
+
+      const font = '"Hiragino Kaku Gothic ProN", "Yu Gothic", "Noto Sans JP", sans-serif';
+      const TITLE_Y = 630 + 14 + 18;
+
+      // タイトル（日付範囲）
+      const fmt = (s: string) => `${parseInt(s.slice(5, 7))}/${parseInt(s.slice(8, 10))}`;
+      const sameYear = mapDateFrom.slice(0, 4) === mapDateTo.slice(0, 4);
+      const titleStr = sameYear
+        ? (mapDateFrom === mapDateTo
+            ? `${mapDateFrom.slice(0, 4)}/${fmt(mapDateFrom)} の巡礼マップ`
+            : `${mapDateFrom.slice(0, 4)}/${fmt(mapDateFrom)}〜${fmt(mapDateTo)} の巡礼マップ`)
+        : `${mapDateFrom}〜${mapDateTo} の巡礼マップ`;
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.font = `bold 18px ${font}`;
+      ctx.fillText(titleStr, SIDE_PAD, TITLE_Y);
+
+      // スポット数（右寄せ）
+      const spotLabel = `${uniqueVisits.length} スポット`;
+      ctx.font = `13px ${font}`;
+      ctx.fillStyle = 'rgba(255,255,255,0.45)';
+      ctx.fillText(spotLabel, 1200 - SIDE_PAD - ctx.measureText(spotLabel).width, TITLE_Y);
+
+      // 日付凡例
+      let lx = SIDE_PAD;
+      let ly = 630 + 14 + 26 + 8 + 13;
+      uniqueDates.forEach((date, i) => {
+        const color = `#${dateColorMap.get(date)!}`;
+        // カラードット
+        ctx.beginPath();
+        ctx.arc(lx + 7, ly, 7, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+        // 日付ラベル
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        ctx.font = `bold 13px ${font}`;
+        ctx.fillText(formatLegendDate(date), lx + 18, ly + 5);
+
+        lx += ITEM_W;
+        if ((i + 1) % ITEMS_PER_ROW === 0) { lx = SIDE_PAD; ly += 26; }
+      });
+
+      // PNG として書き出し
+      const finalBlob = await new Promise<Blob>((resolve, reject) =>
+        canvas.toBlob(b => b ? resolve(b) : reject(new Error('Canvas toBlob failed')), 'image/png')
+      );
+
       const fileName = `hasunosora-map-${mapDateFrom}-to-${mapDateTo}.png`;
-      const file = new File([blob], fileName, { type: 'image/png' });
+      const file = new File([finalBlob], fileName, { type: 'image/png' });
       const shareText = `${mapDateFrom}〜${mapDateTo}の巡礼記録（${uniqueVisits.length}スポット）`;
 
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({ files: [file], title: '巡礼マップ', text: shareText });
       } else {
-        const url = URL.createObjectURL(blob);
+        const url = URL.createObjectURL(finalBlob);
         const a = document.createElement('a');
         a.href = url;
         a.download = fileName;
