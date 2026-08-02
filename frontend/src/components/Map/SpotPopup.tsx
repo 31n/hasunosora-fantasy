@@ -104,7 +104,21 @@ export default function SpotPopup({
               <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                 {spot.spot_name}
                 {campaignAreas.length > 0 && (
-                  <CampaignIcon fontSize="small" style={{ color: '#d97706', flexShrink: 0 }} />
+                  <button
+                    onClick={() => setShowDetail(true)}
+                    title="キャンペーン詳細を見る"
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      padding: '0',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      flexShrink: 0
+                    }}
+                  >
+                    <CampaignIcon fontSize="small" style={{ color: '#d97706' }} />
+                  </button>
                 )}
               </h3>
               <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: '#6b7280' }}>
