@@ -616,8 +616,8 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
 
       if (hasMemberIcon) {
         // メンバーアイコン画像で表示（状態は枠線の色で表現）
-        el.style.width = '44px';
-        el.style.height = '44px';
+        el.style.width = '38px';
+        el.style.height = '38px';
         el.style.backgroundImage = `url(/member-icons/${spot.member_icon})`;
         el.style.backgroundSize = 'cover';
         el.style.backgroundPosition = 'center';
