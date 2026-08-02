@@ -44,11 +44,11 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
   // フィルター表示状態
   const [showFilter, setShowFilter] = useState(false);
   
-  // フィルター状態（sessionStorage から復元）
+  // フィルター状態（localStorage から復元・アプリを閉じても保持）
   const MAP_FILTER_SESSION_KEY = 'mapFilterState';
   const _savedFilter = (() => {
     try {
-      const s = sessionStorage.getItem(MAP_FILTER_SESSION_KEY);
+      const s = localStorage.getItem(MAP_FILTER_SESSION_KEY);
       return s ? JSON.parse(s) : null;
     } catch { return null; }
   })();
@@ -756,10 +756,10 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
     }
   }, [showTodayCheckinMark, showAllCheckinMark]);
 
-  // フィルター状態をsessionStorageに保存
+  // フィルター状態をlocalStorageに保存（アプリを閉じても保持）
   useEffect(() => {
     try {
-      sessionStorage.setItem(MAP_FILTER_SESSION_KEY, JSON.stringify({
+      localStorage.setItem(MAP_FILTER_SESSION_KEY, JSON.stringify({
         highlightQuizSpots,
         selectedGenre,
         showTodayCheckinMark,
@@ -1121,7 +1121,7 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
                   backgroundColor: '#fdf4ff', borderRadius: '6px',
                   fontSize: '12px', color: '#7e22ce'
                 }}>
-                  パネルが設置されているスポットがメンバーアイコンで表示されます
+                  ℹ️ パネルが設置されているスポットがメンバーアイコンで表示されます
                 </div>
               )}
             </div>
