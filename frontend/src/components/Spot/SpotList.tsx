@@ -166,7 +166,7 @@ export default function SpotList({ spots, user, areas, quizTypes }: SpotListProp
               padding: '8px 36px 8px 12px',
               border: '2px solid #e5e7eb',
               borderRadius: '8px',
-              fontSize: '14px',
+              fontSize: '16px',
               boxSizing: 'border-box'
             }}
           />
