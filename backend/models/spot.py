@@ -320,6 +320,28 @@ class Spot:
         return Spot._build_from_item(response['Item'])
 
     @staticmethod
+    def get_names(spot_ids: List[str]) -> Dict[str, str]:
+        """スポット ID → スポット名。1 件ずつ get_item せず、batch_get_item で 100 件ずつまとめて読む"""
+        from utils.dynamodb import dynamodb
+
+        unique_ids = list(dict.fromkeys(spot_ids))
+        names: Dict[str, str] = {}
+        for i in range(0, len(unique_ids), 100):
+            request = {
+                config.SPOTS_TABLE: {
+                    'Keys': [{'spot_id': spot_id} for spot_id in unique_ids[i:i + 100]],
+                    'ProjectionExpression': 'spot_id, spot_name',
+                }
+            }
+            # 混雑時は一部が UnprocessedKeys で返るので、なくなるまで読み直す
+            while request:
+                response = dynamodb.batch_get_item(RequestItems=request)
+                for item in response.get('Responses', {}).get(config.SPOTS_TABLE, []):
+                    names[item['spot_id']] = item['spot_name']
+                request = response.get('UnprocessedKeys') or None
+        return names
+
+    @staticmethod
     def get_all() -> List['Spot']:
         """全スポットを取得"""
         table = get_table(config.SPOTS_TABLE)

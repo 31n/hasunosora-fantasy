@@ -102,13 +102,13 @@ class UserService:
         # 指定範囲のチェックイン履歴を取得
         checkins_raw = all_checkins[offset:offset + limit]
         
-        # スポット情報を付加
+        # スポット名を付加（まとめて読む）
+        spot_names = Spot.get_names([item['spot_id'] for item in checkins_raw])
         checkins = []
         for item in checkins_raw:
-            spot = Spot.get(item['spot_id'])
             checkins.append({
                 'spot_id': item['spot_id'],
-                'spot_name': spot.spot_name if spot else 'Unknown',
+                'spot_name': spot_names.get(item['spot_id'], 'Unknown'),
                 'checked_in_at': item['checked_in_at'],
                 'quiz_answered': item.get('quiz_answered', False),
                 'quiz_correct': item.get('quiz_correct', False),
