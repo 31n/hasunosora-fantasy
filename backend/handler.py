@@ -50,6 +50,12 @@ def handler(event, context):
 
         elif path.startswith('/users/') and path.endswith('/history') and http_method == 'GET':
             return get_history(event)
+
+        elif path.startswith('/users/') and path.endswith('/checked-in-spots') and http_method == 'GET':
+            return get_checked_in_spots(event)
+
+        elif path.startswith('/users/') and '/spots/' in path and path.endswith('/status') and http_method == 'GET':
+            return get_spot_status(event)
         
         elif path.startswith('/users/') and path.endswith('/unlock-area') and http_method == 'POST':
             return unlock_area(event)
@@ -198,6 +204,37 @@ def get_history(event):
         offset = int(query_params.get('offset', 0))
         
         result = UserService.get_history(user_id, limit, offset)
+        return success_response(result)
+    except ValueError as e:
+        return error_response(str(e), str(e), 400)
+    except Exception as e:
+        return internal_error_response()
+
+
+def get_checked_in_spots(event):
+    try:
+        user_id = event['path'].split('/')[2]
+        validate_user_id(user_id)
+
+        result = CheckInService.get_checked_in_spots(user_id)
+        return success_response(result)
+    except ValueError as e:
+        return error_response(str(e), str(e), 400)
+    except Exception as e:
+        return internal_error_response()
+
+
+def get_spot_status(event):
+    try:
+        # /users/{user_id}/spots/{spot_id}/status
+        path_parts = event['path'].split('/')
+        if len(path_parts) != 6:
+            return error_response('NOT_FOUND', 'Not found', 404)
+        user_id = path_parts[2]
+        spot_id = path_parts[4]
+        validate_user_id(user_id)
+
+        result = CheckInService.get_spot_status(user_id, spot_id)
         return success_response(result)
     except ValueError as e:
         return error_response(str(e), str(e), 400)

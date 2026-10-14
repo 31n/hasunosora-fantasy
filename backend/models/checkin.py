@@ -167,3 +167,46 @@ class CheckIn:
         )
 
         return len(response.get('Items', [])) > 0
+
+    @staticmethod
+    def get_latest_checked_in_at(user_id: str, spot_id: str) -> Optional[str]:
+        """このスポットへの最後のチェックイン日時（なければ None）"""
+        table = get_table(config.CHECKINS_TABLE)
+
+        # ソートキーは "spot_id#日時" なので、スポットで絞って降順の先頭が最新
+        response = table.query(
+            KeyConditionExpression='user_id = :uid AND begins_with(spot_id_timestamp, :prefix)',
+            ExpressionAttributeValues={
+                ':uid': user_id,
+                ':prefix': f"{spot_id}#"
+            },
+            ProjectionExpression='checked_in_at',
+            ScanIndexForward=False,
+            Limit=1
+        )
+
+        items = response.get('Items', [])
+        return items[0]['checked_in_at'] if items else None
+
+    @staticmethod
+    def get_latest_checked_in_at_by_spot(user_id: str) -> Dict[str, str]:
+        """チェックインしたことのあるスポットごとの、最後のチェックイン日時"""
+        table = get_table(config.CHECKINS_TABLE)
+
+        query = {
+            'KeyConditionExpression': 'user_id = :uid',
+            'ExpressionAttributeValues': {':uid': user_id},
+            'ProjectionExpression': 'spot_id, checked_in_at',
+        }
+        latest: Dict[str, str] = {}
+        # 件数が多いと 1 回の query で取り切れないので、続きがある限り読む
+        while True:
+            response = table.query(**query)
+            for item in response.get('Items', []):
+                spot_id = item['spot_id']
+                if spot_id not in latest or item['checked_in_at'] > latest[spot_id]:
+                    latest[spot_id] = item['checked_in_at']
+            last_key = response.get('LastEvaluatedKey')
+            if not last_key:
+                return latest
+            query['ExclusiveStartKey'] = last_key

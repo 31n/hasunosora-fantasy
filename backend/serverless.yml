@@ -108,6 +108,22 @@ functions:
               - Content-Type
               - Authorization
             allowCredentials: false
+      - http:
+          path: /users/{user_id}/checked-in-spots
+          method: get
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+            allowCredentials: false
+      - http:
+          path: /users/{user_id}/spots/{spot_id}/status
+          method: get
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+            allowCredentials: false
       
       # マスタ関連
       - http:
