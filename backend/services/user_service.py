@@ -39,14 +39,11 @@ class UserService:
     
     @staticmethod
     def set_nickname(user_id: str, nickname: str) -> Dict:
-        """ニックネームを設定"""
+        """ニックネームを設定（設定済みでも変更できる）"""
         user = User.get(user_id)
 
         if not user:
             raise ValueError('USER_NOT_FOUND')
-
-        if user.nickname:
-            raise ValueError('NICKNAME_ALREADY_SET')
 
         # ニックネームのバリデーション
         if not nickname or not isinstance(nickname, str):
