@@ -1,18 +1,12 @@
 from models.user import User
 from models.spot import Spot
-from models.checkin import CheckIn
+from models.checkin import CheckIn, _parse_utc
 from utils.distance import is_within_range
 from config import config
 from datetime import datetime, timedelta, timezone
 from typing import Dict
 
 JST = timezone(timedelta(hours=9))
-
-
-def _parse_utc(value: str) -> datetime:
-    """保存されている日時文字列を UTC の datetime にする（タイムゾーンなしは UTC とみなす）"""
-    dt = datetime.fromisoformat(value.replace('Z', '+00:00'))
-    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
 
 class CheckInService:
     @staticmethod

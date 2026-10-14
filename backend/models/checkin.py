@@ -4,6 +4,13 @@ from decimal import Decimal
 from utils.dynamodb import get_table
 from config import config
 
+
+def _parse_utc(value: str) -> datetime:
+    """保存されている日時文字列を UTC の datetime にする（タイムゾーンなしは UTC とみなす）"""
+    dt = datetime.fromisoformat(value.replace('Z', '+00:00'))
+    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+
+
 class CheckIn:
     def __init__(self, user_id: str, spot_id: str, 
                  checked_in_at: Optional[str] = None,
@@ -35,22 +42,35 @@ class CheckIn:
         table.put_item(Item=self.to_dict())
     
     @staticmethod
-    def get_user_history(user_id: str, limit: int = 50, offset: int = 0) -> List[Dict]:
-        """ユーザーのチェックイン履歴を取得"""
+    def get_all_user_checkins(user_id: str) -> List[Dict]:
+        """ユーザーの全チェックインを、新しい順で返す
+
+        ソートキーは "spot_id#日時" なので、query の並びはスポット ID 順になる。
+        日時の順にするには全件を読んでから並べ直す必要がある
+        """
         table = get_table(config.CHECKINS_TABLE)
-        
-        response = table.query(
-            KeyConditionExpression='user_id = :uid',
-            ExpressionAttributeValues={':uid': user_id},
-            ScanIndexForward=False,  # 降順（新しい順）
-            Limit=limit + offset
-        )
-        
-        items = response.get('Items', [])
-        # オフセット処理
-        items = items[offset:offset + limit]
-        
+
+        query = {
+            'KeyConditionExpression': 'user_id = :uid',
+            'ExpressionAttributeValues': {':uid': user_id},
+        }
+        items: List[Dict] = []
+        # 件数が多いと 1 回の query で取り切れないので、続きがある限り読む
+        while True:
+            response = table.query(**query)
+            items.extend(response.get('Items', []))
+            last_key = response.get('LastEvaluatedKey')
+            if not last_key:
+                break
+            query['ExclusiveStartKey'] = last_key
+
+        items.sort(key=lambda item: _parse_utc(item['checked_in_at']), reverse=True)
         return items
+
+    @staticmethod
+    def get_user_history(user_id: str, limit: int = 50, offset: int = 0) -> List[Dict]:
+        """ユーザーのチェックイン履歴を、新しい順に limit 件取得"""
+        return CheckIn.get_all_user_checkins(user_id)[offset:offset + limit]
     
     @staticmethod
     def has_visited(user_id: str, spot_id: str) -> bool:

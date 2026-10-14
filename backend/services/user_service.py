@@ -89,8 +89,8 @@ class UserService:
         if not user:
             raise ValueError('USER_NOT_FOUND')
         
-        # 全チェックイン履歴を取得（統計計算用）
-        all_checkins = CheckIn.get_user_history(user_id, limit=1000, offset=0)
+        # 全チェックイン履歴を新しい順に取得（統計計算と、指定範囲の切り出しに使う）
+        all_checkins = CheckIn.get_all_user_checkins(user_id)
         
         # 統計情報を計算
         unique_spots = set()
@@ -103,7 +103,7 @@ class UserService:
                 total_correct += 1
         
         # 指定範囲のチェックイン履歴を取得
-        checkins_raw = CheckIn.get_user_history(user_id, limit, offset)
+        checkins_raw = all_checkins[offset:offset + limit]
         
         # スポット情報を付加
         checkins = []
