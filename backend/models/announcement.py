@@ -1,8 +1,10 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, List
 from utils.dynamodb import get_table
 from config import config
 import uuid
+
+JST = timezone(timedelta(hours=9))
 
 
 class Announcement:
@@ -64,8 +66,12 @@ class Announcement:
 
     @staticmethod
     def get_active() -> List['Announcement']:
-        """現在公開中（is_active=True かつ start_date <= today <= end_date）のみ返す"""
-        today = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+        """現在公開中（is_active=True かつ start_date <= 今日 <= end_date）のみ返す
+
+        開始日・終了日は管理画面で日本時間の日付として入力するので、今日も日本時間で求める
+        （UTC だと 0〜9 時に前日扱いになり、終了日の翌朝まで表示が残っていた）
+        """
+        today = datetime.now(JST).strftime('%Y-%m-%d')
         all_items = Announcement.get_all()
         return [
             a for a in all_items
