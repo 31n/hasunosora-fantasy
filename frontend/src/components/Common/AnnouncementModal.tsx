@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { Announcement } from '../../types';
+import { LEVEL_STYLES, levelOf } from '../../utils/announcement';
 
 interface Props {
   announcements: Announcement[];
@@ -13,6 +14,7 @@ export default function AnnouncementModal({ announcements, onClose }: Props) {
 
   const current = announcements[index];
   const total = announcements.length;
+  const level = LEVEL_STYLES[levelOf(current)];
 
   return (
     <div
@@ -71,7 +73,19 @@ export default function AnnouncementModal({ announcements, onClose }: Props) {
         {/* 区切り線 */}
         <hr style={{ border: 'none', borderTop: '1px solid #f3f4f6', marginBottom: '16px' }} />
 
-        {/* タイトル */}
+        {/* レベルとタイトル */}
+        <span style={{
+          display: 'inline-block',
+          padding: '2px 10px',
+          borderRadius: '12px',
+          fontSize: '12px',
+          fontWeight: '700',
+          backgroundColor: level.background,
+          color: level.color,
+          marginBottom: '8px',
+        }}>
+          {level.label}
+        </span>
         <h3 style={{ margin: '0 0 10px', fontSize: '17px', fontWeight: '700', color: '#1f2937' }}>
           {current.title}
         </h3>

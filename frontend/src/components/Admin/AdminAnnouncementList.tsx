@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { adminAnnouncementApi } from '../../services/api';
 import { storage } from '../../services/storage';
 import type { Announcement } from '../../types';
+import { jstToday } from '../../utils/date';
+import { LEVEL_STYLES, levelOf } from '../../utils/announcement';
 
 export default function AdminAnnouncementList() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
@@ -42,7 +44,7 @@ export default function AdminAnnouncementList() {
     }
   };
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = jstToday();
 
   const getStatus = (a: Announcement) => {
     if (!a.is_active) return { label: '無効', color: '#9ca3af' };
@@ -128,6 +130,19 @@ export default function AdminAnnouncementList() {
                         }}
                       >
                         {status.label}
+                      </span>
+                      <span
+                        style={{
+                          display: 'inline-block',
+                          padding: '2px 8px',
+                          borderRadius: '12px',
+                          fontSize: '11px',
+                          fontWeight: '600',
+                          backgroundColor: LEVEL_STYLES[levelOf(a)].background,
+                          color: LEVEL_STYLES[levelOf(a)].color,
+                        }}
+                      >
+                        {LEVEL_STYLES[levelOf(a)].label}
                       </span>
                       <span style={{ fontWeight: '700', fontSize: '16px' }}>{a.title}</span>
                     </div>

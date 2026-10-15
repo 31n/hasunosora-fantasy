@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { adminAnnouncementApi } from '../../services/api';
 import { storage } from '../../services/storage';
+import { jstToday } from '../../utils/date';
+import { ANNOUNCEMENT_LEVELS, LEVEL_STYLES } from '../../utils/announcement';
+import type { AnnouncementLevel } from '../../types';
 
 export default function AdminAnnouncementForm() {
   const navigate = useNavigate();
@@ -11,13 +14,14 @@ export default function AdminAnnouncementForm() {
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = jstToday();
   const [formData, setFormData] = useState({
     title: '',
     body: '',
     start_date: today,
     end_date: today,
     is_active: true,
+    level: 'info' as AnnouncementLevel,
   });
 
   useEffect(() => {
@@ -46,6 +50,7 @@ export default function AdminAnnouncementForm() {
         start_date: item.start_date,
         end_date: item.end_date,
         is_active: item.is_active,
+        level: item.level ?? 'info',
       });
     } catch (error) {
       console.error('お知らせ取得エラー:', error);
@@ -165,7 +170,25 @@ export default function AdminAnnouncementForm() {
           </p>
         </div>
 
-        {/* 公開期間 */}
+        {/* レベル */}
+        <div>
+          <label style={labelStyle}>レベル</label>
+          <select
+            value={formData.level}
+            onChange={e => handleChange('level', e.target.value)}
+            style={inputStyle}
+          >
+            {ANNOUNCEMENT_LEVELS.map(level => (
+              <option key={level} value={level}>{LEVEL_STYLES[level].label}</option>
+            ))}
+          </select>
+          <p style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>
+            お知らせ：一度見たら次からは自動で表示しない ／ 重要：起動のたびに表示 ／
+            緊急：起動のたびに表示し、地図画面の上部にも出す
+          </p>
+        </div>
+
+        {/* 公開期間（日本時間の日付。終了日はその日いっぱいまで表示） */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
           <div>
             <label style={labelStyle}>

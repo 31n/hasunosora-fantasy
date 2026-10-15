@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { storage } from '../../services/storage';
 import { userApi } from '../../services/api';
-import type { User, CheckInHistory, Spot, Area, QuizType } from '../../types';
+import type { User, CheckInHistory, Spot, Area, QuizType, Announcement } from '../../types';
 
 interface MyPageProps {
   user: User;
@@ -10,6 +10,8 @@ interface MyPageProps {
   spots: Spot[];
   areas: Area[];
   quizTypes: QuizType[];
+  announcements: Announcement[];
+  onShowAnnouncements: (announcements: Announcement[]) => void;
 }
 
 // JST日付文字列（YYYY-MM-DD）を返す純粋関数
@@ -50,7 +52,7 @@ const formatLegendDate = (dateStr: string): string => {
   return `${m}/${d}(${dow})`;
 };
 
-export default function MyPage({ user, setUser, spots, areas, quizTypes }: MyPageProps) {
+export default function MyPage({ user, setUser, spots, areas, quizTypes, announcements, onShowAnnouncements }: MyPageProps) {
   const [nickname, setNickname] = useState('');
   const [isEditingNickname, setIsEditingNickname] = useState(false);
   const [history, setHistory] = useState<CheckInHistory[]>([]);
@@ -827,6 +829,26 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes }: MyPag
             )}
           </div>
         </div>
+
+        {/* お知らせ（公開中のものをすべて見直せる） */}
+        <button
+          onClick={() => onShowAnnouncements(announcements)}
+          disabled={announcements.length === 0}
+          style={{
+            width: '100%',
+            padding: '14px',
+            backgroundColor: 'white',
+            color: announcements.length === 0 ? '#9ca3af' : '#3b82f6',
+            border: '2px solid #e5e7eb',
+            borderRadius: '8px',
+            fontSize: '16px',
+            fontWeight: 'bold',
+            cursor: announcements.length === 0 ? 'not-allowed' : 'pointer',
+            marginTop: '16px'
+          }}
+        >
+          📢 お知らせを見る{announcements.length > 0 && `（${announcements.length} 件）`}
+        </button>
 
         {/* ログアウトボタン */}
         <button

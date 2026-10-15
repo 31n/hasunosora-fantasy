@@ -1,4 +1,11 @@
 /**
+ * 日本時間の今日の日付（YYYY-MM-DD）。端末のタイムゾーンや UTC に左右されない
+ */
+export function jstToday(): string {
+  return new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+/**
  * ISO8601形式の日時文字列を日本語フォーマットに変換
  */
 export function formatDate(dateString: string): string {

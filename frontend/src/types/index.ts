@@ -189,10 +189,13 @@ export interface UnlockGenreResponse {
 }
 
 // announcement.ts
+export type AnnouncementLevel = 'info' | 'important' | 'urgent';
+
 export interface Announcement {
   announcement_id: string;
   title: string;
   body: string;
+  level?: AnnouncementLevel; // 未設定は info
   start_date: string; // 'YYYY-MM-DD'
   end_date: string;   // 'YYYY-MM-DD'
   is_active: boolean;

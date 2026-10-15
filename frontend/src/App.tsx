@@ -25,6 +25,7 @@ import Header from './components/Common/Header';
 import Loading from './components/Common/Loading';
 import HowToPage from './components/Common/HowToPage';
 import AnnouncementModal from './components/Common/AnnouncementModal';
+import { announcementsToPopup, markAnnouncementsRead, levelOf, LEVEL_STYLES } from './utils/announcement';
 
 import type { User, Spot, Area, QuizType, Announcement } from './types';
 
@@ -35,8 +36,9 @@ function App() {
   const [quizTypes, setQuizTypes] = useState<QuizType[]>([]);
   const [loading, setLoading] = useState(true);
   const [reloading, setReloading] = useState(false);
+  // 公開中のお知らせ（レベルの高い順）と、モーダルで表示中のお知らせ
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
+  const [modalAnnouncements, setModalAnnouncements] = useState<Announcement[]>([]);
 
   useEffect(() => {
     initializeApp();
@@ -59,10 +61,8 @@ function App() {
       // お知らせを取得
       try {
         const announcementData = await announcementApi.getActive();
-        if (announcementData.announcements.length > 0) {
-          setAnnouncements(announcementData.announcements);
-          setShowAnnouncementModal(true);
-        }
+        setAnnouncements(announcementData.announcements);
+        setModalAnnouncements(announcementsToPopup(announcementData.announcements));
       } catch (e) {
         // お知らせ取得失敗はサイレントに無視
       }
@@ -166,11 +166,16 @@ function App() {
         handleLogin={handleLogin}
         handleLogout={handleLogout}
         handleReload={handleReload}
+        announcements={announcements}
+        onShowAnnouncements={setModalAnnouncements}
       />
-      {showAnnouncementModal && announcements.length > 0 && (
+      {modalAnnouncements.length > 0 && (
         <AnnouncementModal
-          announcements={announcements}
-          onClose={() => setShowAnnouncementModal(false)}
+          announcements={modalAnnouncements}
+          onClose={() => {
+            markAnnouncementsRead(modalAnnouncements, announcements);
+            setModalAnnouncements([]);
+          }}
         />
       )}
     </BrowserRouter>
@@ -187,7 +192,9 @@ function AppContent({
   reloading,
   handleLogin,
   handleLogout,
-  handleReload
+  handleReload,
+  announcements,
+  onShowAnnouncements
 }: {
   user: User | null;
   setUser: (user: User) => void;
@@ -199,9 +206,12 @@ function AppContent({
   handleLogin: (userData: User) => void;
   handleLogout: () => void;
   handleReload: () => void;
+  announcements: Announcement[];
+  onShowAnnouncements: (announcements: Announcement[]) => void;
 }) {
   const location = useLocation();
   const isMapPage = location.pathname === '/';
+  const urgentAnnouncements = announcements.filter(a => levelOf(a) === 'urgent');
 
   return (
     <div className={`app ${isMapPage ? 'map-page' : ''}`}>
@@ -259,7 +269,37 @@ function AppContent({
               {reloading ? '更新中...' : '再読み込み'}
             </button>
           )}
-          
+
+          {/* 緊急のお知らせは、地図画面の上部に帯でも出す */}
+          {user && isMapPage && urgentAnnouncements.length > 0 && (
+            <button
+              onClick={() => onShowAnnouncements(urgentAnnouncements)}
+              style={{
+                position: 'absolute',
+                top: '12px',
+                left: '56px',
+                right: '56px',
+                zIndex: 1000,
+                padding: '10px 14px',
+                backgroundColor: LEVEL_STYLES.urgent.color,
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: '14px',
+                fontWeight: 'bold',
+                textAlign: 'left',
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              ⚠️ {urgentAnnouncements[0].title}
+              {urgentAnnouncements.length > 1 && ` ほか ${urgentAnnouncements.length - 1} 件`}
+            </button>
+          )}
+
           <Routes>
           {/* ユーザー未ログイン時 */}
           {!user ? (
@@ -274,7 +314,7 @@ function AppContent({
               <Route path="/" element={<MapView user={user} spots={spots} areas={areas} quizTypes={quizTypes} />} />
               <Route path="/spots" element={<SpotList spots={spots} user={user} areas={areas} quizTypes={quizTypes} />} />
               <Route path="/spots/:spotId" element={<SpotDetail user={user} quizTypes={quizTypes} areas={areas} />} />
-              <Route path="/mypage" element={<MyPage user={user} setUser={setUser} spots={spots} areas={areas} quizTypes={quizTypes} />} />
+              <Route path="/mypage" element={<MyPage user={user} setUser={setUser} spots={spots} areas={areas} quizTypes={quizTypes} announcements={announcements} onShowAnnouncements={onShowAnnouncements} />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </>
           )}
