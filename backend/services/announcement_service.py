@@ -1,4 +1,4 @@
-from models.announcement import Announcement
+from models.announcement import Announcement, LEVELS, DEFAULT_LEVEL
 from typing import Dict, List
 
 
@@ -33,6 +33,9 @@ class AnnouncementService:
             raise ValueError('END_DATE_REQUIRED')
         if start_date > end_date:
             raise ValueError('START_DATE_MUST_BE_BEFORE_END_DATE')
+        level = data.get('level', DEFAULT_LEVEL)
+        if level not in LEVELS:
+            raise ValueError('INVALID_LEVEL')
 
         announcement = Announcement(
             title=title,
@@ -40,6 +43,7 @@ class AnnouncementService:
             start_date=start_date,
             end_date=end_date,
             is_active=data.get('is_active', True),
+            level=level,
         )
         announcement.save()
         return announcement.to_dict()
@@ -61,6 +65,10 @@ class AnnouncementService:
             announcement.end_date = data['end_date']
         if 'is_active' in data:
             announcement.is_active = bool(data['is_active'])
+        if 'level' in data:
+            if data['level'] not in LEVELS:
+                raise ValueError('INVALID_LEVEL')
+            announcement.level = data['level']
 
         start = data.get('start_date', announcement.start_date)
         end = data.get('end_date', announcement.end_date)
