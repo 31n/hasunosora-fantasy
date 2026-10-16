@@ -79,6 +79,7 @@ class CheckInService:
     def get_spot_status(user_id: str, spot_id: str) -> Dict:
         """スポットを開いたときに必要な、チェックインとクイズの状態をまとめて返す"""
         from models.cooldown import QuizCooldown
+        from services.quiz_service import QuizService
 
         now = datetime.now(timezone.utc)
         last_checked_in_at = CheckIn.get_latest_checked_in_at(user_id, spot_id)
@@ -92,7 +93,7 @@ class CheckInService:
                 checkin_cooldown_until = until.isoformat()
             checked_in_today = last.astimezone(JST).date() == now.astimezone(JST).date()
 
-        quiz_on_cooldown, quiz_cooldown_until = QuizCooldown.is_on_cooldown(user_id, spot_id)
+        quiz_cooldown = QuizCooldown.get_active(user_id, spot_id)
 
         return {
             'spot_id': spot_id,
@@ -100,8 +101,11 @@ class CheckInService:
             # この時刻まではチェックインできない（クールタイム中でなければ None）
             'checkin_cooldown_until': checkin_cooldown_until,
             'checked_in_today': checked_in_today,
-            'quiz_on_cooldown': quiz_on_cooldown,
-            'quiz_cooldown_until': quiz_cooldown_until,
+            'quiz_on_cooldown': quiz_cooldown is not None,
+            'quiz_cooldown_until': quiz_cooldown.cooldown_until if quiz_cooldown else None,
+            # 今日回答したクイズ（正解付き）。回答済みでなければ None
+            'answered_quiz': QuizService.get_answered_quiz(user_id, spot_id, quiz_cooldown)
+                             if quiz_cooldown else None,
         }
 
     @staticmethod

@@ -46,7 +46,7 @@ export interface QuizWithType {
   question: string;
   question_image?: string | null; // 問題画像URL（任意）
   choices: string[];
-  correct_answer: number;
+  correct_answer?: number; // 公開マスタには含まれない（管理画面と、回答した本人への応答にだけある）
   score: number;
 }
 
@@ -128,6 +128,7 @@ export interface CheckInResponse {
     question_image?: string | null;
     choices: string[];
     score: number;
+    correct_answer?: number; // 閲覧専用で開くとき（回答済みのクイズ）だけ
   };
   message?: string;
 }
@@ -147,6 +148,7 @@ export interface QuizChallengeResponse {
 
 export interface QuizAnswerResponse {
   correct: boolean;
+  correct_answer?: number;
   score_earned: number;
   total_score: number;
   cooldown_until?: string;
@@ -157,6 +159,7 @@ export interface CooldownResponse {
   on_cooldown: boolean;
   cooldown_until?: string;
   remaining_seconds?: number;
+  answered_quiz?: QuizWithType | null; // 今日回答したクイズ（正解付き）
 }
 
 export interface MasterVersionResponse {

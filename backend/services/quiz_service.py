@@ -3,7 +3,7 @@ import math
 from models.user import User
 from models.spot import Spot
 from models.checkin import CheckIn
-from models.cooldown import QuizCooldown
+from models.cooldown import QuizCooldown, UNKNOWN_QUIZ_TYPE
 from models.quiz_type import QuizType
 from utils.distance import is_within_range
 from config import config
@@ -72,11 +72,13 @@ class QuizService:
             )
             checkin.save()
 
-            cooldown = QuizCooldown(user_id=user_id, spot_id=spot_id)
+            cooldown = QuizCooldown(user_id=user_id, spot_id=spot_id,
+                                    quiz_type_id=quiz.get('quiz_type_id'))
             cooldown.save()
 
             return {
                 'correct': True,
+                'correct_answer': correct_answer,
                 'score_earned': score,
                 'total_score': user.total_score,
                 'cooldown_until': cooldown.cooldown_until,
@@ -96,11 +98,13 @@ class QuizService:
             )
             checkin.save()
 
-            cooldown = QuizCooldown(user_id=user_id, spot_id=spot_id)
+            cooldown = QuizCooldown(user_id=user_id, spot_id=spot_id,
+                                    quiz_type_id=quiz.get('quiz_type_id'))
             cooldown.save()
 
             return {
                 'correct': False,
+                'correct_answer': correct_answer,
                 'score_earned': incorrect_score,
                 'total_score': user.total_score,
                 'cooldown_until': cooldown.cooldown_until,
@@ -173,19 +177,44 @@ class QuizService:
         }
 
     @staticmethod
+    def get_answered_quiz(user_id: str, spot_id: str,
+                          cooldown: QuizCooldown) -> Optional[Dict]:
+        """
+        当日回答したクイズを正解付きで返す（閲覧専用で見返すため）。
+        正解は公開のマスタデータには含めず、回答した本人にだけ返す。
+        """
+        spot = Spot.get(spot_id)
+        if not spot or not spot.quizzes:
+            return None
+
+        quiz = None
+        if cooldown.quiz_type_id is not UNKNOWN_QUIZ_TYPE:
+            quiz = next((q for q in spot.quizzes
+                         if q.get('quiz_type_id') == cooldown.quiz_type_id), None)
+        if quiz is None:
+            # タイプの記録がない（古い回答済み情報）ときは、挑戦時と同じ選び方をする
+            user = User.get(user_id)
+            if not user:
+                return None
+            allowed_ids = QuizService._get_allowed_quiz_type_ids(user.selected_quiz_type)
+            quiz = spot.get_quiz_for_type(user.selected_quiz_type, allowed_quiz_type_ids=allowed_ids)
+        return dict(quiz) if quiz else None
+
+    @staticmethod
     def check_cooldown(user_id: str, spot_id: str) -> Dict:
         """クイズ回答済み状態を確認"""
-        on_cooldown, cooldown_until = QuizCooldown.is_on_cooldown(user_id, spot_id)
+        cooldown = QuizCooldown.get_active(user_id, spot_id)
 
-        if on_cooldown:
-            cooldown_dt = datetime.fromisoformat(cooldown_until.replace('Z', '+00:00'))
+        if cooldown:
+            cooldown_dt = datetime.fromisoformat(cooldown.cooldown_until.replace('Z', '+00:00'))
             now = datetime.now(timezone.utc)
             remaining_seconds = int((cooldown_dt - now).total_seconds())
 
             return {
                 'on_cooldown': True,
-                'cooldown_until': cooldown_until,
-                'remaining_seconds': max(0, remaining_seconds)
+                'cooldown_until': cooldown.cooldown_until,
+                'remaining_seconds': max(0, remaining_seconds),
+                'answered_quiz': QuizService.get_answered_quiz(user_id, spot_id, cooldown)
             }
         else:
             return {

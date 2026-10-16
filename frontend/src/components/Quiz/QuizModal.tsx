@@ -20,15 +20,15 @@ export default function QuizModal({ user, spot, quizData, onClose, readOnly = fa
     correct: boolean;
     message: string;
     score_earned: number;
+    correct_answer?: number;
   } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [showCorrectAnswer, setShowCorrectAnswer] = useState(false);
 
+  // 正解は公開マスタに含まれないので、回答の結果か、回答済みのクイズ（閲覧専用）から取る
   const correctAnswerIndex =
-    (quizData.quiz as any)?.correct_answer ??
-    spot.quizzes?.find(q => q.quiz_type_id === (quizTypeId ?? null))?.correct_answer ??
-    spot.quizzes?.find(q => q.quiz_type_id === null)?.correct_answer ??
-    spot.quizzes?.[0]?.correct_answer ??
+    result?.correct_answer ??
+    quizData.quiz?.correct_answer ??
     null;
   const correctAnswerText =
     correctAnswerIndex !== null && quizData.quiz?.choices
@@ -55,6 +55,7 @@ export default function QuizModal({ user, spot, quizData, onClose, readOnly = fa
         correct: response.correct,
         message: response.message,
         score_earned: response.score_earned,
+        correct_answer: response.correct_answer,
       });
     } catch (error: any) {
       if (error.message.includes('QUIZ_NOT_AVAILABLE')) {

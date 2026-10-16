@@ -187,29 +187,42 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
     }
   };
 
+  // 今日回答したクイズを閲覧専用で開く。正解は公開マスタにないので、回答済みの状態 API から取る
+  const openReadOnlyQuiz = async (spot: Spot): Promise<boolean> => {
+    let quiz = getQuizForUser(spot, user, quizTypes);
+    try {
+      const cooldownData = await checkinApi.checkCooldown(user.user_id, spot.spot_id);
+      quiz = cooldownData.answered_quiz ?? quiz;
+    } catch (error) {
+      console.error('回答済みクイズの取得エラー:', error);
+    }
+    if (!quiz) return false;
+    setQuizData({
+      score_earned: 0,
+      total_score: user.total_score,
+      already_scored_today: true,
+      quiz_available: true,
+      quiz_type_id: quiz.quiz_type_id,
+      quiz: {
+        question: quiz.question,
+        question_image: quiz.question_image,
+        choices: quiz.choices,
+        score: quiz.score,
+        correct_answer: quiz.correct_answer,
+      },
+    });
+    setQuizReadOnly(true);
+    setShowQuiz(true);
+    return true;
+  };
+
   // クイズ挑戦処理を分離
   const handleQuizChallenge = async () => {
     if (!selectedSpot) return;
 
-    // クールタイム中の場合、APIを呼ばずに閲覧専用でクイズを表示
+    // 回答済みの場合、挑戦の API を呼ばずに閲覧専用でクイズを表示
     if (isQuizOnCooldown) {
-      const quiz = getQuizForUser(selectedSpot, user, quizTypes);
-      if (quiz) {
-        setQuizData({
-          score_earned: 0,
-          total_score: user.total_score,
-          already_scored_today: true,
-          quiz_available: true,
-          quiz: {
-            question: quiz.question,
-            choices: quiz.choices,
-            score: quiz.score,
-            correct_answer: quiz.correct_answer,
-          } as any,
-        });
-        setQuizReadOnly(true);
-        setShowQuiz(true);
-      }
+      await openReadOnlyQuiz(selectedSpot);
       return;
     }
 
@@ -244,24 +257,8 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
       } else if (error.message.includes('QUIZ_NOT_AVAILABLE')) {
         alert('このスポットにはクイズが登録されていません。');
       } else if (error.message.includes('QUIZ_ALREADY_ANSWERED_TODAY')) {
-        // 選択中スポットのクイズデータを閲覧専用で表示
-        const quiz = getQuizForUser(selectedSpot, user, quizTypes);
-        if (quiz) {
-          setQuizData({
-            score_earned: 0,
-            total_score: user.total_score,
-            already_scored_today: true,
-            quiz_available: true,
-            quiz: {
-              question: quiz.question,
-              choices: quiz.choices,
-              score: quiz.score,
-              correct_answer: quiz.correct_answer,
-            } as any,
-          });
-          setQuizReadOnly(true);
-          setShowQuiz(true);
-        } else {
+        // 今日回答したクイズを閲覧専用で表示
+        if (!(await openReadOnlyQuiz(selectedSpot))) {
           alert('本日はすでにクイズに回答済みです。明日また挑戦できます。');
         }
       } else {

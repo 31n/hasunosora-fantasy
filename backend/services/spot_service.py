@@ -3,6 +3,22 @@ from models.area import Area
 from models.quiz_type import QuizType
 from typing import Dict, List
 
+
+def _public_spot(spot: Dict) -> Dict:
+    """公開用：クイズの正解を外す（正解は回答した本人にだけ返す）"""
+    spot['quizzes'] = [
+        {k: v for k, v in q.items() if k != 'correct_answer'}
+        for q in spot.get('quizzes') or []
+    ]
+    return spot
+
+
+def _public_area(area: Dict) -> Dict:
+    """公開用：限定エリアのアクセスコードを外す"""
+    area.pop('access_code', None)
+    return area
+
+
 class SpotService:
     @staticmethod
     def get_master_version() -> Dict:
@@ -26,11 +42,11 @@ class SpotService:
 
         # 全エリアを取得（アクティブのみ）
         areas = Area.get_all(include_inactive=False)
-        areas_data = [area.to_dict(for_dynamodb=False) for area in areas]
+        areas_data = [_public_area(area.to_dict(for_dynamodb=False)) for area in areas]
 
         # 全スポットを取得（API用に変換）
         spots = Spot.get_all()
-        spots_data = [spot.to_dict(for_dynamodb=False) for spot in spots]
+        spots_data = [_public_spot(spot.to_dict(for_dynamodb=False)) for spot in spots]
 
         # 全クイズタイプを取得（アクティブのみ）
         quiz_types = QuizType.get_all(include_inactive=False)
@@ -61,4 +77,4 @@ class SpotService:
         if not spot:
             raise ValueError('SPOT_NOT_FOUND')
         
-        return spot.to_dict()
+        return _public_spot(spot.to_dict())

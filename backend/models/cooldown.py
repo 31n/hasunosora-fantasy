@@ -1,5 +1,8 @@
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict
+
+# quiz_type_id が記録されていない（この項目を足す前の）回答済み情報を表す
+UNKNOWN_QUIZ_TYPE = object()
 from utils.dynamodb import get_table
 from config import config
 
@@ -17,9 +20,12 @@ def _next_midnight_jst_as_utc() -> datetime:
 class QuizCooldown:
     def __init__(self, user_id: str, spot_id: str,
                  answered_at: Optional[str] = None,
-                 cooldown_until: Optional[str] = None):
+                 cooldown_until: Optional[str] = None,
+                 quiz_type_id=UNKNOWN_QUIZ_TYPE):
         self.user_id = user_id
         self.spot_id = spot_id
+        # 回答したクイズのタイプ（None = デフォルトのクイズ）
+        self.quiz_type_id = quiz_type_id
         self.answered_at = answered_at or datetime.now(timezone.utc).isoformat()
 
         if cooldown_until:
@@ -34,7 +40,7 @@ class QuizCooldown:
         cooldown_dt = datetime.fromisoformat(self.cooldown_until.replace('Z', '+00:00'))
         ttl = int(cooldown_dt.timestamp())
         
-        return {
+        item = {
             'user_spot_id': f"{self.user_id}#{self.spot_id}",
             'user_id': self.user_id,
             'spot_id': self.spot_id,
@@ -42,6 +48,9 @@ class QuizCooldown:
             'cooldown_until': self.cooldown_until,
             'ttl': ttl
         }
+        if self.quiz_type_id is not UNKNOWN_QUIZ_TYPE:
+            item['quiz_type_id'] = self.quiz_type_id
+        return item
     
     def save(self):
         """DynamoDBに保存"""
@@ -64,9 +73,21 @@ class QuizCooldown:
             user_id=item['user_id'],
             spot_id=item['spot_id'],
             answered_at=item.get('answered_at'),
-            cooldown_until=item['cooldown_until']
+            cooldown_until=item['cooldown_until'],
+            quiz_type_id=item['quiz_type_id'] if 'quiz_type_id' in item else UNKNOWN_QUIZ_TYPE
         )
     
+    def is_active(self) -> bool:
+        """当日（JST）の回答済み期間中か"""
+        cooldown_until = datetime.fromisoformat(self.cooldown_until.replace('Z', '+00:00'))
+        return datetime.now(timezone.utc) < cooldown_until
+
+    @staticmethod
+    def get_active(user_id: str, spot_id: str) -> Optional['QuizCooldown']:
+        """当日（JST）回答済みなら、その回答済み情報を返す"""
+        cooldown = QuizCooldown.get(user_id, spot_id)
+        return cooldown if cooldown and cooldown.is_active() else None
+
     @staticmethod
     def is_on_cooldown(user_id: str, spot_id: str) -> tuple[bool, Optional[str]]:
         """
@@ -75,21 +96,10 @@ class QuizCooldown:
         Returns:
             (回答済みか, クールタイム終了時刻＝翌日JST 0時のUTC)
         """
-        cooldown = QuizCooldown.get(user_id, spot_id)
-
-        if not cooldown:
-            return False, None
-
-        # cooldown_until（翌日JST 0時のUTC）と現在時刻を比較
-        cooldown_until = datetime.fromisoformat(
-            cooldown.cooldown_until.replace('Z', '+00:00')
-        )
-        now = datetime.now(timezone.utc)
-
-        if now < cooldown_until:
+        cooldown = QuizCooldown.get_active(user_id, spot_id)
+        if cooldown:
             return True, cooldown.cooldown_until
-        else:
-            return False, None
+        return False, None
     
     @staticmethod
     def delete(user_id: str, spot_id: str):
