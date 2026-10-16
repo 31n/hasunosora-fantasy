@@ -3,14 +3,20 @@ from utils.s3 import upload_image, delete_image
 from config import config
 from typing import Dict, List
 import base64
+import hmac
 import collections
 from datetime import datetime, timezone, timedelta
 
 class AdminService:
     @staticmethod
     def authenticate(password: str) -> bool:
-        """管理者認証"""
-        return password == config.ADMIN_PASSWORD
+        """管理者認証（パスワードが未設定・既定値のままなら常に拒否する）"""
+        expected = config.ADMIN_PASSWORD or ''
+        if not expected or expected.startswith('change_me'):
+            return False
+        if not isinstance(password, str) or not password:
+            return False
+        return hmac.compare_digest(password.encode('utf-8'), expected.encode('utf-8'))
     
     @staticmethod
     def get_all_spots() -> Dict:

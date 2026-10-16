@@ -19,35 +19,21 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '22'
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Install Serverless Framework
-        run: npm install -g serverless
-
+      # Serverless Framework は backend/package-lock.json で固定したもの（v3）を使う
       - name: Install backend dependencies
         working-directory: backend
-        run: npm install
+        run: npm ci
 
       - name: Install Python dependencies
         working-directory: backend
         run: pip install -r lambda/requirements.txt
-
-      - name: Create .env file
-        working-directory: backend
-        run: |
-          cat > .env << EOF
-          DYNAMODB_TABLE_PREFIX=${{ secrets.DYNAMODB_TABLE_PREFIX }}
-          S3_BUCKET_NAME=${{ secrets.S3_BUCKET_NAME }}
-          S3_REGION=${{ secrets.AWS_REGION }}
-          QUIZ_COOLDOWN_MINUTES=${{ secrets.QUIZ_COOLDOWN_MINUTES }}
-          ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}
-          EOF
-          echo "✅ .env file created"
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -56,9 +42,13 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
+      # Serverless v3 は .env を読まないので、管理パスワードは環境変数で渡す。
+      # テーブル名・バケット名は serverless.yml の既定値のまま（変えるとリソースが作り直される）
       - name: Deploy to AWS Lambda
         working-directory: backend
-        run: serverless deploy --stage prod --verbose
+        env:
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+        run: npx serverless deploy --stage prod --verbose
 
       - name: Get deployment info
         working-directory: backend
@@ -66,7 +56,7 @@ jobs:
           echo "### 🚀 Deployment Successful!" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "#### API Information" >> $GITHUB_STEP_SUMMARY
-          serverless info --stage prod >> $GITHUB_STEP_SUMMARY
+          npx serverless info --stage prod >> $GITHUB_STEP_SUMMARY
 
       - name: Configure S3 bucket for public access
         continue-on-error: true
@@ -103,7 +93,7 @@ jobs:
         continue-on-error: true
         run: |
           echo "Testing API endpoint..."
-          API_URL=$(cd backend && serverless info --stage prod | grep "ANY" | awk '{print $3}' | sed 's/{proxy+}//' | head -1)
+          API_URL=$(cd backend && npx serverless info --stage prod | grep "ANY" | awk '{print $3}' | sed 's/{proxy+}//' | head -1)
           echo "API URL: ${API_URL}"
           echo "### 📡 API Endpoint" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
