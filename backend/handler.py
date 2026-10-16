@@ -495,11 +495,6 @@ def admin_upload_image(event):
         headers = event.get('headers', {})
         content_type_header = headers.get('content-type') or headers.get('Content-Type', '')
         
-        # デバッグログ
-        print(f"Headers: {headers}")
-        print(f"Content-Type: {content_type_header}")
-        print(f"isBase64Encoded: {event.get('isBase64Encoded')}")
-        
         if 'multipart/form-data' not in content_type_header:
             return error_response('INVALID_REQUEST', f'Invalid content type: {content_type_header}', 400)
         
@@ -512,7 +507,6 @@ def admin_upload_image(event):
         else:
             body_bytes = body.encode('utf-8')
         
-        print(f"Body length: {len(body_bytes)}")
         
         # HTTPヘッダーを構築してメッセージとしてパース
         message_bytes = f"Content-Type: {content_type_header}\r\n\r\n".encode('utf-8') + body_bytes
@@ -526,12 +520,10 @@ def admin_upload_image(event):
         for part in msg.iter_parts():
             part_count += 1
             content_disposition = part.get('Content-Disposition', '')
-            print(f"Part {part_count}: {content_disposition}")
             
             if 'name="file"' in content_disposition or "name='file'" in content_disposition:
                 file_data = part.get_payload(decode=True)
                 file_content_type = part.get_content_type() or 'image/jpeg'
-                print(f"Found file: {len(file_data) if file_data else 0} bytes, type: {file_content_type}")
                 break
         
         if not file_data:
@@ -541,7 +533,6 @@ def admin_upload_image(event):
         return success_response(result)
     
     except ValueError as e:
-        print(f"ValueError: {str(e)}")
         return error_response(str(e), str(e), 400)
     except Exception as e:
         print(f"Exception: {str(e)}")
@@ -552,14 +543,18 @@ def admin_upload_image(event):
 # 管理画面API - エリア関連
 def admin_get_areas(event):
     try:
+        check_admin_auth(event)
         result = AreaService.get_all_areas(include_inactive=True)
         return success_response(result)
+    except ValueError as e:
+        return error_response(str(e), str(e), 401)
     except Exception as e:
         return internal_error_response()
 
 
 def admin_create_area(event):
     try:
+        check_admin_auth(event)
         body = json.loads(event.get('body', '{}'))
         area_id = body.get('area_id')
         area_name = body.get('area_name')
@@ -599,6 +594,7 @@ def admin_create_area(event):
 
 def admin_update_area(event):
     try:
+        check_admin_auth(event)
         path_parts = event['path'].split('/')
         area_id = path_parts[3]
         
@@ -629,6 +625,7 @@ def admin_update_area(event):
 
 def admin_delete_area(event):
     try:
+        check_admin_auth(event)
         path_parts = event['path'].split('/')
         area_id = path_parts[3]
 
