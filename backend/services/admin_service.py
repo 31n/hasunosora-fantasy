@@ -1,5 +1,6 @@
 from models.spot import Spot
 from utils.s3 import upload_image, delete_image
+from utils.ssm import get_admin_password
 from config import config
 from typing import Dict, List
 import base64
@@ -10,8 +11,8 @@ from datetime import datetime, timezone, timedelta
 class AdminService:
     @staticmethod
     def authenticate(password: str) -> bool:
-        """管理者認証（パスワードが未設定・既定値のままなら常に拒否する）"""
-        expected = config.ADMIN_PASSWORD or ''
+        """管理者認証（パスワードを読めない・既定値のままなら常に拒否する）"""
+        expected = get_admin_password() or ''
         if not expected or expected.startswith('change_me'):
             return False
         if not isinstance(password, str) or not password:

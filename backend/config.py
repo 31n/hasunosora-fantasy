@@ -17,7 +17,8 @@ class Config:
     CORS_ORIGIN = os.getenv('CORS_ORIGIN', '*')  # 本番では https://your-domain.com を設定すること
 
     # Admin
-    ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'change_me_in_production')
+    # 管理パスワードを置いた SSM パラメータの名前（値は utils/ssm.py が実行時に読む）
+    ADMIN_PASSWORD_PARAM = os.getenv('ADMIN_PASSWORD_PARAM', '')
     
     # Tables
     @property

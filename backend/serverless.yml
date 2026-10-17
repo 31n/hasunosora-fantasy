@@ -11,8 +11,8 @@ provider:
     S3_REGION: ${env:S3_REGION, 'ap-northeast-1'}
     CHECKIN_SCORE: ${env:CHECKIN_SCORE, '10'}
     CHECKIN_COOLDOWN_MINUTES: ${env:CHECKIN_COOLDOWN_MINUTES, '5'}
-    # 既定値は持たない（未設定ならデプロイが失敗する）
-    ADMIN_PASSWORD: ${env:ADMIN_PASSWORD}
+    # 管理パスワードは SSM パラメータストア（SecureString）に置き、Lambda が実行時に読む
+    ADMIN_PASSWORD_PARAM: /hasu-fantasy/${self:provider.stage}/admin-password
   apiGateway:
     binaryMediaTypes:
       - 'multipart/form-data'
@@ -42,6 +42,12 @@ provider:
             - s3:DeleteObject
           Resource:
             - "arn:aws:s3:::${self:provider.environment.S3_BUCKET_NAME}/*"
+        # 管理パスワードの読み取りだけ（AWS 管理の鍵 aws/ssm なら KMS の権限は不要）
+        - Effect: Allow
+          Action:
+            - ssm:GetParameter
+          Resource:
+            - "arn:aws:ssm:${self:provider.region}:*:parameter${self:provider.environment.ADMIN_PASSWORD_PARAM}"
 
 package:
   patterns:
