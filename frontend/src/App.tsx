@@ -46,74 +46,97 @@ function App() {
     initializeApp();
   }, []);
 
+  // ユーザー情報が変わったら保存し、次の起動ですぐ使えるようにする
+  useEffect(() => {
+    if (user) storage.setCachedUser(user);
+  }, [user]);
+
   const initializeApp = async () => {
-    try {
-      // ユーザーIDをチェック
-      const userId = storage.getUserId();
+    const userId = storage.getUserId();
+    const cachedUser = userId ? storage.getCachedUser(userId) : null;
 
-      if (userId) {
-        // ログイン
-        const userData = await userApi.login(userId);
-        setUser(userData);
-      }
-
-      // マスタデータを取得
-      await fetchMasterData();
-
-      // お知らせを取得
-      try {
-        const announcementData = await announcementApi.getActive();
-        setAnnouncements(announcementData.announcements);
-        setModalAnnouncements(announcementsToPopup(announcementData.announcements));
-      } catch (e) {
-        // お知らせ取得失敗はサイレントに無視
-      }
-    } catch (error) {
-      console.error('Initialization error:', error);
-    } finally {
+    // 保存済みのマスタとユーザー情報があれば、通信を待たずに画面を出す
+    const hasCachedMaster = await loadCachedMasterData();
+    if (cachedUser && hasCachedMaster) {
+      setUser(cachedUser);
       setLoading(false);
+    }
+
+    // ログイン・マスタの更新確認・お知らせは裏で同時に行う
+    // （保存済みのデータがない初回などは、ここが終わるまでローディングを出す）
+    await Promise.all([
+      userId ? refreshUser(userId) : Promise.resolve(),
+      fetchMasterData(),
+      fetchAnnouncements(),
+    ]);
+    setLoading(false);
+  };
+
+  const refreshUser = async (userId: string) => {
+    try {
+      const userData = await userApi.login(userId);
+      setUser(userData);
+    } catch (error) {
+      console.error('Login error:', error);
+      // ユーザーが存在しないときだけログアウトする。通信エラーなら保存済みの情報で続ける
+      const code = error instanceof Error ? error.message : '';
+      if (code === 'USER_NOT_FOUND' || code === 'INVALID_USER_ID') {
+        storage.clearUserId();
+        setUser(null);
+      }
     }
   };
 
+  const fetchAnnouncements = async () => {
+    try {
+      const announcementData = await announcementApi.getActive();
+      setAnnouncements(announcementData.announcements);
+      setModalAnnouncements(announcementsToPopup(announcementData.announcements));
+    } catch (e) {
+      // お知らせ取得失敗はサイレントに無視
+    }
+  };
+
+  // IndexedDB に保存済みのマスタを読む。スポットかエリアがあれば true
+  const loadCachedMasterData = async (): Promise<boolean> => {
+    try {
+      const [cachedSpots, cachedAreas, cachedQuizTypes] = await Promise.all([
+        indexedDB.getAllSpots(),
+        indexedDB.getAllAreas(),
+        indexedDB.getAllQuizTypes(),
+      ]);
+      setSpots(cachedSpots);
+      setAreas(cachedAreas);
+      setQuizTypes(cachedQuizTypes);
+      return cachedSpots.length > 0 || cachedAreas.length > 0;
+    } catch (error) {
+      console.error('Failed to load cached master data:', error);
+      return false;
+    }
+  };
+
+  // サーバーのバージョンと比べ、変わっていれば取り直して IndexedDB と画面を更新する
   const fetchMasterData = async () => {
     try {
-      // ローカルバージョンを確認
       const localVersion = storage.getMasterVersion();
-
-      // サーバーから最新バージョンを取得
       const versionData = await masterApi.getVersion();
 
-      // バージョンが異なる場合、または初回起動の場合
       if (!localVersion || localVersion !== versionData.version) {
         const masterData = await masterApi.getMasterData(localVersion || undefined);
 
         if (masterData.spots.length > 0 || masterData.areas.length > 0) {
-          // IndexedDBに保存
           await indexedDB.saveSpots(masterData.spots);
           await indexedDB.saveAreas(masterData.areas);
           if (masterData.quiz_types.length > 0) {
             await indexedDB.saveQuizTypes(masterData.quiz_types);
           }
           storage.setMasterVersion(masterData.version);
+          await loadCachedMasterData();
         }
       }
-
-      // IndexedDBからデータを読み込み
-      const cachedSpots = await indexedDB.getAllSpots();
-      const cachedAreas = await indexedDB.getAllAreas();
-      const cachedQuizTypes = await indexedDB.getAllQuizTypes();
-      setSpots(cachedSpots);
-      setAreas(cachedAreas);
-      setQuizTypes(cachedQuizTypes);
     } catch (error) {
+      // 取れなければ保存済みのマスタのまま使う
       console.error('Failed to fetch master data:', error);
-      // キャッシュから読み込み
-      const cachedSpots = await indexedDB.getAllSpots();
-      const cachedAreas = await indexedDB.getAllAreas();
-      const cachedQuizTypes = await indexedDB.getAllQuizTypes();
-      setSpots(cachedSpots);
-      setAreas(cachedAreas);
-      setQuizTypes(cachedQuizTypes);
     }
   };
 
