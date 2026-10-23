@@ -887,7 +887,7 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes, announc
               padding: '8px 12px',
               border: '2px solid #e5e7eb',
               borderRadius: '6px',
-              fontSize: '14px',
+              fontSize: '16px',
               backgroundColor: 'white',
               cursor: 'pointer'
             }}
@@ -982,7 +982,7 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes, announc
                 padding: '8px',
                 border: '1px solid #bae6fd',
                 borderRadius: '6px',
-                fontSize: '14px',
+                fontSize: '16px',
                 backgroundColor: 'white'
               }}
             />
@@ -996,7 +996,7 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes, announc
                 padding: '8px',
                 border: '1px solid #bae6fd',
                 borderRadius: '6px',
-                fontSize: '14px',
+                fontSize: '16px',
                 backgroundColor: 'white'
               }}
             />

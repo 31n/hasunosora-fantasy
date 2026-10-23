@@ -1142,7 +1142,7 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
                   padding: '10px 12px',
                   border: '2px solid #e5e7eb',
                   borderRadius: '8px',
-                  fontSize: '14px',
+                  fontSize: '16px',
                   cursor: 'pointer',
                   backgroundColor: 'white'
                 }}
