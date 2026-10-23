@@ -12,6 +12,8 @@ interface MyPageProps {
   quizTypes: QuizType[];
   announcements: Announcement[];
   onShowAnnouncements: (announcements: Announcement[]) => void;
+  onReload: () => void;
+  reloading: boolean;
 }
 
 // JST日付文字列（YYYY-MM-DD）を返す純粋関数
@@ -52,7 +54,7 @@ const formatLegendDate = (dateStr: string): string => {
   return `${m}/${d}(${dow})`;
 };
 
-export default function MyPage({ user, setUser, spots, areas, quizTypes, announcements, onShowAnnouncements }: MyPageProps) {
+export default function MyPage({ user, setUser, spots, areas, quizTypes, announcements, onShowAnnouncements, onReload, reloading }: MyPageProps) {
   const [nickname, setNickname] = useState('');
   const [isEditingNickname, setIsEditingNickname] = useState(false);
   const [history, setHistory] = useState<CheckInHistory[]>([]);
@@ -848,6 +850,26 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes, announc
           }}
         >
           📢 お知らせを見る{announcements.length > 0 && `（${announcements.length} 件）`}
+        </button>
+
+        {/* 再読み込みボタン（スポットやユーザー情報をサーバーから取り直す） */}
+        <button
+          onClick={onReload}
+          disabled={reloading}
+          style={{
+            width: '100%',
+            padding: '14px',
+            backgroundColor: 'white',
+            color: reloading ? '#9ca3af' : '#3b82f6',
+            border: '2px solid #e5e7eb',
+            borderRadius: '8px',
+            fontSize: '16px',
+            fontWeight: 'bold',
+            cursor: reloading ? 'not-allowed' : 'pointer',
+            marginTop: '16px'
+          }}
+        >
+          🔄 {reloading ? '更新中...' : 'データを再読み込み'}
         </button>
 
         {/* ログアウトボタン */}

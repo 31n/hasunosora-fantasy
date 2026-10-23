@@ -831,7 +831,7 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
         aria-label="現在地に移動"
         style={{
           position: 'absolute',
-          bottom: 'calc(80px + env(safe-area-inset-bottom))',
+          bottom: 'calc(20px + env(safe-area-inset-bottom))',
           right: '20px',
           width: '48px',
           height: '48px',

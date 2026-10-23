@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { storage } from './services/storage';
 import { userApi, masterApi, announcementApi } from './services/api';
 import { indexedDB } from './services/indexedDB';
-import RefreshIcon from '@mui/icons-material/Refresh';
 import { useScrollRestoration } from './hooks/useScrollRestoration';
 
 // Components
@@ -234,47 +233,6 @@ function AppContent({
           flex: 1,
           overflowX: 'clip'
         }}>
-          {user && (
-            /* 再読み込みボタン */
-            <button
-              onClick={handleReload}
-              disabled={reloading}
-              style={{
-                position: 'fixed',
-                bottom: 'calc(20px + env(safe-area-inset-bottom))',
-                right: '20px',
-                padding: '12px 16px',
-                backgroundColor: reloading ? '#9ca3af' : '#3b82f6',
-                color: 'white',
-                border: 'none',
-                borderRadius: '50px',
-                fontSize: '14px',
-                fontWeight: '600',
-                cursor: reloading ? 'not-allowed' : 'pointer',
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-                zIndex: 999,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                transition: 'all 0.2s'
-              }}
-              onPointerEnter={(e) => {
-                if (e.pointerType !== 'mouse') return;
-                if (!reloading) {
-                  e.currentTarget.style.transform = 'scale(1.05)';
-                  e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.2)';
-                }
-              }}
-              onPointerLeave={(e) => {
-                e.currentTarget.style.transform = 'scale(1)';
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
-              }}
-            >
-              <RefreshIcon style={{ fontSize: '18px', marginRight: '4px' }} />
-              {reloading ? '更新中...' : '再読み込み'}
-            </button>
-          )}
-
           {/* 緊急のお知らせは、地図画面の上部に帯でも出す */}
           {user && isMapPage && urgentAnnouncements.length > 0 && (
             <button
@@ -319,7 +277,7 @@ function AppContent({
               <Route path="/" element={<MapView user={user} spots={spots} areas={areas} quizTypes={quizTypes} />} />
               <Route path="/spots" element={<SpotList spots={spots} user={user} areas={areas} quizTypes={quizTypes} />} />
               <Route path="/spots/:spotId" element={<SpotDetail user={user} quizTypes={quizTypes} areas={areas} />} />
-              <Route path="/mypage" element={<MyPage user={user} setUser={setUser} spots={spots} areas={areas} quizTypes={quizTypes} announcements={announcements} onShowAnnouncements={onShowAnnouncements} />} />
+              <Route path="/mypage" element={<MyPage user={user} setUser={setUser} spots={spots} areas={areas} quizTypes={quizTypes} announcements={announcements} onShowAnnouncements={onShowAnnouncements} onReload={handleReload} reloading={reloading} />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </>
           )}
