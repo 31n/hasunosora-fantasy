@@ -303,7 +303,7 @@ export default function SpotPopup({
       bottom: 0,
       left: 0,
       right: 0,
-      maxHeight: '80vh',
+      maxHeight: '80dvh',
       backgroundColor: 'white',
       borderTopLeftRadius: '24px',
       borderTopRightRadius: '24px',

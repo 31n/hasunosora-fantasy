@@ -935,7 +935,7 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
             zIndex: 1001,
             width: 'calc(100% - 32px)',
             maxWidth: '480px',
-            maxHeight: '80vh',
+            maxHeight: '80dvh',
             overflowY: 'auto'
           }}
           onClick={(e) => e.stopPropagation()}

@@ -30,7 +30,7 @@ export default function CreateUser({ onLogin }: CreateUserProps) {
       flexDirection: 'column', 
       alignItems: 'center', 
       justifyContent: 'center', 
-      minHeight: '100vh',
+      minHeight: '100dvh',
       padding: '24px'
     }}>
       <h1 style={{ marginBottom: '24px' }}>HASU Fantasy</h1>

@@ -88,7 +88,7 @@ export default function SpotDetail({ user, quizTypes, areas = [] }: SpotDetailPr
         display: 'flex', 
         justifyContent: 'center', 
         alignItems: 'center', 
-        minHeight: '100vh' 
+        minHeight: '100dvh' 
       }}>
         <p>読み込み中...</p>
       </div>

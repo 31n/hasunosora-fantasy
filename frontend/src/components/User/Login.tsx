@@ -49,7 +49,7 @@ export default function Login({ onLogin }: LoginProps) {
         flexDirection: 'column', 
         alignItems: 'center', 
         justifyContent: 'center', 
-        minHeight: '100vh',
+        minHeight: '100dvh',
         padding: '24px',
         backgroundColor: '#f3f4f6',
         position: 'relative'

@@ -5,7 +5,7 @@ export default function Loading() {
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      minHeight: '100vh',
+      minHeight: '100dvh',
       backgroundColor: '#f3f4f6'
     }}>
       <div style={{

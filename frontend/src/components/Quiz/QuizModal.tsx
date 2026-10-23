@@ -90,7 +90,7 @@ export default function QuizModal({ user, spot, quizData, onClose, readOnly = fa
           padding: '24px',
           maxWidth: '500px',
           width: '90%',
-          maxHeight: '80vh',
+          maxHeight: '80dvh',
           overflow: 'auto',
         }}
       >

@@ -47,7 +47,7 @@ export default function HowToPage() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f8fafc' }}>
+    <div style={{ minHeight: '100dvh', backgroundColor: '#f8fafc' }}>
       {/* ヘッダーバー */}
       <div
         style={{

@@ -100,7 +100,7 @@ export default function HowToModal({ buttonStyle }: HowToModalProps) {
               borderRadius: '12px',
               width: '100%',
               maxWidth: '560px',
-              maxHeight: '80vh',
+              maxHeight: '80dvh',
               display: 'flex',
               flexDirection: 'column',
               boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
