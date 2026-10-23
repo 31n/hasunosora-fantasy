@@ -13,8 +13,16 @@ body {
   background-color: #f3f4f6;
 }
 
+/* 高さは vh / dvh ではなく 100% でつなぐ。
+   ホーム画面の PWA（viewport-fit=cover）では、100vh がステータスバーを含む画面全体の高さになり、
+   表示領域より長くなって下が見切れるため */
+html,
+body {
+  height: 100%;
+}
+
 #root {
-  min-height: 100vh;
+  height: 100%;
   display: flex;
   flex-direction: column;
 }
@@ -22,8 +30,7 @@ body {
 .app {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
-  height: 100vh;
+  height: 100%;
 }
 
 .app.map-page {
