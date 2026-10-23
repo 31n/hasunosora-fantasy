@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import howtoContent from '../../content/howto.md?raw';
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 
 interface HowToModalProps {
   buttonStyle?: React.CSSProperties;
@@ -40,6 +41,7 @@ const tocItems = extractToc(howtoContent);
 
 export default function HowToModal({ buttonStyle }: HowToModalProps) {
   const [open, setOpen] = useState(false);
+  useBodyScrollLock(open);
   const [tocOpen, setTocOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 

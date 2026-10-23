@@ -4,6 +4,7 @@ import { storage } from './services/storage';
 import { userApi, masterApi, announcementApi } from './services/api';
 import { indexedDB } from './services/indexedDB';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import { useScrollRestoration } from './hooks/useScrollRestoration';
 
 // Components
 import CreateUser from './components/User/CreateUser';
@@ -211,14 +212,18 @@ function AppContent({
 }) {
   const location = useLocation();
   const isMapPage = location.pathname === '/';
+  // 使い方ページは自前の sticky バーを持つので、アプリのヘッダーは出さない（2つ重なるため）
+  const showHeader = user && location.pathname !== '/howto';
   const urgentAnnouncements = announcements.filter(a => levelOf(a) === 'urgent');
+  useScrollRestoration();
 
   return (
     <div className={`app ${isMapPage ? 'map-page' : ''}`}>
-        {user && (
+        {showHeader && (
           <Header user={user} onLogout={handleLogout} />
         )}
         
+        {/* 地図以外はページ全体（body）でスクロールする。中に別のスクロール領域を作ると、iOS でヘッダーごと動いてずれる */}
         <div style={isMapPage ? {
           flex: 1,
           display: 'flex',
@@ -227,8 +232,7 @@ function AppContent({
           position: 'relative'
         } : {
           flex: 1,
-          overflowY: 'auto',
-          overflowX: 'hidden'
+          overflowX: 'clip'
         }}>
           {user && (
             /* 再読み込みボタン */

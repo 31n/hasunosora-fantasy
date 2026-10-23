@@ -7,6 +7,7 @@ import { indexedDB } from '../../services/indexedDB';
 import { userApi, checkinApi } from '../../services/api';
 import type { User, Spot, CheckInHistory, QuizType, Area } from '../../types';
 import { getQuizForUser } from '../../utils/quiz';
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 
 interface SpotDetailProps {
   user: User;
@@ -21,6 +22,7 @@ export default function SpotDetail({ user, quizTypes, areas = [] }: SpotDetailPr
   const [loading, setLoading] = useState(true);
   const [imageIndex, setImageIndex] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  useBodyScrollLock(isFullscreen);
   const [rotation, setRotation] = useState(0);
   const touchStartX = useRef<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);

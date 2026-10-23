@@ -22,18 +22,21 @@ body {
 }
 
 #root {
-  height: 100%;
+  min-height: 100%;
   display: flex;
   flex-direction: column;
 }
 
+/* 地図以外は、ページ全体でスクロールする（ヘッダーは sticky） */
 .app {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  min-height: 100%;
 }
 
+/* 地図は画面にぴったり固定し、ページ自体はスクロールさせない */
 .app.map-page {
+  height: 100%;
   overflow: hidden;
 }
 

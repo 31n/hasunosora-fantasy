@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Announcement } from '../../types';
 import { LEVEL_STYLES, levelOf } from '../../utils/announcement';
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 
 interface Props {
   announcements: Announcement[];
@@ -9,6 +10,7 @@ interface Props {
 
 export default function AnnouncementModal({ announcements, onClose }: Props) {
   const [index, setIndex] = useState(0);
+  useBodyScrollLock();
 
   if (announcements.length === 0) return null;
 
