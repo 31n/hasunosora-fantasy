@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { storage } from '../../services/storage';
 import { userApi } from '../../services/api';
 import type { User, CheckInHistory, Spot, Area, QuizType, Announcement } from '../../types';
+import { toast } from '../../utils/toast';
 
 interface MyPageProps {
   user: User;
@@ -99,7 +100,7 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes, announc
 
   const handleSetNickname = async () => {
     if (!nickname.trim()) {
-      alert('ニックネームを入力してください');
+      toast.warning('ニックネームを入力してください');
       return;
     }
 
@@ -108,12 +109,12 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes, announc
       const updatedUser = await userApi.setNickname(user.user_id, nickname.trim());
       setUser(updatedUser);
       setIsEditingNickname(false);
-      alert('ニックネームを設定しました');
+      toast.success('ニックネームを設定しました');
     } catch (error: any) {
       if (error.message.includes('NICKNAME_ALREADY_SET')) {
-        alert('ニックネームは既に設定済みです');
+        toast.warning('ニックネームは既に設定済みです');
       } else {
-        alert('ニックネームの設定に失敗しました。しばらく時間をおいてから再試行してください。');
+        toast.error('ニックネームの設定に失敗しました。しばらく時間をおいてから再試行してください。');
       }
     } finally {
       setLoading(false);
@@ -130,7 +131,7 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes, announc
 
   const handleUnlockGenre = async () => {
     if (!genreCode.trim()) {
-      alert('ジャンルコードを入力してください');
+      toast.warning('ジャンルコードを入力してください');
       return;
     }
 
@@ -140,14 +141,14 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes, announc
       setUser(result.user);
       setGenreCode('');
       setShowGenreCodeInput(false);
-      alert(`「${result.unlocked_genre}」ジャンルが解放されました！`);
+      toast.success(`「${result.unlocked_genre}」ジャンルが解放されました！`);
     } catch (error: any) {
       if (error.message.includes('INVALID_GENRE_CODE')) {
-        alert('無効なジャンルコードです');
+        toast.error('無効なジャンルコードです');
       } else if (error.message.includes('GENRE_ALREADY_UNLOCKED')) {
-        alert('このジャンルは既に解放済みです');
+        toast.warning('このジャンルは既に解放済みです');
       } else {
-        alert('エラーが発生しました。しばらく時間をおいてから再試行してください。');
+        toast.error('エラーが発生しました。しばらく時間をおいてから再試行してください。');
       }
     } finally {
       setLoading(false);
@@ -160,7 +161,7 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes, announc
       const updatedUser = await userApi.setSelectedQuizType(user.user_id, quizTypeId || null);
       setUser(updatedUser);
     } catch (error: any) {
-      alert('クイズタイプの変更に失敗しました。しばらく時間をおいてから再試行してください。');
+      toast.error('クイズタイプの変更に失敗しました。しばらく時間をおいてから再試行してください。');
     } finally {
       setLoading(false);
     }
@@ -176,7 +177,7 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes, announc
       const updatedUser = await userApi.setSelectedAreas(user.user_id, updated);
       setUser(updatedUser);
     } catch (error: any) {
-      alert('エリアの変更に失敗しました。しばらく時間をおいてから再試行してください。');
+      toast.error('エリアの変更に失敗しました。しばらく時間をおいてから再試行してください。');
     } finally {
       setLoading(false);
     }
@@ -184,12 +185,12 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes, announc
 
   const copyUserId = () => {
     navigator.clipboard.writeText(user.user_id);
-    alert('ユーザーIDをコピーしました');
+    toast.success('ユーザーIDをコピーしました');
   };
 
   const handleUnlockArea = async () => {
     if (!areaCode.trim()) {
-      alert('エリアコードを入力してください');
+      toast.warning('エリアコードを入力してください');
       return;
     }
 
@@ -199,14 +200,14 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes, announc
       setUser(result.user);
       setAreaCode('');
       setShowAreaCodeInput(false);
-      alert(`${result.unlocked_area} エリアが解放されました！`);
+      toast.success(`${result.unlocked_area} エリアが解放されました！`);
     } catch (error: any) {
       if (error.message.includes('INVALID_AREA_CODE')) {
-        alert('無効なエリアコードです');
+        toast.error('無効なエリアコードです');
       } else if (error.message.includes('AREA_ALREADY_UNLOCKED')) {
-        alert('このエリアはすでに解放済みです');
+        toast.warning('このエリアはすでに解放済みです');
       } else {
-        alert('エラーが発生しました。しばらく時間をおいてから再試行してください。');
+        toast.error('エラーが発生しました。しばらく時間をおいてから再試行してください。');
       }
     } finally {
       setLoading(false);
@@ -260,14 +261,14 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes, announc
   }, [history, mapDateFrom, mapDateTo]);
 
   const generateAndShareMap = async () => {
-    if (!mapDateFrom || !mapDateTo) { alert('日付を指定してください'); return; }
-    if (mapDateFrom > mapDateTo) { alert('開始日は終了日以前にしてください'); return; }
+    if (!mapDateFrom || !mapDateTo) { toast.warning('日付を指定してください'); return; }
+    if (mapDateFrom > mapDateTo) { toast.warning('開始日は終了日以前にしてください'); return; }
 
     const filtered = [...history]
       .filter(h => { const d = toJstDate(h.checked_in_at); return d >= mapDateFrom && d <= mapDateTo; })
       .sort((a, b) => new Date(a.checked_in_at).getTime() - new Date(b.checked_in_at).getTime());
 
-    if (filtered.length === 0) { alert('指定した期間の訪問履歴がありません'); return; }
+    if (filtered.length === 0) { toast.warning('指定した期間の訪問履歴がありません'); return; }
 
     const getCoords = (spotId: string): [number, number] | null => {
       const s = spots.find(sp => sp.spot_id === spotId);
@@ -317,7 +318,7 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes, announc
       pinCount++;
     }
 
-    if (overlayParts.length === 0) { alert('地図に表示できるスポットがありません'); return; }
+    if (overlayParts.length === 0) { toast.warning('地図に表示できるスポットがありません'); return; }
 
     const staticUrl = `https://api.mapbox.com/styles/v1/${mapStyle}/static/${overlayParts.join(',')}/auto/1200x630?padding=60&access_token=${token}`;
 
@@ -420,7 +421,7 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes, announc
       }
     } catch (err) {
       console.error('マップ生成エラー:', err);
-      alert('地図画像の生成に失敗しました。しばらく時間をおいて再試行してください。');
+      toast.error('地図画像の生成に失敗しました。しばらく時間をおいて再試行してください。');
     } finally {
       setIsGeneratingMap(false);
     }

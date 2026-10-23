@@ -3,6 +3,7 @@ import { checkinApi } from '../../services/api';
 import type { User, Spot, CheckInResponse, QuizType } from '../../types';
 import CelebrationIcon from '@mui/icons-material/Celebration';
 import CloseIcon from '@mui/icons-material/Close';
+import { toast } from '../../utils/toast';
 
 interface QuizModalProps {
   user: User;
@@ -37,7 +38,7 @@ export default function QuizModal({ user, spot, quizData, onClose, readOnly = fa
 
   const handleSubmit = async () => {
     if (selectedAnswer === null) {
-      alert('選択肢を選んでください');
+      toast.warning('選択肢を選んでください');
       return;
     }
 
@@ -59,9 +60,9 @@ export default function QuizModal({ user, spot, quizData, onClose, readOnly = fa
       });
     } catch (error: any) {
       if (error.message.includes('QUIZ_NOT_AVAILABLE')) {
-        alert('このスポットにはクイズが登録されていません。');
+        toast.warning('このスポットにはクイズが登録されていません。');
       } else {
-        alert('エラーが発生しました。しばらく時間をおいてから再試行してください。');
+        toast.error('エラーが発生しました。しばらく時間をおいてから再試行してください。');
       }
     } finally {
       setSubmitting(false);

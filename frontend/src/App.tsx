@@ -25,9 +25,11 @@ import Header from './components/Common/Header';
 import Loading from './components/Common/Loading';
 import HowToPage from './components/Common/HowToPage';
 import AnnouncementModal from './components/Common/AnnouncementModal';
+import ToastHost from './components/Common/ToastHost';
 import { announcementsToPopup, markAnnouncementsRead, levelOf, LEVEL_STYLES } from './utils/announcement';
 
 import type { User, Spot, Area, QuizType, Announcement } from './types';
+import { toast } from './utils/toast';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -130,10 +132,10 @@ function App() {
         setUser(userData);
       }
       
-      alert('データを更新しました');
+      toast.success('データを更新しました');
     } catch (error) {
       console.error('Reload error:', error);
-      alert('更新に失敗しました');
+      toast.error('更新に失敗しました');
     } finally {
       setReloading(false);
     }
@@ -178,6 +180,7 @@ function App() {
           }}
         />
       )}
+      <ToastHost />
     </BrowserRouter>
   );
 }

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { userApi } from '../../services/api';
 import type { User } from '../../types';
+import { toast } from '../../utils/toast';
 
 interface CreateUserProps {
   onLogin: (user: User) => void;
@@ -18,7 +19,7 @@ export default function CreateUser({ onLogin }: CreateUserProps) {
       onLogin(user);
       navigate('/');
     } catch (error: any) {
-      alert('ユーザーの作成に失敗しました。しばらく時間をおいてから再試行してください。');
+      toast.error('ユーザーの作成に失敗しました。しばらく時間をおいてから再試行してください。');
     } finally {
       setLoading(false);
     }

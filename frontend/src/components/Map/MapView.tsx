@@ -11,6 +11,7 @@ import { calculateDistance, formatDistance } from '../../utils/distance';
 import { getQuizForUser, spotHasQuizForUser } from '../../utils/quiz';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
 import FilterListIcon from '@mui/icons-material/FilterList';
+import { toast } from '../../utils/toast';
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN || '';
 
@@ -134,9 +135,9 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
 
     if (!currentLocation) {
       if (locationStatus === 'loading') {
-        alert('位置情報を取得中です。しばらくお待ちください。');
+        toast.warning('位置情報を取得中です。しばらくお待ちください。');
       } else {
-        alert('位置情報を取得できません。ブラウザの設定を確認してください。');
+        toast.error('位置情報を取得できません。ブラウザの設定を確認してください。');
       }
       return;
     }
@@ -176,13 +177,13 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
 
     } catch (error: any) {
       if (error.message.includes('OUT_OF_RANGE')) {
-        alert('スポットから離れすぎています。スポットに近づいてください。');
+        toast.warning('スポットから離れすぎています。スポットに近づいてください。');
       } else if (error.message.includes('CHECKIN_ON_COOLDOWN')) {
-        alert('連続チェックインはできません。少し時間を空けて再挑戦してください。');
+        toast.warning('連続チェックインはできません。少し時間を空けて再挑戦してください。');
       } else if (error.message.includes('ALREADY_CHECKED_IN')) {
-        alert('既にチェックイン済みです。');
+        toast.warning('既にチェックイン済みです。');
       } else {
-        alert('エラーが発生しました。しばらく時間をおいてから再試行してください。');
+        toast.error('エラーが発生しました。しばらく時間をおいてから再試行してください。');
       }
     }
   };
@@ -230,9 +231,9 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
 
     if (!currentLocation) {
       if (locationStatus === 'loading') {
-        alert('位置情報を取得中です。しばらくお待ちください。');
+        toast.warning('位置情報を取得中です。しばらくお待ちください。');
       } else {
-        alert('位置情報を取得できません。ブラウザの設定を確認してください。');
+        toast.error('位置情報を取得できません。ブラウザの設定を確認してください。');
       }
       return;
     }
@@ -249,20 +250,20 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
         setQuizData(response as any);
         setShowQuiz(true);
       } else {
-        alert('クイズに挑戦できません。');
+        toast.warning('クイズに挑戦できません。');
       }
     } catch (error: any) {
       if (error.message.includes('OUT_OF_RANGE')) {
-        alert('スポットから離れすぎています。スポットに近づいてください。');
+        toast.warning('スポットから離れすぎています。スポットに近づいてください。');
       } else if (error.message.includes('QUIZ_NOT_AVAILABLE')) {
-        alert('このスポットにはクイズが登録されていません。');
+        toast.warning('このスポットにはクイズが登録されていません。');
       } else if (error.message.includes('QUIZ_ALREADY_ANSWERED_TODAY')) {
         // 今日回答したクイズを閲覧専用で表示
         if (!(await openReadOnlyQuiz(selectedSpot))) {
-          alert('本日はすでにクイズに回答済みです。明日また挑戦できます。');
+          toast.warning('本日はすでにクイズに回答済みです。明日また挑戦できます。');
         }
       } else {
-        alert('エラーが発生しました。しばらく時間をおいてから再試行してください。');
+        toast.error('エラーが発生しました。しばらく時間をおいてから再試行してください。');
       }
     }
   };
@@ -487,11 +488,11 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
           
           // エラーメッセージを表示
           if (error.code === error.PERMISSION_DENIED) {
-            alert('位置情報の使用が拒否されています。ブラウザの設定を確認してください。');
+            toast.error('位置情報の使用が拒否されています。ブラウザの設定を確認してください。');
           } else if (error.code === error.POSITION_UNAVAILABLE) {
-            alert('位置情報を取得できませんでした。');
+            toast.error('位置情報を取得できませんでした。');
           } else if (error.code === error.TIMEOUT) {
-            alert('位置情報の取得がタイムアウトしました。再読み込みしてください。');
+            toast.error('位置情報の取得がタイムアウトしました。再読み込みしてください。');
           }
         },
         { 
@@ -502,7 +503,7 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
       );
     } else {
       setLocationStatus('error');
-      alert('このブラウザは位置情報に対応していません。');
+      toast.error('このブラウザは位置情報に対応していません。');
     }
 
     return () => {
@@ -809,7 +810,7 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
         }
       } catch (error) {
         console.error('向き許可リクエストエラー:', error);
-        alert('端末の向き取得の許可に失敗しました');
+        toast.error('端末の向き取得の許可に失敗しました');
       }
     }
   };
