@@ -59,8 +59,11 @@ select {
   /* transition: transform 0.2s; */
 }
 
-.spot-marker:hover {
-  transform: scale(1.2);
+/* タッチ端末ではタップ後に拡大が残るので、マウスのときだけ */
+@media (hover: hover) {
+  .spot-marker:hover {
+    transform: scale(1.2);
+  }
 }
 
 /* チェックイン圏内マーカー：パルスアニメーション */

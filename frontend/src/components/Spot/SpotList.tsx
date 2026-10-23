@@ -285,11 +285,12 @@ export default function SpotList({ spots, user, areas, quizTypes }: SpotListProp
                 transition: 'transform 0.2s, box-shadow 0.2s',
                 border: '1px solid #e5e7eb'
               }}
-              onMouseEnter={(e) => {
+              onPointerEnter={(e) => {
+                if (e.pointerType !== 'mouse') return;
                 e.currentTarget.style.transform = 'translateY(-2px)';
                 e.currentTarget.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.15)';
               }}
-              onMouseLeave={(e) => {
+              onPointerLeave={(e) => {
                 e.currentTarget.style.transform = 'translateY(0)';
                 e.currentTarget.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)';
               }}

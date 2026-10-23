@@ -847,13 +847,14 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
           justifyContent: 'center',
           transition: 'all 0.2s'
         }}
-        onMouseEnter={(e) => {
+        onPointerEnter={(e) => {
+          if (e.pointerType !== 'mouse') return;
           if (userLocation) {
             e.currentTarget.style.transform = 'scale(1.1)';
             e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.25)';
           }
         }}
-        onMouseLeave={(e) => {
+        onPointerLeave={(e) => {
           e.currentTarget.style.transform = 'scale(1)';
           e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.2)';
         }}
@@ -884,11 +885,12 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
           gap: '8px',
           transition: 'all 0.2s'
         }}
-        onMouseEnter={(e) => {
+        onPointerEnter={(e) => {
+          if (e.pointerType !== 'mouse') return;
           e.currentTarget.style.transform = 'scale(1.05)';
           e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.2)';
         }}
-        onMouseLeave={(e) => {
+        onPointerLeave={(e) => {
           e.currentTarget.style.transform = 'scale(1)';
           e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
         }}

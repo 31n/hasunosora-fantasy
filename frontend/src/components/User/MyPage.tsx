@@ -1048,8 +1048,8 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes, announc
                   cursor: 'pointer',
                   transition: 'background-color 0.2s'
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'}
+                onPointerEnter={(e) => { if (e.pointerType === 'mouse') e.currentTarget.style.backgroundColor = '#f3f4f6'; }}
+                onPointerLeave={(e) => { e.currentTarget.style.backgroundColor = '#f9fafb'; }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                   <p style={{ fontWeight: '600' }}>{item.spot_name}</p>

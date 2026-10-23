@@ -254,13 +254,14 @@ function AppContent({
                 gap: '8px',
                 transition: 'all 0.2s'
               }}
-              onMouseEnter={(e) => {
+              onPointerEnter={(e) => {
+                if (e.pointerType !== 'mouse') return;
                 if (!reloading) {
                   e.currentTarget.style.transform = 'scale(1.05)';
                   e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.2)';
                 }
               }}
-              onMouseLeave={(e) => {
+              onPointerLeave={(e) => {
                 e.currentTarget.style.transform = 'scale(1)';
                 e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
               }}
