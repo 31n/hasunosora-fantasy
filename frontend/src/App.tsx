@@ -237,7 +237,7 @@ function AppContent({
               disabled={reloading}
               style={{
                 position: 'fixed',
-                bottom: '20px',
+                bottom: 'calc(20px + env(safe-area-inset-bottom))',
                 right: '20px',
                 padding: '12px 16px',
                 backgroundColor: reloading ? '#9ca3af' : '#3b82f6',

@@ -18,6 +18,10 @@ export default function Header({ user, onLogout }: HeaderProps) {
       backgroundColor: 'white',
       borderBottom: '1px solid #e5e7eb',
       padding: '12px 16px',
+      // 横向きのノッチや、ステータスバーに重なる表示のときの余白
+      paddingTop: 'calc(12px + env(safe-area-inset-top))',
+      paddingLeft: 'calc(16px + env(safe-area-inset-left))',
+      paddingRight: 'calc(16px + env(safe-area-inset-right))',
       position: 'sticky',
       top: 0,
       zIndex: 100,

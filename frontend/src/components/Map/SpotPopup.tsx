@@ -105,7 +105,7 @@ export default function SpotPopup({
     return (
       <div style={{
         position: 'fixed',
-        bottom: '80px',
+        bottom: 'calc(80px + env(safe-area-inset-bottom))',
         left: '50%',
         transform: 'translateX(-50%)',
         width: '90%',
@@ -327,7 +327,7 @@ export default function SpotPopup({
         }} />
       </div>
 
-      <div style={{ padding: '0 20px 24px 20px' }}>
+      <div style={{ padding: '0 20px calc(24px + env(safe-area-inset-bottom)) 20px' }}>
         {/* ヘッダー */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
           <div style={{ flex: 1 }}>
@@ -782,7 +782,7 @@ export default function SpotPopup({
                   aria-label="次の画像"
                 >›</button>
                 <div style={{
-                  position: 'absolute', bottom: '20px', left: '50%', transform: 'translateX(-50%)',
+                  position: 'absolute', bottom: 'calc(20px + env(safe-area-inset-bottom))', left: '50%', transform: 'translateX(-50%)',
                   background: 'rgba(0,0,0,0.5)', color: 'white',
                   borderRadius: '12px', padding: '4px 14px', fontSize: '14px',
                 }}>

@@ -831,7 +831,7 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
         aria-label="現在地に移動"
         style={{
           position: 'absolute',
-          bottom: '80px',
+          bottom: 'calc(80px + env(safe-area-inset-bottom))',
           right: '20px',
           width: '48px',
           height: '48px',
@@ -868,7 +868,7 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
         aria-label="表示フィルターを開く"
         style={{
           position: 'absolute',
-          bottom: '20px',
+          bottom: 'calc(20px + env(safe-area-inset-bottom))',
           left: '20px',
           padding: '12px 16px',
           backgroundColor: '#3b82f6',
@@ -1280,7 +1280,7 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
       {orientationPermissionNeeded && (
         <div style={{
           position: 'absolute',
-          bottom: '100px',
+          bottom: 'calc(100px + env(safe-area-inset-bottom))',
           left: '50%',
           transform: 'translateX(-50%)',
           padding: '16px',

@@ -120,6 +120,7 @@ export default function PWAInstallPrompt() {
       backgroundColor: '#3b82f6',
       color: 'white',
       padding: '16px',
+      paddingBottom: 'calc(16px + env(safe-area-inset-bottom))',
       boxShadow: '0 -4px 6px rgba(0, 0, 0, 0.1)',
       zIndex: 1000,
       animation: 'slideUp 0.3s ease-out'
