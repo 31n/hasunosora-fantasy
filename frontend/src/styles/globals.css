@@ -21,16 +21,19 @@ body {
   height: 100%;
 }
 
+/* #root は高さを決めておく（min-height だと、地図ページの .app の height: 100% が効かず、地図の高さが 0 になる） */
 #root {
-  min-height: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
 }
 
-/* 地図以外は、ページ全体でスクロールする（ヘッダーは sticky） */
+/* 地図以外は、ページ全体でスクロールする（ヘッダーは sticky）。
+   中身に合わせて #root より長く伸びるよう、縮めない */
 .app {
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;
   min-height: 100%;
 }
 
