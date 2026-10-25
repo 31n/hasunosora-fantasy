@@ -12,8 +12,28 @@ import { getQuizForUser, spotHasQuizForUser } from '../../utils/quiz';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import { toast } from '../../utils/toast';
+import LocationPermissionDialog, { type LocationDialogMode } from './LocationPermissionDialog';
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN || '';
+
+// 位置情報の取得に成功したことがあるか（Permissions API が使えないブラウザでの判定用）
+const LOCATION_GRANTED_KEY = 'spot_checkin_location_granted';
+
+// 位置情報の案内を「あとで」で閉じたか。アプリを開いている間は、画面を移動するたびに出さない
+let locationDialogDismissed = false;
+
+// 位置情報の許可の状態を調べる。調べられないときは、過去に取得できたかで判断する
+async function checkLocationPermission(): Promise<PermissionState> {
+  try {
+    if (navigator.permissions?.query) {
+      const status = await navigator.permissions.query({ name: 'geolocation' });
+      return status.state;
+    }
+  } catch {
+    // 未対応のブラウザは下の判定に任せる
+  }
+  return localStorage.getItem(LOCATION_GRANTED_KEY) === '1' ? 'granted' : 'prompt';
+}
 
 interface MapViewProps {
   user: User;
@@ -32,7 +52,10 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
   const orientationEventType = useRef<'deviceorientationabsolute' | 'deviceorientation' | null>(null); // 登録されたイベントタイプ
   const prevSelectedAreaRef = useRef<string | null | undefined>(undefined); // エリアID変更追跡用
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
-  const [locationStatus, setLocationStatus] = useState<'loading' | 'available' | 'error'>('loading');
+  // idle: 許可を待っている（案内を出していて、まだ取得を始めていない）
+  const [locationStatus, setLocationStatus] = useState<'idle' | 'loading' | 'available' | 'error'>('loading');
+  const [locationDialog, setLocationDialog] = useState<LocationDialogMode | null>(null);
+  const locationDeniedRef = useRef(false);
   const [userHeading, setUserHeading] = useState<number>(0);
   const [selectedSpot, setSelectedSpot] = useState<Spot | null>(null);
   const [quizData, setQuizData] = useState<CheckInResponse | null>(null);
@@ -137,7 +160,7 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
       if (locationStatus === 'loading') {
         toast.warning('位置情報を取得中です。しばらくお待ちください。');
       } else {
-        toast.error('位置情報を取得できません。ブラウザの設定を確認してください。');
+        openLocationDialog();
       }
       return;
     }
@@ -233,7 +256,7 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
       if (locationStatus === 'loading') {
         toast.warning('位置情報を取得中です。しばらくお待ちください。');
       } else {
-        toast.error('位置情報を取得できません。ブラウザの設定を確認してください。');
+        openLocationDialog();
       }
       return;
     }
@@ -356,28 +379,12 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
     return area ? [area.center_longitude, area.center_latitude] as [number, number] : null;
   }, [user.selected_area, areas]);
 
-  useEffect(() => {
-    if (!mapContainer.current) return;
-
-    // 地図の初期中心座標を決定（エリア中心またはデフォルト）
-    const initialCenter = selectedAreaCenter || [139.7454, 35.6586];
-    const initialZoom = 15;
-
-    // 地図を初期化（日本語化）
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/streets-v12',
-      center: initialCenter,
-      zoom: initialZoom,
-      language: 'ja' // 日本語化
-    });
-
-    // ナビゲーションコントロール（ズームボタン）を追加
-    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
-
-    // 位置情報を取得
+  // 位置情報の取得を始める（現在地の表示・向き・継続的な更新）
+  // 案内の「許可する」から呼ぶと、ボタンを押した流れで OS の確認が出る
+  const startLocation = () => {
     if (navigator.geolocation) {
       console.log('位置情報の取得を開始します');
+      setLocationStatus('loading');
       
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -389,6 +396,8 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
           userLocationRef.current = location;
           setUserLocation(location);
           setLocationStatus('available');
+          locationDeniedRef.current = false;
+          localStorage.setItem(LOCATION_GRANTED_KEY, '1');
 
           // spotIdが指定されていない場合のみ、ユーザーの位置に地図を移動
           const spotIdParam = searchParams.get('spotId');
@@ -396,7 +405,8 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
             map.current.setCenter([longitude, latitude]);
           }
 
-          if (map.current) {
+          // 「もう一度試す」などで2回目に成功したときは、マーカーと監視を作り直さない
+          if (map.current && !userMarker.current) {
             // 矢印型のマーカーを作成
             const el = document.createElement('div');
             el.className = 'user-location-marker';
@@ -488,7 +498,10 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
           
           // エラーメッセージを表示
           if (error.code === error.PERMISSION_DENIED) {
-            toast.error('位置情報の使用が拒否されています。ブラウザの設定を確認してください。');
+            // 設定で許可する手順を案内する
+            locationDeniedRef.current = true;
+            localStorage.removeItem(LOCATION_GRANTED_KEY);
+            setLocationDialog('denied');
           } else if (error.code === error.POSITION_UNAVAILABLE) {
             toast.error('位置情報を取得できませんでした。');
           } else if (error.code === error.TIMEOUT) {
@@ -505,8 +518,54 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
       setLocationStatus('error');
       toast.error('このブラウザは位置情報に対応していません。');
     }
+  };
+
+  // 位置情報の案内を開く。拒否されているときは設定の手順を出す
+  const openLocationDialog = () => {
+    setLocationDialog(locationDeniedRef.current ? 'denied' : 'prompt');
+  };
+
+  useEffect(() => {
+    if (!mapContainer.current) return;
+
+    // 地図の初期中心座標を決定（エリア中心またはデフォルト）
+    const initialCenter = selectedAreaCenter || [139.7454, 35.6586];
+    const initialZoom = 15;
+
+    // 地図を初期化（日本語化）
+    map.current = new mapboxgl.Map({
+      container: mapContainer.current,
+      style: 'mapbox://styles/mapbox/streets-v12',
+      center: initialCenter,
+      zoom: initialZoom,
+      language: 'ja' // 日本語化
+    });
+
+    // ナビゲーションコントロール（ズームボタン）を追加
+    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+
+    // 位置情報：許可済みならすぐ取得する。まだなら案内を出し、ボタンを押してから OS の確認を出す
+    let cancelled = false;
+    if (!navigator.geolocation) {
+      startLocation();
+    } else {
+      checkLocationPermission().then((state) => {
+        if (cancelled) return;
+        if (state === 'granted') {
+          startLocation();
+          return;
+        }
+        locationDeniedRef.current = state === 'denied';
+        setLocationStatus(state === 'denied' ? 'error' : 'idle');
+        if (!locationDialogDismissed) {
+          setLocationDialog(state === 'denied' ? 'denied' : 'prompt');
+        }
+      });
+    }
 
     return () => {
+      cancelled = true;
+
       // watchPositionを停止
       if (watchPositionId.current !== null) {
         navigator.geolocation.clearWatch(watchPositionId.current);
@@ -822,7 +881,11 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
       {/* 現在地ボタン */}
       <button
         onClick={() => {
-          if (!map.current || !userLocationRef.current) return;
+          if (!map.current) return;
+          if (!userLocationRef.current) {
+            if (locationStatus !== 'loading') openLocationDialog();
+            return;
+          }
           map.current.flyTo({
             center: userLocationRef.current,
             zoom: 17,
@@ -1259,23 +1322,44 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
         </div>
       )}
 
-      {locationStatus === 'error' && (
-        <div style={{
-          position: 'absolute',
-          top: '80px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          padding: '12px 24px',
-          backgroundColor: 'rgba(239, 68, 68, 0.9)',
-          color: 'white',
-          borderRadius: '8px',
-          fontSize: '14px',
-          fontWeight: '600',
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
-          zIndex: 10
-        }}>
-          ⚠️ 位置情報を取得できません
-        </div>
+      {(locationStatus === 'idle' || locationStatus === 'error') && (
+        <button
+          onClick={openLocationDialog}
+          style={{
+            position: 'absolute',
+            top: '80px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            padding: '12px 24px',
+            backgroundColor: locationStatus === 'idle' ? 'rgba(59, 130, 246, 0.9)' : 'rgba(239, 68, 68, 0.9)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            fontSize: '14px',
+            fontWeight: '600',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
+            zIndex: 10,
+            cursor: 'pointer',
+            whiteSpace: 'nowrap'
+          }}
+        >
+          {locationStatus === 'idle' ? '📍 タップして位置情報をオンにする' : '⚠️ 位置情報を取得できません（タップで案内）'}
+        </button>
+      )}
+
+      {/* 位置情報の案内 */}
+      {locationDialog && (
+        <LocationPermissionDialog
+          mode={locationDialog}
+          onConfirm={() => {
+            setLocationDialog(null);
+            startLocation();
+          }}
+          onClose={() => {
+            setLocationDialog(null);
+            locationDialogDismissed = true;
+          }}
+        />
       )}
 
       {orientationPermissionNeeded && (
