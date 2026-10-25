@@ -16,26 +16,39 @@ import LocationPermissionDialog, { type LocationDialogMode } from './LocationPer
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN || '';
 
-// 位置情報の取得に成功したことがあるか（Permissions API が使えないブラウザでの判定用）
-const LOCATION_GRANTED_KEY = 'spot_checkin_location_granted';
+// 位置情報の案内（事前説明）を、この端末で一度出したか。出すのは最初の1回だけで、2回目以降は直接 OS に任せる
+const LOCATION_EXPLAINED_KEY = 'spot_checkin_location_explained';
+// 以前の版で、位置情報の取得に成功したときに付けていた記録。取得できた端末は案内済みとみなす
+const LEGACY_LOCATION_GRANTED_KEY = 'spot_checkin_location_granted';
 
 // 位置情報の案内を「あとで」で閉じたか。アプリを開いている間は、画面を移動するたびに出さない
 let locationDialogDismissed = false;
 
-// 位置情報の許可の状態を調べる
-// iOS の Safari・PWA は、許可済みでも Permissions API が 'prompt' を返すことがある。
-// そのため 'prompt' のときは、過去に取得できたかで判断する（取得できていれば許可済みとみなす）
-async function checkLocationPermission(): Promise<PermissionState> {
-  const grantedBefore = localStorage.getItem(LOCATION_GRANTED_KEY) === '1';
+function isLocationExplained(): boolean {
+  return localStorage.getItem(LOCATION_EXPLAINED_KEY) === '1'
+    || localStorage.getItem(LEGACY_LOCATION_GRANTED_KEY) === '1';
+}
+
+function markLocationExplained() {
+  localStorage.setItem(LOCATION_EXPLAINED_KEY, '1');
+}
+
+// 地図を開いたときにどうするかを決める
+// - denied: 拒否されているのがわかっている → 設定の案内
+// - start: 許可済み、または案内を一度出した端末 → 直接取得する（必要なら OS が確認を出す）
+// - explain: まだ案内を出していない → 事前説明を出す
+// Permissions API の 'prompt' は iOS では当てにならないことがあるので、'denied' と 'granted' だけを使う
+async function decideLocationStart(): Promise<'denied' | 'start' | 'explain'> {
   try {
     if (navigator.permissions?.query) {
       const status = await navigator.permissions.query({ name: 'geolocation' });
-      if (status.state !== 'prompt') return status.state;
+      if (status.state === 'denied') return 'denied';
+      if (status.state === 'granted') return 'start';
     }
   } catch {
-    // 未対応のブラウザは下の判定に任せる
+    // 未対応のブラウザは、案内を出したかだけで決める
   }
-  return grantedBefore ? 'granted' : 'prompt';
+  return isLocationExplained() ? 'start' : 'explain';
 }
 
 interface MapViewProps {
@@ -400,7 +413,7 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
           setUserLocation(location);
           setLocationStatus('available');
           locationDeniedRef.current = false;
-          localStorage.setItem(LOCATION_GRANTED_KEY, '1');
+          markLocationExplained();
 
           // spotIdが指定されていない場合のみ、ユーザーの位置に地図を移動
           const spotIdParam = searchParams.get('spotId');
@@ -503,7 +516,6 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
           if (error.code === error.PERMISSION_DENIED) {
             // 設定で許可する手順を案内する
             locationDeniedRef.current = true;
-            localStorage.removeItem(LOCATION_GRANTED_KEY);
             setLocationDialog('denied');
           } else if (error.code === error.POSITION_UNAVAILABLE) {
             toast.error('位置情報を取得できませんでした。');
@@ -522,6 +534,11 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
       toast.error('このブラウザは位置情報に対応していません。');
     }
   };
+
+  // 事前説明を出したら、この端末では次から出さない
+  useEffect(() => {
+    if (locationDialog === 'prompt') markLocationExplained();
+  }, [locationDialog]);
 
   // 位置情報の案内を開く。拒否されているときは設定の手順を出す
   const openLocationDialog = () => {
@@ -547,21 +564,21 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
     // ナビゲーションコントロール（ズームボタン）を追加
     map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
-    // 位置情報：許可済みならすぐ取得する。まだなら案内を出し、ボタンを押してから OS の確認を出す
+    // 位置情報：最初の1回だけ案内を出し、ボタンを押してから OS の確認を出す。2回目以降は直接取得する
     let cancelled = false;
     if (!navigator.geolocation) {
       startLocation();
     } else {
-      checkLocationPermission().then((state) => {
+      decideLocationStart().then((decision) => {
         if (cancelled) return;
-        if (state === 'granted') {
+        if (decision === 'start') {
           startLocation();
           return;
         }
-        locationDeniedRef.current = state === 'denied';
-        setLocationStatus(state === 'denied' ? 'error' : 'idle');
+        locationDeniedRef.current = decision === 'denied';
+        setLocationStatus(decision === 'denied' ? 'error' : 'idle');
         if (!locationDialogDismissed) {
-          setLocationDialog(state === 'denied' ? 'denied' : 'prompt');
+          setLocationDialog(decision === 'denied' ? 'denied' : 'prompt');
         }
       });
     }
