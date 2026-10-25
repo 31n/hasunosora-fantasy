@@ -22,17 +22,20 @@ const LOCATION_GRANTED_KEY = 'spot_checkin_location_granted';
 // 位置情報の案内を「あとで」で閉じたか。アプリを開いている間は、画面を移動するたびに出さない
 let locationDialogDismissed = false;
 
-// 位置情報の許可の状態を調べる。調べられないときは、過去に取得できたかで判断する
+// 位置情報の許可の状態を調べる
+// iOS の Safari・PWA は、許可済みでも Permissions API が 'prompt' を返すことがある。
+// そのため 'prompt' のときは、過去に取得できたかで判断する（取得できていれば許可済みとみなす）
 async function checkLocationPermission(): Promise<PermissionState> {
+  const grantedBefore = localStorage.getItem(LOCATION_GRANTED_KEY) === '1';
   try {
     if (navigator.permissions?.query) {
       const status = await navigator.permissions.query({ name: 'geolocation' });
-      return status.state;
+      if (status.state !== 'prompt') return status.state;
     }
   } catch {
     // 未対応のブラウザは下の判定に任せる
   }
-  return localStorage.getItem(LOCATION_GRANTED_KEY) === '1' ? 'granted' : 'prompt';
+  return grantedBefore ? 'granted' : 'prompt';
 }
 
 interface MapViewProps {
