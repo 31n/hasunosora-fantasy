@@ -11,6 +11,7 @@ import { calculateDistance, formatDistance } from '../../utils/distance';
 import { getQuizForUser, spotHasQuizForUser } from '../../utils/quiz';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
 import FilterListIcon from '@mui/icons-material/FilterList';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { toast } from '../../utils/toast';
 import LocationPermissionDialog, { type LocationDialogMode } from './LocationPermissionDialog';
 
@@ -1360,10 +1361,19 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
             boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
             zIndex: 10,
             cursor: 'pointer',
-            whiteSpace: 'nowrap'
+            whiteSpace: 'nowrap',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px'
           }}
+          aria-label={locationStatus === 'error' ? '位置情報を取得できません。案内を開く' : undefined}
         >
-          {locationStatus === 'idle' ? '📍 タップして位置情報をオンにする' : '⚠️ 位置情報を取得できません（タップで案内）'}
+          {locationStatus === 'idle' ? '📍 タップして位置情報をオンにする' : (
+            <>
+              ⚠️ 位置情報を取得できません
+              <InfoOutlinedIcon style={{ fontSize: '18px' }} aria-hidden="true" />
+            </>
+          )}
         </button>
       )}
 
