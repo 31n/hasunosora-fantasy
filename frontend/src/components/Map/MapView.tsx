@@ -1366,14 +1366,10 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
             alignItems: 'center',
             gap: '6px'
           }}
-          aria-label={locationStatus === 'error' ? '位置情報を取得できません。案内を開く' : undefined}
+          aria-label={locationStatus === 'idle' ? '位置情報がオフです。案内を開く' : '位置情報を取得できません。案内を開く'}
         >
-          {locationStatus === 'idle' ? '📍 タップして位置情報をオンにする' : (
-            <>
-              ⚠️ 位置情報を取得できません
-              <InfoOutlinedIcon style={{ fontSize: '18px' }} aria-hidden="true" />
-            </>
-          )}
+          {locationStatus === 'idle' ? '📍 位置情報がオフです' : '⚠️ 位置情報を取得できません'}
+          <InfoOutlinedIcon style={{ fontSize: '18px' }} aria-hidden="true" />
         </button>
       )}
 
