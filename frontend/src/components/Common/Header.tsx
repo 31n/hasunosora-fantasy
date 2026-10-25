@@ -47,7 +47,10 @@ export default function Header({ user, onLogout }: HeaderProps) {
             minWidth: 'fit-content'
           }}
         >
-          🌸 HASU Fantasy
+          {/* 画面が狭いほど短い表記にする（どれを出すかは下の <style> で切り替える） */}
+          <span className="header-logo-full">🌸 HASU Fantasy</span>
+          <span className="header-logo-medium">HASU Fantasy</span>
+          <span className="header-logo-short">H.Fantasy</span>
         </div>
 
         {/* ナビゲーション */}
@@ -60,8 +63,8 @@ export default function Header({ user, onLogout }: HeaderProps) {
         }}>
           <button
             onClick={() => navigate('/')}
+            className="header-nav-button"
             style={{
-              padding: '6px 12px',
               backgroundColor: isActive('/') ? '#dbeafe' : 'transparent',
               color: isActive('/') ? '#1e40af' : '#6b7280',
               border: 'none',
@@ -77,8 +80,8 @@ export default function Header({ user, onLogout }: HeaderProps) {
           </button>
           <button
             onClick={() => navigate('/spots')}
+            className="header-nav-button"
             style={{
-              padding: '6px 12px',
               backgroundColor: isActive('/spots') ? '#dbeafe' : 'transparent',
               color: isActive('/spots') ? '#1e40af' : '#6b7280',
               border: 'none',
@@ -94,8 +97,8 @@ export default function Header({ user, onLogout }: HeaderProps) {
           </button>
           <button
             onClick={() => navigate('/mypage')}
+            className="header-nav-button"
             style={{
-              padding: '6px 12px',
               backgroundColor: isActive('/mypage') ? '#dbeafe' : 'transparent',
               color: isActive('/mypage') ? '#1e40af' : '#6b7280',
               border: 'none',
@@ -136,6 +139,40 @@ export default function Header({ user, onLogout }: HeaderProps) {
       </div>
 
       <style>{`
+        .header-nav-button {
+          padding: 6px 12px;
+        }
+        .header-logo-medium,
+        .header-logo-short {
+          display: none;
+        }
+
+        /* 1段目がはみ出さないよう、狭い画面ほど詰める
+           ① ボタンの余白を詰める → ② ロゴの 🌸 を外す → ③ ロゴを H.Fantasy にする
+           幅は実測（1段目に必要な幅：そのまま 約425px、余白を詰めて 約401px、HASU Fantasy で 約376px、H.Fantasy で 約340px）
+           に、フォントの差を見込んで 4px の余裕を足した値。ボタンやロゴの文字を変えたら測り直す */
+        @media (max-width: 428px) {
+          .header-nav-button {
+            padding: 6px 8px;
+          }
+        }
+        @media (max-width: 404px) {
+          .header-logo-full {
+            display: none;
+          }
+          .header-logo-medium {
+            display: inline;
+          }
+        }
+        @media (max-width: 379px) {
+          .header-logo-medium {
+            display: none;
+          }
+          .header-logo-short {
+            display: inline;
+          }
+        }
+
         @media (min-width: 640px) {
           .mobile-user-info {
             display: none;
