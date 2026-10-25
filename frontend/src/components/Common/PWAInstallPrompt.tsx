@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { isIOS as detectIOS, isAndroid as detectAndroid } from '../../utils/platform';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -54,7 +55,7 @@ export default function PWAInstallPrompt() {
     console.log('[PWA] Added beforeinstallprompt listener');
 
     // iOS Safariの検出
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isIOS = detectIOS();
     const isInStandaloneMode = (window.navigator as any).standalone;
     
     console.log('[PWA] isIOS:', isIOS, 'isInStandaloneMode:', isInStandaloneMode);
@@ -66,8 +67,8 @@ export default function PWAInstallPrompt() {
     }
 
     // Androidで3秒待ってもbeforeinstallpromptが発火しない場合、手動案内を表示
-    const isAndroid = /Android/.test(navigator.userAgent);
-    if (isAndroid && !isIOS) {
+    const isAndroid = detectAndroid();
+    if (isAndroid) {
       const timer = setTimeout(() => {
         if (!deferredPrompt) {
           console.log('[PWA] beforeinstallprompt not fired, showing manual Android prompt');

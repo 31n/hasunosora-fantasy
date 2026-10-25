@@ -1,4 +1,12 @@
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
+import { getPlatform, type Platform } from '../../utils/platform';
+
+// 拒否されているときの、設定で許可する手順（端末の OS に合わせて1つだけ出す）
+const SETTINGS_STEPS: Record<Platform, string> = {
+  ios: '「設定」→「プライバシーとセキュリティ」→「位置情報サービス」をオンにし、「Safari Web サイト」で位置情報を許可してください。',
+  android: '端末の「設定」で位置情報をオンにし、ブラウザのサイト設定で、このサイトの位置情報を許可してください。',
+  other: 'ブラウザのアドレスバーの鍵のアイコンなどから、このサイトの位置情報を許可してください。',
+};
 
 export type LocationDialogMode = 'prompt' | 'denied';
 
@@ -18,6 +26,7 @@ export default function LocationPermissionDialog({ mode, onConfirm, onClose }: L
   useBodyScrollLock();
 
   const isPrompt = mode === 'prompt';
+  const platform = getPlatform();
 
   return (
     <div
@@ -73,14 +82,7 @@ export default function LocationPermissionDialog({ mode, onConfirm, onClose }: L
               チェックインやクイズには位置情報が必要です。設定で許可してから「もう一度試す」を押してください。
             </p>
             <div style={{ backgroundColor: '#f3f4f6', borderRadius: '8px', padding: '10px 14px', fontSize: '13px' }}>
-              <p style={{ marginBottom: '6px' }}>
-                <strong style={{ color: '#374151' }}>iPhone：</strong>
-                「設定」→「プライバシーとセキュリティ」→「位置情報サービス」をオンにし、「Safari Web サイト」で位置情報を許可
-              </p>
-              <p>
-                <strong style={{ color: '#374151' }}>Android・PC：</strong>
-                ブラウザのサイト設定で、このサイトの位置情報を許可
-              </p>
+              {SETTINGS_STEPS[platform]}
             </div>
           </div>
         )}
