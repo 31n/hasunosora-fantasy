@@ -1,8 +1,16 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { storage } from '../../services/storage';
 import { userApi } from '../../services/api';
 import type { User, CheckInHistory, Spot, Area, QuizType, Announcement } from '../../types';
+import type { SvgIconComponent } from '@mui/icons-material';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import LockOpenIcon from '@mui/icons-material/LockOpen';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import MapIcon from '@mui/icons-material/Map';
+import IosShareIcon from '@mui/icons-material/IosShare';
 import { toast } from '../../utils/toast';
 
 interface MyPageProps {
@@ -16,6 +24,14 @@ interface MyPageProps {
   onReload: () => void;
   reloading: boolean;
 }
+
+// ボタンや見出しの、アイコン＋文字
+const IconLabel = ({ icon: Icon, size = 18, children }: { icon: SvgIconComponent; size?: number; children: ReactNode }) => (
+  <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', verticalAlign: 'middle' }}>
+    <Icon style={{ fontSize: `${size}px` }} aria-hidden="true" />
+    {children}
+  </span>
+);
 
 // JST日付文字列（YYYY-MM-DD）を返す純粋関数
 const toJstDate = (utcStr: string): string => {
@@ -562,7 +578,7 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes, announc
                   fontSize: '14px'
                 }}
               >
-                📋 コピー
+                <IconLabel icon={ContentCopyIcon} size={16}>コピー</IconLabel>
               </button>
             </div>
           </div>
@@ -725,7 +741,7 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes, announc
                     cursor: 'pointer'
                   }}
                 >
-                  🔓 コード入力
+                  <IconLabel icon={LockOpenIcon}>コード入力</IconLabel>
                 </button>
               )}
             </div>
@@ -804,7 +820,7 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes, announc
                       opacity: loading ? 0.5 : 1
                     }}
                   >
-                    {loading ? '解放中...' : '✨ 解放する'}
+                    {loading ? '解放中...' : <IconLabel icon={AutoAwesomeIcon}>解放する</IconLabel>}
                   </button>
                   <button
                     onClick={() => {
@@ -850,7 +866,9 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes, announc
             marginTop: '16px'
           }}
         >
-          📢 お知らせを見る{announcements.length > 0 && `（${announcements.length} 件）`}
+          <IconLabel icon={NotificationsNoneIcon}>
+            お知らせを見る{announcements.length > 0 && `（${announcements.length} 件）`}
+          </IconLabel>
         </button>
 
         {/* 再読み込みボタン（スポットやユーザー情報をサーバーから取り直す） */}
@@ -870,7 +888,7 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes, announc
             marginTop: '16px'
           }}
         >
-          🔄 {reloading ? '更新中...' : 'データを再読み込み'}
+          <IconLabel icon={RefreshIcon}>{reloading ? '更新中...' : 'データを再読み込み'}</IconLabel>
         </button>
 
         {/* ログアウトボタン */}
@@ -993,7 +1011,7 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes, announc
           border: '1px solid #bae6fd'
         }}>
           <p style={{ fontSize: '14px', fontWeight: '600', color: '#0369a1', marginBottom: '10px' }}>
-            🗺️ 訪問マップを生成
+            <IconLabel icon={MapIcon} size={16}>訪問マップを生成</IconLabel>
           </p>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap' }}>
             <input
@@ -1050,7 +1068,7 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes, announc
               cursor: isGeneratingMap || mapFilteredCount.visits === 0 ? 'not-allowed' : 'pointer'
             }}
           >
-            {isGeneratingMap ? '生成中...' : '📸 マップ画像を保存 / シェア'}
+            {isGeneratingMap ? '生成中...' : <IconLabel icon={IosShareIcon} size={16}>マップ画像を保存 / シェア</IconLabel>}
           </button>
         </div>
 
