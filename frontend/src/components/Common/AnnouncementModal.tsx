@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { Announcement } from '../../types';
 import { LEVEL_STYLES, levelOf } from '../../utils/announcement';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
+import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 
 interface Props {
   announcements: Announcement[];
@@ -46,7 +47,7 @@ export default function AnnouncementModal({ announcements, onClose }: Props) {
       >
         {/* ヘッダー */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-          <span style={{ fontSize: '18px' }}>📢</span>
+          <NotificationsNoneIcon style={{ fontSize: '22px', color: level.color }} aria-hidden="true" />
           <h2 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#111827', flex: 1 }}>
             お知らせ
           </h2>

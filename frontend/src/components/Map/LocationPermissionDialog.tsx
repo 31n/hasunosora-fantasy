@@ -1,5 +1,7 @@
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import { getPlatform, type Platform } from '../../utils/platform';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import LocationOffIcon from '@mui/icons-material/LocationOff';
 
 // 拒否されているときの、設定で許可する手順（端末の OS に合わせて1つだけ出す）
 const SETTINGS_STEPS: Record<Platform, string> = {
@@ -60,8 +62,10 @@ export default function LocationPermissionDialog({ mode, onConfirm, onClose }: L
           textAlign: 'center',
         }}
       >
-        <div style={{ fontSize: '44px', lineHeight: 1, marginBottom: '12px' }} aria-hidden="true">
-          {isPrompt ? '📍' : '🔒'}
+        <div style={{ lineHeight: 1, marginBottom: '8px' }} aria-hidden="true">
+          {isPrompt
+            ? <LocationOnIcon style={{ fontSize: '52px', color: '#3b82f6' }} />
+            : <LocationOffIcon style={{ fontSize: '52px', color: '#ef4444' }} />}
         </div>
         <h2 id="location-dialog-title" style={{ fontSize: '18px', fontWeight: 'bold', color: '#111827', marginBottom: '12px' }}>
           {isPrompt ? '位置情報を使います' : '位置情報がオフになっています'}

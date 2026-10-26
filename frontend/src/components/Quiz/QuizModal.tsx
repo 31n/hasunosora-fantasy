@@ -4,6 +4,9 @@ import type { User, Spot, CheckInResponse, QuizType } from '../../types';
 import CelebrationIcon from '@mui/icons-material/Celebration';
 import CloseIcon from '@mui/icons-material/Close';
 import { toast } from '../../utils/toast';
+import IconLabel from '../Common/IconLabel';
+import EventAvailableIcon from '@mui/icons-material/EventAvailable';
+import CheckIcon from '@mui/icons-material/Check';
 
 interface QuizModalProps {
   user: User;
@@ -130,7 +133,7 @@ export default function QuizModal({ user, spot, quizData, onClose, readOnly = fa
                 color: '#92400e',
                 fontWeight: '600'
               }}>
-                📅 本日は回答済みです。明日また挑戦できます。
+                <IconLabel icon={EventAvailableIcon}>本日は回答済みです。明日また挑戦できます。</IconLabel>
               </div>
             )}
 
@@ -186,7 +189,7 @@ export default function QuizModal({ user, spot, quizData, onClose, readOnly = fa
                   />
                   {choice}
                   {showCorrectAnswer && index === correctAnswerIndex && (
-                    <span style={{ marginLeft: '8px', color: '#16a34a' }}>✓ 正解</span>
+                    <span style={{ marginLeft: '8px', color: '#16a34a' }}><IconLabel icon={CheckIcon} size={16} gap={2}>正解</IconLabel></span>
                   )}
                 </label>
               ))}
@@ -307,7 +310,7 @@ export default function QuizModal({ user, spot, quizData, onClose, readOnly = fa
                     fontWeight: 'bold',
                     color: '#15803d',
                   }}>
-                    ✓ 正解：{correctAnswerText}
+                    <IconLabel icon={CheckIcon} gap={4}>正解：{correctAnswerText}</IconLabel>
                   </div>
                 )}
               </div>

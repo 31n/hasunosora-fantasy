@@ -14,6 +14,11 @@ import FilterListIcon from '@mui/icons-material/FilterList';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { toast } from '../../utils/toast';
 import LocationPermissionDialog, { type LocationDialogMode } from './LocationPermissionDialog';
+import IconLabel from '../Common/IconLabel';
+import LightbulbOutlinedIcon from '@mui/icons-material/LightbulbOutlined';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import LocationOffIcon from '@mui/icons-material/LocationOff';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN || '';
 
@@ -1097,7 +1102,7 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
                   fontSize: '12px',
                   color: '#1e40af'
                 }}>
-                  💡 クイズありスポットが黄色で表示されます
+                  <IconLabel icon={LightbulbOutlinedIcon} size={16} gap={4}>クイズありスポットが黄色で表示されます</IconLabel>
                 </div>
               )}
             </div>
@@ -1133,7 +1138,7 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
                   backgroundColor: '#dcfce7', borderRadius: '6px',
                   fontSize: '12px', color: '#15803d'
                 }}>
-                  ✅ 本日チェックイン済みのスポットが緑のチェックマークで表示されます
+                  <IconLabel icon={CheckCircleIcon} size={16} gap={4}>本日チェックイン済みのスポットが緑のチェックマークで表示されます</IconLabel>
                 </div>
               )}
             </div>
@@ -1169,7 +1174,7 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
                   backgroundColor: '#e0f2fe', borderRadius: '6px',
                   fontSize: '12px', color: '#0369a1'
                 }}>
-                  ✅ 過去にチェックインしたスポットが青のチェックマークで表示されます
+                  <IconLabel icon={CheckCircleIcon} size={16} gap={4}>過去にチェックインしたスポットが青のチェックマークで表示されます</IconLabel>
                 </div>
               )}
             </div>
@@ -1368,7 +1373,10 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
           }}
           aria-label={locationStatus === 'idle' ? '位置情報がオフです。案内を開く' : '位置情報を取得できません。案内を開く'}
         >
-          {locationStatus === 'idle' ? '📍 位置情報がオフです' : '⚠️ 位置情報を取得できません'}
+          {locationStatus === 'idle'
+            ? <LocationOffIcon style={{ fontSize: '18px' }} aria-hidden="true" />
+            : <WarningAmberIcon style={{ fontSize: '18px' }} aria-hidden="true" />}
+          {locationStatus === 'idle' ? '位置情報がオフです' : '位置情報を取得できません'}
           <InfoOutlinedIcon style={{ fontSize: '18px' }} aria-hidden="true" />
         </button>
       )}

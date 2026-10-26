@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { adminApi } from '../../services/api';
 import { storage } from '../../services/storage';
 import type { Area } from '../../types';
+import IconLabel from '../Common/IconLabel';
+import CampaignIcon from '@mui/icons-material/Campaign';
 
 export default function AdminAreaList() {
   const [areas, setAreas] = useState<Area[]>([]);
@@ -444,7 +446,7 @@ export default function AdminAreaList() {
                 backgroundColor: '#fffbeb'
               }}>
                 <p style={{ fontWeight: '600', marginBottom: '12px', color: '#92400e' }}>
-                  🎟️ キャンペーン情報
+                  <IconLabel icon={CampaignIcon}>キャンペーン情報</IconLabel>
                 </p>
 
                 <div style={{ marginBottom: '12px' }}>

@@ -1,9 +1,9 @@
-import { useState, useEffect, useMemo, type ReactNode } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { storage } from '../../services/storage';
 import { userApi } from '../../services/api';
 import type { User, CheckInHistory, Spot, Area, QuizType, Announcement } from '../../types';
-import type { SvgIconComponent } from '@mui/icons-material';
+import IconLabel from '../Common/IconLabel';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
@@ -24,14 +24,6 @@ interface MyPageProps {
   onReload: () => void;
   reloading: boolean;
 }
-
-// ボタンや見出しの、アイコン＋文字
-const IconLabel = ({ icon: Icon, size = 18, children }: { icon: SvgIconComponent; size?: number; children: ReactNode }) => (
-  <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', verticalAlign: 'middle' }}>
-    <Icon style={{ fontSize: `${size}px` }} aria-hidden="true" />
-    {children}
-  </span>
-);
 
 // JST日付文字列（YYYY-MM-DD）を返す純粋関数
 const toJstDate = (utcStr: string): string => {

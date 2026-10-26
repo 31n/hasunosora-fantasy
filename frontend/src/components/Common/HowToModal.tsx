@@ -3,6 +3,8 @@ import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import howtoContent from '../../content/howto.md?raw';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
+import IconLabel from './IconLabel';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
 
 interface HowToModalProps {
   buttonStyle?: React.CSSProperties;
@@ -120,7 +122,7 @@ export default function HowToModal({ buttonStyle }: HowToModalProps) {
               }}
             >
               <span style={{ fontWeight: 'bold', fontSize: '16px', color: '#111827' }}>
-                📖 使い方
+                <IconLabel icon={MenuBookIcon}>使い方</IconLabel>
               </span>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 {/* 目次トグルボタン */}

@@ -8,6 +8,9 @@ import { userApi, checkinApi } from '../../services/api';
 import type { User, Spot, CheckInHistory, QuizType, Area } from '../../types';
 import { getQuizForUser } from '../../utils/quiz';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
+import IconLabel from '../Common/IconLabel';
+import CheckIcon from '@mui/icons-material/Check';
+import CloseIcon from '@mui/icons-material/Close';
 
 interface SpotDetailProps {
   user: User;
@@ -555,7 +558,9 @@ export default function SpotDetail({ user, quizTypes, areas = [] }: SpotDetailPr
                       fontSize: '14px',
                       color: item.quiz_correct ? '#059669' : '#dc2626'
                     }}>
-                      {item.quiz_correct ? '✓ 正解' : '✗ 不正解'}
+                      {item.quiz_correct
+                        ? <IconLabel icon={CheckIcon} size={16} gap={2}>正解</IconLabel>
+                        : <IconLabel icon={CloseIcon} size={16} gap={2}>不正解</IconLabel>}
                       {item.quiz_correct && ` (+${item.score_earned}点)`}
                     </p>
                   ) : (
@@ -656,7 +661,7 @@ export default function SpotDetail({ user, quizTypes, areas = [] }: SpotDetailPr
               }}
               aria-label="閉じる"
             >
-              ✕
+              <CloseIcon style={{ fontSize: '24px' }} />
             </button>
 
             {/* 矢印 & カウンター */}

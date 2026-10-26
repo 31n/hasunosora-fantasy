@@ -11,6 +11,8 @@ import DirectionsIcon from '@mui/icons-material/Directions';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import CampaignIcon from '@mui/icons-material/Campaign';
 import type { Area } from '../../types';
+import IconLabel from '../Common/IconLabel';
+import PlaceIcon from '@mui/icons-material/Place';
 
 interface SpotPopupProps {
   spot: Spot;
@@ -141,7 +143,7 @@ export default function SpotPopup({
                 )}
               </h3>
               <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: '#6b7280' }}>
-                📍 {formatDistance(distance)}
+                <IconLabel icon={PlaceIcon} size={16} gap={2}>{formatDistance(distance)}</IconLabel>
               </p>
             </div>
             <button
@@ -333,7 +335,7 @@ export default function SpotPopup({
           <div style={{ flex: 1 }}>
             <h2 style={{ margin: 0, fontSize: '22px', fontWeight: '700' }}>{spot.spot_name}</h2>
             <p style={{ margin: '6px 0 0 0', fontSize: '14px', color: '#6b7280' }}>
-              📍 {formatDistance(distance)}
+              <IconLabel icon={PlaceIcon} size={16} gap={2}>{formatDistance(distance)}</IconLabel>
             </p>
           </div>
           <button
@@ -752,7 +754,7 @@ export default function SpotPopup({
                 cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0,
               }}
               aria-label="閉じる"
-            >✕</button>
+            ><CloseIcon style={{ fontSize: '24px' }} /></button>
             {spot.images.length > 1 && (
               <>
                 <button

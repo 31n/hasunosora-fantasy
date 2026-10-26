@@ -1,11 +1,16 @@
 import { useEffect, useState } from 'react';
+import type { SvgIconComponent } from '@mui/icons-material';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { subscribeToast, type ToastMessage, type ToastType } from '../../utils/toast';
 
-const STYLES: Record<ToastType, { background: string; icon: string }> = {
-  success: { background: '#16a34a', icon: '✓' },
-  error: { background: '#dc2626', icon: '!' },
-  warning: { background: '#d97706', icon: '!' },
-  info: { background: '#1f2937', icon: 'i' },
+const STYLES: Record<ToastType, { background: string; icon: SvgIconComponent }> = {
+  success: { background: '#16a34a', icon: CheckCircleIcon },
+  error: { background: '#dc2626', icon: ErrorOutlineIcon },
+  warning: { background: '#d97706', icon: WarningAmberIcon },
+  info: { background: '#1f2937', icon: InfoOutlinedIcon },
 };
 
 // 表示しておく時間。エラーは読み切れるよう長めにする
@@ -85,23 +90,10 @@ export default function ToastHost() {
             animation: 'toastIn 0.2s ease-out',
           }}
         >
-          <span
-            aria-hidden="true"
-            style={{
-              flexShrink: 0,
-              width: '20px',
-              height: '20px',
-              borderRadius: '50%',
-              backgroundColor: 'rgba(255, 255, 255, 0.25)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '12px',
-              fontWeight: 'bold',
-            }}
-          >
-            {STYLES[toast.type].icon}
-          </span>
+          {(() => {
+            const Icon = STYLES[toast.type].icon;
+            return <Icon style={{ fontSize: '20px', flexShrink: 0 }} aria-hidden="true" />;
+          })()}
           <span>{toast.message}</span>
         </div>
       ))}

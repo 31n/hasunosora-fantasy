@@ -5,6 +5,8 @@ import { storage } from '../../services/storage';
 import { indexedDB } from '../../services/indexedDB';
 import type { Spot, Area, QuizType, QuizWithType, PilgrimageWork } from '../../types';
 import { OpenLocationCode } from 'open-location-code';
+import IconLabel from '../Common/IconLabel';
+import CheckIcon from '@mui/icons-material/Check';
 
 export default function AdminSpotForm() {
   const { spotId } = useParams<{ spotId?: string }>();
@@ -796,7 +798,7 @@ export default function AdminSpotForm() {
                 )}
                 {plusCode && !plusCodeError && formData.latitude && formData.longitude && (
                   <p style={{ color: '#10b981', fontSize: '14px', marginTop: '4px' }}>
-                    ✓ 緯度: {formData.latitude}, 経度: {formData.longitude}
+                    <IconLabel icon={CheckIcon} size={16} gap={4}>緯度: {formData.latitude}, 経度: {formData.longitude}</IconLabel>
                   </p>
                 )}
               </div>

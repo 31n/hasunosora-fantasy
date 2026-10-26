@@ -3,6 +3,8 @@ import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import { useNavigate } from 'react-router-dom';
 import howtoContent from '../../content/howto.md?raw';
+import IconLabel from './IconLabel';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
 
 interface TocItem {
   level: 2 | 3;
@@ -80,7 +82,7 @@ export default function HowToPage() {
             ←
           </button>
           <span style={{ fontWeight: 'bold', fontSize: '16px', color: '#111827' }}>
-            📖 使い方
+            <IconLabel icon={MenuBookIcon}>使い方</IconLabel>
           </span>
         </div>
         <button

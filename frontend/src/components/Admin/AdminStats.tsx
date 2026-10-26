@@ -2,6 +2,10 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { adminApi } from '../../services/api';
 import { storage } from '../../services/storage';
+import IconLabel from '../Common/IconLabel';
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
 
 type DailyEntry = { date: string; count: number };
 type CheckinSpot = { spot_id: string; spot_name: string; count: number };
@@ -203,7 +207,7 @@ export default function AdminStats() {
 
             {/* チェックインが多いスポット */}
             <div style={{ backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '20px' }}>
-              <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#374151', marginBottom: '12px' }}>🏅 チェックインが多いスポット</h3>
+              <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#374151', marginBottom: '12px' }}><IconLabel icon={EmojiEventsIcon} color="#d97706">チェックインが多いスポット</IconLabel></h3>
               {stats.top_checkin_spots.length === 0 ? (
                 <p style={{ fontSize: '13px', color: '#9ca3af' }}>データなし</p>
               ) : (
@@ -223,7 +227,7 @@ export default function AdminStats() {
 
             {/* クイズ正解率が高いスポット */}
             <div style={{ backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '20px' }}>
-              <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#374151', marginBottom: '12px' }}>✅ クイズ正解率が高いスポット</h3>
+              <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#374151', marginBottom: '12px' }}><IconLabel icon={CheckCircleOutlineIcon} color="#16a34a">クイズ正解率が高いスポット</IconLabel></h3>
               {stats.top_quiz_correct_spots.length === 0 ? (
                 <p style={{ fontSize: '13px', color: '#9ca3af' }}>データなし（3回以上回答があるスポットが対象）</p>
               ) : (
@@ -243,7 +247,7 @@ export default function AdminStats() {
 
             {/* クイズ正解率が低いスポット */}
             <div style={{ backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '20px' }}>
-              <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#374151', marginBottom: '12px' }}>❌ クイズ正解率が低いスポット</h3>
+              <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#374151', marginBottom: '12px' }}><IconLabel icon={CancelOutlinedIcon} color="#dc2626">クイズ正解率が低いスポット</IconLabel></h3>
               {stats.low_quiz_correct_spots.length === 0 ? (
                 <p style={{ fontSize: '13px', color: '#9ca3af' }}>データなし（3回以上回答があるスポットが対象）</p>
               ) : (

@@ -30,6 +30,7 @@ import { announcementsToPopup, markAnnouncementsRead, levelOf, LEVEL_STYLES } fr
 
 import type { User, Spot, Area, QuizType, Announcement } from './types';
 import { toast } from './utils/toast';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -284,7 +285,8 @@ function AppContent({
                 whiteSpace: 'nowrap',
               }}
             >
-              ⚠️ {urgentAnnouncements[0].title}
+              <WarningAmberIcon style={{ fontSize: '18px', verticalAlign: '-4px', marginRight: '6px' }} aria-hidden="true" />
+              {urgentAnnouncements[0].title}
               {urgentAnnouncements.length > 1 && ` ほか ${urgentAnnouncements.length - 1} 件`}
             </button>
           )}
