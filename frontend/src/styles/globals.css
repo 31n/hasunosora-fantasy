@@ -43,6 +43,12 @@ body {
   overflow: hidden;
 }
 
+/* 地図のページでは、ページ全体のバウンドも止める（モーダルの上でスワイプしたとき、画面ごと動かないように） */
+html:has(.app.map-page),
+html:has(.app.map-page) body {
+  overscroll-behavior: none;
+}
+
 button {
   font-family: inherit;
 }

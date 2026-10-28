@@ -116,7 +116,9 @@ export default function SpotPopup({
         borderRadius: '16px',
         boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
         zIndex: 1000,
-        animation: 'slideUp 0.3s ease-out'
+        animation: 'slideUp 0.3s ease-out',
+        // カードの上でスワイプしても、裏の画面が動かないようにする（タップはそのまま効く）
+        touchAction: 'none'
       }}>
         <div style={{ padding: '16px' }}>
           {/* ヘッダー */}
@@ -312,6 +314,8 @@ export default function SpotPopup({
       boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.15)',
       zIndex: 1000,
       overflowY: 'auto',
+      // 端までスクロールしても、その先の動きを裏の画面に伝えない
+      overscrollBehavior: 'contain',
       animation: 'slideUpDetail 0.3s ease-out'
     }}>
       {/* ハンドル */}

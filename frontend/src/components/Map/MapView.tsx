@@ -1008,7 +1008,9 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              // 背景の上でスワイプしても、裏の地図が動かないようにする
+              touchAction: 'none'
             }}
           />
           
@@ -1026,7 +1028,9 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
             width: 'calc(100% - 32px)',
             maxWidth: '480px',
             maxHeight: '80dvh',
-            overflowY: 'auto'
+            overflowY: 'auto',
+            // 端までスクロールしても、その先の動きを裏の画面に伝えない
+            overscrollBehavior: 'contain'
           }}
           onClick={(e) => e.stopPropagation()}
           role="dialog"
