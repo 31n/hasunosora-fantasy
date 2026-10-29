@@ -15,7 +15,7 @@ export default defineConfig({
         name: 'HASU Fantasy',
         short_name: 'HASU Fantasy',
         description: '位置情報を使ったスポット巡りアプリ',
-        theme_color: '#3b82f6',
+        theme_color: '#ffffff',
         background_color: '#ffffff',
         display: 'standalone',
         orientation: 'portrait',
