@@ -6,6 +6,13 @@ export function jstToday(): string {
 }
 
 /**
+ * 日本時間で今日から days 日前の日付（YYYY-MM-DD）
+ */
+export function jstDaysAgo(days: number): string {
+  return new Date(Date.now() + (9 - days * 24) * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+/**
  * ISO8601形式の日時文字列を日本語フォーマットに変換
  */
 export function formatDate(dateString: string): string {

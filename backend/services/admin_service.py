@@ -1,12 +1,16 @@
 from models.spot import Spot
+from models.checkin import _parse_utc
 from utils.s3 import upload_image, delete_image
 from utils.ssm import get_admin_password
 from config import config
-from typing import Dict, List
+from typing import Dict, List, Optional
 import base64
 import hmac
 import collections
 from datetime import datetime, timezone, timedelta
+
+JST = timezone(timedelta(hours=9))
+
 
 class AdminService:
     @staticmethod
@@ -203,85 +207,89 @@ class AdminService:
         }
     
     @staticmethod
-    def get_stats() -> Dict:
-        """ユーザー統計を取得（過去30日）"""
+    def _parse_stats_date(value: Optional[str]) -> Optional[str]:
+        """期間指定の日付（YYYY-MM-DD）を検証する。未指定は None"""
+        if not value:
+            return None
+        try:
+            return datetime.strptime(value, '%Y-%m-%d').date().isoformat()
+        except ValueError:
+            raise ValueError('INVALID_DATE')
+
+    @staticmethod
+    def _jst_date(value: Optional[str]) -> Optional[str]:
+        """保存されている日時（UTC）を日本時間の日付にする。読めない値は None"""
+        if not value:
+            return None
+        try:
+            return _parse_utc(value).astimezone(JST).date().isoformat()
+        except ValueError:
+            return None
+
+    @staticmethod
+    def _scan_all(table, projection: str) -> List[Dict]:
+        """テーブルを最後までスキャンする"""
+        scan = {'ProjectionExpression': projection}
+        items: List[Dict] = []
+        while True:
+            response = table.scan(**scan)
+            items.extend(response.get('Items', []))
+            last_key = response.get('LastEvaluatedKey')
+            if not last_key:
+                return items
+            scan['ExclusiveStartKey'] = last_key
+
+    @staticmethod
+    def get_stats(date_from: Optional[str] = None, date_to: Optional[str] = None) -> Dict:
+        """ユーザー統計を取得する
+
+        期間は日本時間の日付で、両端を含む。from を省くと最初のデータから、to を省くと今日まで。
+        total_users だけは期間によらず全ユーザー数を返す
+        """
         from utils.dynamodb import get_table
 
-        now = datetime.now(timezone.utc)
-        thirty_days_ago = (now - timedelta(days=30)).isoformat()
-        seven_days_ago = (now - timedelta(days=7)).isoformat()
+        date_from = AdminService._parse_stats_date(date_from)
+        date_to = AdminService._parse_stats_date(date_to)
 
-        # ユーザーテーブルをフルスキャン（created_at のみ取得）
-        users_table = get_table(config.USERS_TABLE)
-        user_items = []
-        response = users_table.scan(ProjectionExpression='created_at')
-        user_items.extend(response.get('Items', []))
-        while 'LastEvaluatedKey' in response:
-            response = users_table.scan(
-                ProjectionExpression='created_at',
-                ExclusiveStartKey=response['LastEvaluatedKey']
-            )
-            user_items.extend(response.get('Items', []))
+        today = datetime.now(JST).date().isoformat()
+        end = min(date_to or today, today)
+        if date_from and date_from > end:
+            raise ValueError('INVALID_DATE_RANGE')
 
-        total_users = len(user_items)
+        user_items = AdminService._scan_all(get_table(config.USERS_TABLE), 'created_at')
+        checkin_items = AdminService._scan_all(
+            get_table(config.CHECKINS_TABLE),
+            'user_id, spot_id, checked_in_at, quiz_answered, quiz_correct'
+        )
 
-        # 日別新規ユーザー数（過去30日）
+        user_dates = [AdminService._jst_date(item.get('created_at')) for item in user_items]
+        checkins = [(AdminService._jst_date(item.get('checked_in_at')), item) for item in checkin_items]
+
+        # 最初のデータより前は数えるものがないので、日別の一覧に含めない
+        earliest = min(
+            [d for d in user_dates if d] + [d for d, _ in checkins if d],
+            default=today
+        )
+        start = max(date_from or earliest, earliest)
+
         daily_new_users_map: Dict[str, int] = collections.defaultdict(int)
-        cutoff_date = thirty_days_ago[:10]
-        for item in user_items:
-            date = (item.get('created_at') or '')[:10]
-            if date >= cutoff_date:
+        for date in user_dates:
+            if date and start <= date <= end:
                 daily_new_users_map[date] += 1
 
-        # チェックインテーブルをスキャン（過去30日）
-        checkins_table = get_table(config.CHECKINS_TABLE)
-        checkin_items = []
-        response = checkins_table.scan(
-            FilterExpression='checked_in_at >= :d',
-            ExpressionAttributeValues={':d': thirty_days_ago}
-        )
-        checkin_items.extend(response.get('Items', []))
-        while 'LastEvaluatedKey' in response:
-            response = checkins_table.scan(
-                FilterExpression='checked_in_at >= :d',
-                ExpressionAttributeValues={':d': thirty_days_ago},
-                ExclusiveStartKey=response['LastEvaluatedKey']
-            )
-            checkin_items.extend(response.get('Items', []))
-
-        # 日別アクティブユーザー数（ユニーク user_id）
         daily_active_map: Dict[str, set] = collections.defaultdict(set)
-        active_users_7d: set = set()
-        for item in checkin_items:
-            date = (item.get('checked_in_at') or '')[:10]
-            user_id = item.get('user_id', '')
-            if user_id:
-                daily_active_map[date].add(user_id)
-                if (item.get('checked_in_at') or '') >= seven_days_ago:
-                    active_users_7d.add(user_id)
-
-        # 過去30日の日付リスト（昇順）
-        dates = [(now - timedelta(days=i)).strftime('%Y-%m-%d') for i in range(29, -1, -1)]
-
-        # --- スポット別統計（全期間） ---
-        # チェックインテーブルをフルスキャン（spot_id, quiz_answered, quiz_correct のみ取得）
+        active_users: set = set()
         spot_checkin_counts: Dict[str, int] = collections.defaultdict(int)
         spot_quiz_answered: Dict[str, int] = collections.defaultdict(int)
         spot_quiz_correct: Dict[str, int] = collections.defaultdict(int)
 
-        spot_stats_items = []
-        response = checkins_table.scan(
-            ProjectionExpression='spot_id, quiz_answered, quiz_correct'
-        )
-        spot_stats_items.extend(response.get('Items', []))
-        while 'LastEvaluatedKey' in response:
-            response = checkins_table.scan(
-                ProjectionExpression='spot_id, quiz_answered, quiz_correct',
-                ExclusiveStartKey=response['LastEvaluatedKey']
-            )
-            spot_stats_items.extend(response.get('Items', []))
-
-        for item in spot_stats_items:
+        for date, item in checkins:
+            if not date or not start <= date <= end:
+                continue
+            user_id = item.get('user_id', '')
+            if user_id:
+                daily_active_map[date].add(user_id)
+                active_users.add(user_id)
             sid = item.get('spot_id', '')
             if not sid:
                 continue
@@ -290,6 +298,14 @@ class AdminService:
                 spot_quiz_answered[sid] += 1
             if item.get('quiz_correct'):
                 spot_quiz_correct[sid] += 1
+
+        # 期間内の日付リスト（昇順）
+        dates: List[str] = []
+        current = datetime.strptime(start, '%Y-%m-%d').date()
+        last = datetime.strptime(end, '%Y-%m-%d').date()
+        while current <= last:
+            dates.append(current.isoformat())
+            current += timedelta(days=1)
 
         # スポット名マップを取得
         from models.spot import Spot as SpotModel
@@ -328,8 +344,10 @@ class AdminService:
         low_quiz_correct_spots = sorted(quiz_rate_entries, key=lambda x: x['rate'])[:10]
 
         return {
-            'total_users': total_users,
-            'active_users_7d': len(active_users_7d),
+            'period': {'from': start, 'to': end},
+            'total_users': len(user_items),
+            'active_users': len(active_users),
+            'new_users': sum(daily_new_users_map.values()),
             'daily_new_users': [
                 {'date': d, 'count': daily_new_users_map.get(d, 0)} for d in dates
             ],

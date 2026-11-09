@@ -760,7 +760,8 @@ def admin_delete_announcement(event):
 def admin_get_stats(event):
     try:
         check_admin_auth(event)
-        result = AdminService.get_stats()
+        query_params = event.get('queryStringParameters') or {}
+        result = AdminService.get_stats(query_params.get('from'), query_params.get('to'))
         return success_response(result)
     except ValueError as e:
         return error_response(str(e), str(e), 400)

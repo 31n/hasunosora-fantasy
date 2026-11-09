@@ -282,16 +282,23 @@ export const adminApi = {
   },
 
   // 統計
-  getStats: async (password: string): Promise<{
+  // from・to は日本時間の日付（YYYY-MM-DD）。省くと、最初のデータから・今日までになる
+  getStats: async (password: string, period: { from?: string; to?: string } = {}): Promise<{
+    period: { from: string; to: string };
     total_users: number;
-    active_users_7d: number;
+    active_users: number;
+    new_users: number;
     daily_new_users: { date: string; count: number }[];
     daily_active_users: { date: string; count: number }[];
     top_checkin_spots: { spot_id: string; spot_name: string; count: number }[];
     top_quiz_correct_spots: { spot_id: string; spot_name: string; answered: number; correct: number; rate: number }[];
     low_quiz_correct_spots: { spot_id: string; spot_name: string; answered: number; correct: number; rate: number }[];
   }> => {
-    return fetchApi('/admin/stats', {
+    const params = new URLSearchParams();
+    if (period.from) params.set('from', period.from);
+    if (period.to) params.set('to', period.to);
+    const query = params.toString();
+    return fetchApi(`/admin/stats${query ? `?${query}` : ''}`, {
       headers: { 'X-Admin-Password': password },
     });
   },
