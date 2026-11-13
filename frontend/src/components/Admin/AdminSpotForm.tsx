@@ -113,8 +113,17 @@ export default function AdminSpotForm() {
     if (!spotId) return;
 
     try {
-      const spot = await indexedDB.getSpot(spotId);
-      if (spot) {
+      // 管理用 API から読む。端末に保存してある公開用のマスタは、クイズの正解が外してあり、古いこともある
+      const password = storage.getAdminPassword();
+      if (!password) return;
+      const { spots: adminSpots } = await adminApi.getSpots(password);
+      const spot = adminSpots.find(s => s.spot_id === spotId);
+      if (!spot) {
+        alert('スポットが見つかりませんでした');
+        navigate('/admin/spots' + returnSearch);
+        return;
+      }
+      {
         setFormData({
           spot_name: spot.spot_name,
           reading: spot.reading || '',
@@ -156,6 +165,9 @@ export default function AdminSpotForm() {
       }
     } catch (error) {
       console.error('スポット取得エラー:', error);
+      // 空のフォームのまま保存すると中身を消してしまうので、一覧へ戻す
+      alert('スポットを読み込めませんでした。通信状況を確認して、もう一度開いてください');
+      navigate('/admin/spots' + returnSearch);
     }
   };
 
