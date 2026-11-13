@@ -15,7 +15,7 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { toast } from '../../utils/toast';
 import LocationPermissionDialog, { type LocationDialogMode } from './LocationPermissionDialog';
 import IconLabel from '../Common/IconLabel';
-import MyMapsSettings from './MyMapsSettings';
+import MyMapPlacePopup from './MyMapPlacePopup';
 import { useMyMaps } from '../../hooks/useMyMaps';
 import LightbulbOutlinedIcon from '@mui/icons-material/LightbulbOutlined';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -159,6 +159,7 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
   // スポット選択時にステータスを確認
   useEffect(() => {
     if (selectedSpot) {
+      myMaps.clearSelected();
       // 新しいスポットを開く前にリセット
       setCheckinStatus('none');
       setIsQuizOnCooldown(false);
@@ -425,7 +426,8 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
 
           // spotIdが指定されていない場合のみ、ユーザーの位置に地図を移動
           const spotIdParam = searchParams.get('spotId');
-          if (!spotIdParam && map.current) {
+          // マイページの「地図で見る」から来たときも、マイマップの位置を優先する
+          if (!spotIdParam && !searchParams.get('mymap') && map.current) {
             map.current.setCenter([longitude, latitude]);
           }
 
@@ -611,7 +613,17 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
   }, []); // 初回のみ実行
 
   // Google マイマップの重ね表示（地図の初期化のあとに呼ぶ）
-  const myMaps = useMyMaps(map);
+  const myMaps = useMyMaps(map, searchParams.get('mymap'), { today: showTodayCheckinMark, all: showAllCheckinMark });
+
+  // マイマップの場所を選んだら、開いているスポットのカードは閉じる
+  useEffect(() => {
+    if (!myMaps.selected || !selectedSpot) return;
+    setSelectedSpot(null);
+    const params = new URLSearchParams(searchParams);
+    params.delete('spotId');
+    setSearchParams(params);
+    map.current?.easeTo({ padding: { top: 0, bottom: 0, left: 0, right: 0 } });
+  }, [myMaps.selected]);
 
   useEffect(() => {
     return () => {
@@ -1255,16 +1267,6 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
               </select>
             </div>
             
-            <MyMapsSettings
-              entries={myMaps.entries}
-              status={myMaps.status}
-              onAdd={myMaps.add}
-              onToggle={myMaps.toggle}
-              onRemove={myMaps.remove}
-              onReload={myMaps.reload}
-              onFocus={(mid) => { myMaps.focus(mid); setShowFilter(false); }}
-            />
-
             {/* 凡例 */}
             <div style={{
               marginTop: '20px',
@@ -1398,6 +1400,28 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
           {locationStatus === 'idle' ? '位置情報がオフです' : '位置情報を取得できません'}
           <InfoOutlinedIcon style={{ fontSize: '18px' }} aria-hidden="true" />
         </button>
+      )}
+
+      {/* マイマップの場所（スポットを選んでいるときはスポットを優先） */}
+      {myMaps.selected && !selectedSpot && (
+        <MyMapPlacePopup
+          place={myMaps.selected}
+          distance={userLocation ? calculateDistance(
+            userLocation[1],
+            userLocation[0],
+            myMaps.selected.latitude,
+            myMaps.selected.longitude
+          ) : null}
+          status={myMaps.selectedStatus}
+          onCheckin={() => {
+            if (myMaps.selected && myMaps.checkin(myMaps.selected)) {
+              toast.success(`${myMaps.selected.name} にチェックインしました`);
+            } else {
+              toast.error('チェックインを保存できませんでした');
+            }
+          }}
+          onClose={myMaps.clearSelected}
+        />
       )}
 
       {/* 位置情報の案内 */}

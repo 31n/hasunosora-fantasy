@@ -4,6 +4,8 @@ import { storage } from '../../services/storage';
 import { userApi } from '../../services/api';
 import type { User, CheckInHistory, Spot, Area, QuizType, Announcement } from '../../types';
 import IconLabel from '../Common/IconLabel';
+import MyMapsSection from './MyMapsSection';
+import { loadMyMapCheckins, type MyMapCheckin } from '../../utils/myMaps';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
@@ -75,6 +77,23 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes, announc
   const [showGenreCodeInput, setShowGenreCodeInput] = useState(false);
   const [genreCode, setGenreCode] = useState('');
   const [showAllHistory, setShowAllHistory] = useState(false);
+  // 履歴の一覧に出すもの：サーバーの訪問履歴に、この端末だけにあるマイマップのチェックインを混ぜる
+  // （統計やマップ画像には入れない）
+  const historyList = useMemo(() => {
+    const items: (CheckInHistory & { myMap?: MyMapCheckin })[] = [
+      ...history,
+      ...loadMyMapCheckins().map((c) => ({
+        spot_id: '',
+        spot_name: c.name,
+        checked_in_at: c.checked_in_at,
+        quiz_answered: false,
+        quiz_correct: false,
+        score_earned: 0,
+        myMap: c,
+      })),
+    ];
+    return items.sort((a, b) => new Date(b.checked_in_at).getTime() - new Date(a.checked_in_at).getTime());
+  }, [history]);
   // マップ画像生成用
   const [mapDateFrom, setMapDateFrom] = useState(() =>
     new Date(Date.now() + 9 * 3600000 - 6 * 24 * 3600000).toISOString().slice(0, 10)
@@ -709,6 +728,9 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes, announc
             </div>
           )}
 
+          {/* Google マイマップ */}
+          <MyMapsSection />
+
           {/* エリアコード入力 */}
           <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid #e5e7eb' }}>
             <div style={{ marginBottom: '12px' }}>
@@ -1064,16 +1086,18 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes, announc
           </button>
         </div>
 
-        {history.length === 0 ? (
+        {historyList.length === 0 ? (
           <p style={{ textAlign: 'center', color: '#6b7280', padding: '24px 0' }}>
             まだ訪問履歴がありません
           </p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {[...history].sort((a, b) => new Date(b.checked_in_at).getTime() - new Date(a.checked_in_at).getTime()).slice(0, showAllHistory ? undefined : 10).map((item, index) => (
+            {historyList.slice(0, showAllHistory ? undefined : 10).map((item, index) => (
               <div
                 key={index}
-                onClick={() => navigate(`/spots/${item.spot_id}`, { state: { from: '/mypage' } })}
+                onClick={() => item.myMap
+                  ? navigate(`/?mymap=${encodeURIComponent(item.myMap.mid)}`)
+                  : navigate(`/spots/${item.spot_id}`, { state: { from: '/mypage' } })}
                 style={{
                   padding: '16px',
                   backgroundColor: '#f9fafb',
@@ -1090,6 +1114,24 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes, announc
                     {formatDate(item.checked_in_at)}
                   </p>
                 </div>
+                {item.myMap && (
+                  <span style={{
+                    display: 'inline-block',
+                    maxWidth: '100%',
+                    boxSizing: 'border-box',
+                    padding: '4px 12px',
+                    backgroundColor: '#fee2e2',
+                    color: '#991b1b',
+                    borderRadius: '12px',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}>
+                    マイマップ{item.myMap.mapName ? `：${item.myMap.mapName}` : ''}
+                  </span>
+                )}
                 {item.quiz_answered && (
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                     <span style={{
@@ -1113,7 +1155,7 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes, announc
             ))}
           </div>
         )}
-        {history.length > 10 && (
+        {historyList.length > 10 && (
           <button
             onClick={() => setShowAllHistory(!showAllHistory)}
             style={{
@@ -1129,7 +1171,7 @@ export default function MyPage({ user, setUser, spots, areas, quizTypes, announc
               cursor: 'pointer'
             }}
           >
-            {showAllHistory ? '折りたたむ' : `すべて表示（${history.length}件）`}
+            {showAllHistory ? '折りたたむ' : `すべて表示（${historyList.length}件）`}
           </button>
         )}
       </div>

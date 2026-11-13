@@ -13,7 +13,52 @@ export interface MyMapData {
   geojson: GeoJSON.FeatureCollection;
 }
 
+// マイマップの場所でのチェックイン。サーバーには送らず、この端末にだけ残す
+export interface MyMapCheckin {
+  placeKey: string;
+  mid: string;
+  mapName: string;
+  name: string;
+  longitude: number;
+  latitude: number;
+  checked_in_at: string;
+}
+
 const STORAGE_KEY = 'myMapsOverlays';
+const CHECKINS_KEY = 'myMapsCheckins';
+// チェックインできる距離（m）。スポットの検出半径の既定値と同じ
+export const MYMAP_CHECKIN_RADIUS = 100;
+
+// マイマップのピンには固定の ID がないので、地図・名前・位置で同じ場所とみなす
+export function myMapPlaceKey(mid: string, name: string, longitude: number, latitude: number): string {
+  return `${mid}|${name}|${longitude.toFixed(5)},${latitude.toFixed(5)}`;
+}
+
+export function loadMyMapCheckins(): MyMapCheckin[] {
+  try {
+    const raw = localStorage.getItem(CHECKINS_KEY);
+    const list = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(list)) return [];
+    return list.filter((c) => c && typeof c.placeKey === 'string' && typeof c.checked_in_at === 'string');
+  } catch {
+    return [];
+  }
+}
+
+// 保存できたら true。容量不足などで保存できなかったら false
+export function saveMyMapCheckins(checkins: MyMapCheckin[]): boolean {
+  try {
+    localStorage.setItem(CHECKINS_KEY, JSON.stringify(checkins));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// 日時（ISO8601）を日本時間の日付（YYYY-MM-DD）にする
+export function jstDateOf(iso: string): string {
+  return new Date(new Date(iso).getTime() + 9 * 3600000).toISOString().slice(0, 10);
+}
 const DEFAULT_COLOR = '#ea4335';
 
 export function loadMyMapEntries(): MyMapEntry[] {

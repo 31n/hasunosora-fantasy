@@ -1,32 +1,55 @@
 import { useCallback, useEffect, useRef, useState, type MutableRefObject } from 'react';
 import mapboxgl from 'mapbox-gl';
 import {
-  extractMyMapId,
   fetchMyMap,
+  jstDateOf,
+  loadMyMapCheckins,
   loadMyMapEntries,
   myMapBounds,
+  myMapPlaceKey,
+  saveMyMapCheckins,
   saveMyMapEntries,
+  type MyMapCheckin,
   type MyMapData,
   type MyMapEntry,
 } from '../utils/myMaps';
+import { jstToday } from '../utils/date';
 
-export type MyMapStatus = 'loading' | 'ready' | 'error';
+// 地図の上で選んだ、マイマップの場所
+export interface MyMapPlace {
+  name: string;
+  description: string;
+  mapName: string;
+  longitude: number;
+  latitude: number;
+  mid: string;
+  // ピン（点）のときだけ入る。線や面はチェックインの対象にしない
+  placeKey: string | null;
+}
+
+// チェックイン済みの印を出すか（フィルター画面の設定に合わせる）
+export interface MyMapMarks {
+  today: boolean;
+  all: boolean;
+}
+
+const TODAY_COLOR = '#16a34a';
+const PAST_COLOR = '#0ea5e9';
 
 const sourceId = (mid: string) => `mymap-${mid}`;
-const layerIds = (mid: string) => ['fill', 'line', 'circle', 'label'].map((kind) => `mymap-${mid}-${kind}`);
+const layerIds = (mid: string) => ['fill', 'line', 'circle', 'label', 'checked', 'check'].map((kind) => `mymap-${mid}-${kind}`);
 
-// Google マイマップを地図に重ねる。登録の一覧は端末内に保存し、中身は開くたびに Google から取り直す
-export function useMyMaps(map: MutableRefObject<mapboxgl.Map | null>) {
+// Google マイマップを地図に重ねる。登録（マイページで行う）の一覧は端末内にあり、中身は開くたびに Google から取り直す
+// focusMid を渡すと、その地図が読み込めたときに全体が収まる位置へ移動する
+export function useMyMaps(map: MutableRefObject<mapboxgl.Map | null>, focusMid: string | null, marks: MyMapMarks) {
   const [entries, setEntries] = useState<MyMapEntry[]>(loadMyMapEntries);
   const [data, setData] = useState<Record<string, MyMapData>>({});
-  const [status, setStatus] = useState<Record<string, MyMapStatus>>({});
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [selected, setSelected] = useState<MyMapPlace | null>(null);
+  const [checkins, setCheckins] = useState<MyMapCheckin[]>(loadMyMapCheckins);
   const requested = useRef(new Set<string>());
   const added = useRef(new Set<string>());
-  const pendingFit = useRef<string | null>(null);
-  const popup = useRef<mapboxgl.Popup | null>(null);
-
-  useEffect(() => saveMyMapEntries(entries), [entries]);
+  const pendingFit = useRef<string | null>(focusMid);
 
   // 地図のスタイルが読み込まれてからでないとレイヤーを足せない
   useEffect(() => {
@@ -44,16 +67,19 @@ export function useMyMaps(map: MutableRefObject<mapboxgl.Map | null>) {
 
   const load = useCallback(async (mid: string): Promise<MyMapData | null> => {
     requested.current.add(mid);
-    setStatus((s) => ({ ...s, [mid]: 'loading' }));
     try {
       const result = await fetchMyMap(mid);
       setData((d) => ({ ...d, [mid]: result }));
-      setStatus((s) => ({ ...s, [mid]: 'ready' }));
-      setEntries((list) => list.map((e) => (e.mid === mid ? { ...e, name: result.name } : e)));
+      // 元の地図の名前が変わっていたら、保存してある名前も合わせる
+      setEntries((list) => {
+        if (!list.some((e) => e.mid === mid && e.name !== result.name)) return list;
+        const next = list.map((e) => (e.mid === mid ? { ...e, name: result.name } : e));
+        saveMyMapEntries(next);
+        return next;
+      });
       return result;
     } catch (error) {
       console.error('マイマップの読み込みエラー:', error);
-      setStatus((s) => ({ ...s, [mid]: 'error' }));
       return null;
     }
   }, []);
@@ -71,22 +97,17 @@ export function useMyMaps(map: MutableRefObject<mapboxgl.Map | null>) {
     if (!m || e.originalEvent.target !== m.getCanvas()) return;
     const props = e.features?.[0]?.properties;
     if (!props) return;
-
-    const content = document.createElement('div');
-    content.style.cssText = 'max-width:240px;max-height:200px;overflow-y:auto;font-size:13px;color:#374151;';
-    const title = document.createElement('div');
-    title.style.cssText = 'font-weight:600;margin-right:16px;';
-    title.textContent = props.name || '（名前なし）';
-    content.appendChild(title);
-    if (props.description) {
-      const body = document.createElement('div');
-      body.style.cssText = 'margin-top:6px;white-space:pre-wrap;word-break:break-word;';
-      body.textContent = props.description;
-      content.appendChild(body);
-    }
-
-    popup.current?.remove();
-    popup.current = new mapboxgl.Popup({ offset: 10 }).setLngLat(e.lngLat).setDOMContent(content).addTo(m);
+    const feature = e.features?.[0];
+    const point = feature?.geometry.type === 'Point' ? feature.geometry.coordinates : null;
+    setSelected({
+      name: props.name || '（名前なし）',
+      description: props.description || '',
+      mapName: props.mapName || '',
+      longitude: point ? point[0] : e.lngLat.lng,
+      latitude: point ? point[1] : e.lngLat.lat,
+      mid: props.mid || '',
+      placeKey: props.placeKey || null,
+    });
   }, []);
 
   // 登録と表示の状態を、地図のレイヤーに反映する
@@ -104,16 +125,29 @@ export function useMyMaps(map: MutableRefObject<mapboxgl.Map | null>) {
       }
       if (m.getSource(sourceId(mid))) m.removeSource(sourceId(mid));
       added.current.delete(mid);
-      popup.current?.remove();
     }
 
     for (const mid of wanted) {
-      const geojson = data[mid].geojson;
+      // どの地図の場所かを出せるように、地図の名前を各図形に持たせる
+      const geojson: GeoJSON.FeatureCollection = {
+        type: 'FeatureCollection',
+        features: data[mid].geojson.features.map((f) => ({
+          ...f,
+          properties: {
+            ...f.properties,
+            mapName: data[mid].name,
+            mid,
+            placeKey: f.geometry.type === 'Point'
+              ? myMapPlaceKey(mid, f.properties?.name ?? '', f.geometry.coordinates[0], f.geometry.coordinates[1])
+              : null,
+          },
+        })),
+      };
       const existing = m.getSource(sourceId(mid)) as mapboxgl.GeoJSONSource | undefined;
       if (existing) {
         existing.setData(geojson);
       } else {
-        const [fill, line, circle, label] = layerIds(mid);
+        const [fill, line, circle, label, checked, check] = layerIds(mid);
         m.addSource(sourceId(mid), { type: 'geojson', data: geojson });
         m.addLayer({
           id: fill, type: 'fill', source: sourceId(mid),
@@ -150,7 +184,19 @@ export function useMyMaps(map: MutableRefObject<mapboxgl.Map | null>) {
           },
           paint: { 'text-color': '#374151', 'text-halo-color': '#ffffff', 'text-halo-width': 1.5 },
         });
-        for (const id of [fill, line, circle]) m.on('click', id, handleClick);
+        // チェックイン済みの印。対象と色は下の effect で入れる
+        m.addLayer({
+          id: checked, type: 'circle', source: sourceId(mid),
+          filter: ['==', ['get', 'placeKey'], ''],
+          paint: { 'circle-radius': 9, 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2 },
+        });
+        m.addLayer({
+          id: check, type: 'symbol', source: sourceId(mid),
+          filter: ['==', ['get', 'placeKey'], ''],
+          layout: { 'text-field': '✓', 'text-size': 13, 'text-allow-overlap': true, 'text-ignore-placement': true },
+          paint: { 'text-color': '#ffffff' },
+        });
+        for (const id of [fill, line, circle, checked]) m.on('click', id, handleClick);
         added.current.add(mid);
       }
 
@@ -162,36 +208,56 @@ export function useMyMaps(map: MutableRefObject<mapboxgl.Map | null>) {
     }
   }, [mapLoaded, entries, data, handleClick]);
 
-  // URL から地図を追加する。うまくいかなければ、画面に出す文言を返す
-  const add = useCallback(async (input: string): Promise<string | null> => {
-    const mid = extractMyMapId(input);
-    if (!mid) return 'マイマップの URL を確認してください（「mid=」を含む URL が必要です）';
-    if (entries.some((e) => e.mid === mid)) return 'この地図は追加済みです';
-    const result = await load(mid);
-    if (!result) {
-      requested.current.delete(mid);
-      return '読み込めませんでした。マイマップの共有が「リンクを知っている全員」になっているか確認してください';
+  // チェックイン済みの場所に印を付ける。今日の分は緑、それより前は青（スポットの印と同じ色）
+  useEffect(() => {
+    const m = map.current;
+    if (!m || !mapLoaded) return;
+    const today = jstToday();
+    const todayKeys = new Set<string>();
+    const pastKeys = new Set<string>();
+    for (const c of checkins) {
+      (jstDateOf(c.checked_in_at) === today ? todayKeys : pastKeys).add(c.placeKey);
     }
-    pendingFit.current = mid;
-    setEntries((list) => [...list, { mid, name: result.name, visible: true }]);
-    return null;
-  }, [entries, load]);
+    const shownToday = marks.today ? Array.from(todayKeys) : [];
+    const shownPast = marks.all ? Array.from(pastKeys).filter((k) => !shownToday.includes(k)) : [];
+    const filter: mapboxgl.FilterSpecification =
+      ['in', ['get', 'placeKey'], ['literal', [...shownToday, ...shownPast]]];
+    for (const mid of added.current) {
+      const [, , , , checked, check] = layerIds(mid);
+      if (!m.getLayer(checked)) continue;
+      m.setFilter(checked, filter);
+      m.setFilter(check, filter);
+      m.setPaintProperty(checked, 'circle-color',
+        ['case', ['in', ['get', 'placeKey'], ['literal', shownToday]], TODAY_COLOR, PAST_COLOR]);
+    }
+  }, [mapLoaded, entries, data, checkins, marks.today, marks.all]);
 
-  const toggle = useCallback((mid: string) => {
-    setEntries((list) => list.map((e) => (e.mid === mid ? { ...e, visible: !e.visible } : e)));
+  const clearSelected = useCallback(() => setSelected(null), []);
+
+  // 選んだ場所にチェックインする。保存できたら true
+  const checkin = useCallback((place: MyMapPlace): boolean => {
+    if (!place.placeKey) return false;
+    const next: MyMapCheckin[] = [...loadMyMapCheckins(), {
+      placeKey: place.placeKey,
+      mid: place.mid,
+      mapName: place.mapName,
+      name: place.name,
+      longitude: place.longitude,
+      latitude: place.latitude,
+      checked_in_at: new Date().toISOString(),
+    }];
+    if (!saveMyMapCheckins(next)) return false;
+    setCheckins(next);
+    return true;
   }, []);
 
-  const remove = useCallback((mid: string) => {
-    requested.current.delete(mid);
-    setEntries((list) => list.filter((e) => e.mid !== mid));
-  }, []);
+  // 選んでいる場所の状態：today = 今日チェックイン済み、past = 前にチェックインしたことがある
+  const selectedStatus: 'none' | 'today' | 'past' = (() => {
+    if (!selected?.placeKey) return 'none';
+    const mine = checkins.filter((c) => c.placeKey === selected.placeKey);
+    if (mine.some((c) => jstDateOf(c.checked_in_at) === jstToday())) return 'today';
+    return mine.length > 0 ? 'past' : 'none';
+  })();
 
-  const reload = useCallback((mid: string) => { load(mid); }, [load]);
-
-  const focus = useCallback((mid: string) => {
-    const bounds = data[mid] && myMapBounds(data[mid].geojson);
-    if (bounds) map.current?.fitBounds(bounds, { padding: 60, maxZoom: 16, duration: 1000 });
-  }, [data]);
-
-  return { entries, status, add, toggle, remove, reload, focus };
+  return { selected, clearSelected, checkin, selectedStatus };
 }
