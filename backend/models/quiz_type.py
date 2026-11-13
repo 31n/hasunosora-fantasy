@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 from typing import Optional, Dict, List
 from utils.dynamodb import get_table
 from config import config
+from models.spot import Spot
 
 
 class QuizType:
@@ -34,10 +35,13 @@ class QuizType:
         self.updated_at = datetime.now(timezone.utc).isoformat()
         table = get_table(config.QUIZ_TYPES_TABLE)
         table.put_item(Item=self.to_dict())
+        # 端末はマスターバージョンが変わったときだけマスタを取り直すので、クイズタイプの変更でも更新する
+        Spot._update_master_version()
 
     def delete(self):
         table = get_table(config.QUIZ_TYPES_TABLE)
         table.delete_item(Key={'quiz_type_id': self.quiz_type_id})
+        Spot._update_master_version()
 
     @staticmethod
     def get(quiz_type_id: str) -> Optional['QuizType']:

@@ -3,6 +3,7 @@ from typing import Optional, Dict, List
 from decimal import Decimal
 from utils.dynamodb import get_table
 from config import config
+from models.spot import Spot
 
 class Area:
     def __init__(self, area_id: str, area_name: str, 
@@ -88,6 +89,9 @@ class Area:
         self.updated_at = datetime.now(timezone.utc).isoformat()
         table = get_table(config.AREAS_TABLE)
         table.put_item(Item=self.to_dict(for_dynamodb=True))
+        # 端末はマスターバージョンが変わったときだけマスタを取り直すので、エリアの変更でも更新する
+        # （論理削除の delete も save を通る）
+        Spot._update_master_version()
     
     @staticmethod
     def get(area_id: str) -> Optional['Area']:
