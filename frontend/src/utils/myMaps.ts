@@ -6,6 +6,8 @@ export interface MyMapEntry {
   mid: string;
   name: string;
   visible: boolean;
+  // 表示フィルターで隠しているレイヤーの名前
+  hiddenLayers?: string[];
 }
 
 export interface MyMapData {
@@ -68,7 +70,12 @@ export function loadMyMapEntries(): MyMapEntry[] {
     if (!Array.isArray(list)) return [];
     return list
       .filter((e) => e && typeof e.mid === 'string' && isValidMid(e.mid))
-      .map((e) => ({ mid: e.mid, name: String(e.name ?? ''), visible: e.visible !== false }));
+      .map((e) => ({
+        mid: e.mid,
+        name: String(e.name ?? ''),
+        visible: e.visible !== false,
+        hiddenLayers: Array.isArray(e.hiddenLayers) ? e.hiddenLayers.filter((l: unknown) => typeof l === 'string') : [],
+      }));
   } catch {
     return [];
   }
@@ -234,4 +241,37 @@ export function myMapBounds(geojson: GeoJSON.FeatureCollection): [[number, numbe
     if (feature.geometry && 'coordinates' in feature.geometry) visit(feature.geometry.coordinates);
   }
   return Number.isFinite(west) ? [[west, south], [east, north]] : null;
+}
+
+// レイヤーの色が似ていて見分けにくい地図に使う色。スポットや、チェックイン済み・選択中の色とは別のものにする
+const LAYER_PALETTE = ['#e11d48', '#7c3aed', '#92400e', '#4338ca', '#db2777', '#4d7c0f', '#0e7490', '#475569', '#a21caf', '#1e3a8a', '#b91c1c', '#065f46'];
+
+function colorDistance(a: string, b: string): number {
+  const rgb = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  const [x, y] = [rgb(a), rgb(b)];
+  return Math.hypot(x[0] - y[0], x[1] - y[1], x[2] - y[2]);
+}
+
+// レイヤーごとの色を決める。元の地図の色（そのレイヤーでいちばん多い色）で見分けられるならそれを使い、
+// 似た色のレイヤーがあるとき（元の地図がアイコンの形で区別している場合など）は、こちらで色を割り当てる。
+// overridden が true なら、ピンの色もこの色に置き換える
+export function myMapLayerColors(geojson: GeoJSON.FeatureCollection): { colors: Map<string, string>; overridden: boolean } {
+  const counts = new Map<string, Map<string, number>>();
+  for (const f of geojson.features) {
+    const layer = (f.properties?.layer as string) ?? '';
+    const color = (f.properties?.color as string) ?? DEFAULT_COLOR;
+    const byColor = counts.get(layer) ?? new Map<string, number>();
+    byColor.set(color, (byColor.get(color) ?? 0) + 1);
+    counts.set(layer, byColor);
+  }
+  const colors = new Map<string, string>();
+  for (const [layer, byColor] of counts) {
+    colors.set(layer, Array.from(byColor.entries()).sort((a, b) => b[1] - a[1])[0][0]);
+  }
+  const list = Array.from(colors.values());
+  const overridden = list.some((a, i) => list.slice(i + 1).some((b) => colorDistance(a, b) < 80));
+  if (overridden) {
+    Array.from(colors.keys()).forEach((layer, i) => colors.set(layer, LAYER_PALETTE[i % LAYER_PALETTE.length]));
+  }
+  return { colors, overridden };
 }

@@ -1267,6 +1267,51 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
               </select>
             </div>
             
+            {/* マイマップのレイヤー（凡例を兼ねた表示の切り替え） */}
+            {myMaps.legend.map((item) => (
+              <div key={item.mid} style={{ marginBottom: '16px' }}>
+                <div style={{
+                  fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '8px',
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+                }}>
+                  マイマップ：{item.name}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {item.layers.map((layer) => (
+                    <label key={layer.layer} style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      fontSize: '14px',
+                      color: '#374151',
+                      cursor: 'pointer',
+                      padding: '8px 12px',
+                      backgroundColor: '#f9fafb',
+                      borderRadius: '8px',
+                      border: '2px solid #e5e7eb',
+                      opacity: layer.hidden ? 0.6 : 1
+                    }}>
+                      <input
+                        type="checkbox"
+                        checked={!layer.hidden}
+                        onChange={() => myMaps.toggleLayer(item.mid, layer.layer)}
+                        style={{ width: '20px', height: '20px', cursor: 'pointer', flexShrink: 0 }}
+                      />
+                      <div style={{
+                        width: '20px', height: '20px', borderRadius: '50%', flexShrink: 0,
+                        backgroundColor: layer.color, border: '2px solid white',
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.2)', boxSizing: 'border-box'
+                      }} />
+                      <span style={{ flex: 1, minWidth: 0, wordBreak: 'break-word' }}>
+                        {layer.layer || '（レイヤー名なし）'}
+                      </span>
+                      <span style={{ fontSize: '12px', color: '#6b7280', flexShrink: 0 }}>{layer.count}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ))}
+
             {/* 凡例 */}
             <div style={{
               marginTop: '20px',
@@ -1314,21 +1359,6 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
                   <span style={{ fontSize: '14px', color: '#374151' }}>すべてのスポット</span>
                 </div>
               )}
-              {myMaps.legend.map((item) => (
-                <div key={item.mid} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
-                  <div style={{
-                    width: '20px', height: '20px', borderRadius: '50%', flexShrink: 0,
-                    backgroundColor: item.color, border: '2px solid white',
-                    boxShadow: '0 1px 2px rgba(0,0,0,0.2)'
-                  }} />
-                  <span style={{
-                    fontSize: '14px', color: '#374151', minWidth: 0,
-                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
-                  }}>
-                    マイマップ：{item.name}
-                  </span>
-                </div>
-              ))}
               {showTodayCheckinMark && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
                   <div style={{

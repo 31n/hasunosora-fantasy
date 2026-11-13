@@ -6,6 +6,7 @@ import {
   loadMyMapCheckins,
   loadMyMapEntries,
   myMapBounds,
+  myMapLayerColors,
   myMapPlaceKey,
   saveMyMapCheckins,
   saveMyMapEntries,
@@ -143,13 +144,17 @@ export function useMyMaps(map: MutableRefObject<mapboxgl.Map | null>, focusMid: 
     }
 
     for (const mid of wanted) {
-      // どの地図の場所かを出せるように、地図の名前を各図形に持たせる
+      const hiddenLayers = entries.find((e) => e.mid === mid)?.hiddenLayers ?? [];
+      const layerColors = myMapLayerColors(data[mid].geojson);
+      // どの地図の場所かを出せるように、地図の名前を各図形に持たせる。隠しているレイヤーは除く
       const geojson: GeoJSON.FeatureCollection = {
         type: 'FeatureCollection',
         features: data[mid].geojson.features.map((f, index) => ({
           ...f,
           properties: {
             ...f.properties,
+            // レイヤーの色が似ている地図は、凡例と同じ色に置き換える
+            ...(layerColors.overridden ? { color: layerColors.colors.get(f.properties?.layer ?? '') } : {}),
             mapName: data[mid].name,
             mid,
             fid: `${mid}#${index}`,
@@ -157,7 +162,7 @@ export function useMyMaps(map: MutableRefObject<mapboxgl.Map | null>, focusMid: 
               ? myMapPlaceKey(mid, f.properties?.name ?? '', f.geometry.coordinates[0], f.geometry.coordinates[1])
               : null,
           },
-        })),
+        })).filter((f) => !hiddenLayers.includes(f.properties.layer ?? '')),
       };
       const existing = m.getSource(sourceId(mid)) as mapboxgl.GeoJSONSource | undefined;
       if (existing) {
@@ -280,17 +285,40 @@ export function useMyMaps(map: MutableRefObject<mapboxgl.Map | null>, focusMid: 
     }
   }, [mapLoaded, entries, data, selected]);
 
-  // フィルター画面の凡例に出す、表示中の地図。色はその地図でいちばん多いピンの色
+  // フィルター画面に出す、表示中の地図とそのレイヤー。色はそのレイヤーでいちばん多い色
   const legend = useMemo(() => entries.filter((e) => e.visible && data[e.mid]).map((e) => {
+    const { colors } = myMapLayerColors(data[e.mid].geojson);
     const counts = new Map<string, number>();
     for (const f of data[e.mid].geojson.features) {
-      if (f.geometry.type !== 'Point') continue;
-      const color = f.properties?.color as string;
-      counts.set(color, (counts.get(color) ?? 0) + 1);
+      const layer = (f.properties?.layer as string) ?? '';
+      counts.set(layer, (counts.get(layer) ?? 0) + 1);
     }
-    const color = Array.from(counts.entries()).sort((a, b) => b[1] - a[1])[0]?.[0] ?? '#ea4335';
-    return { mid: e.mid, name: data[e.mid].name, color };
+    return {
+      mid: e.mid,
+      name: data[e.mid].name,
+      layers: Array.from(colors.entries()).map(([layer, color]) => ({
+        layer,
+        color,
+        count: counts.get(layer) ?? 0,
+        hidden: (e.hiddenLayers ?? []).includes(layer),
+      })),
+    };
   }), [entries, data]);
+
+  // レイヤーの表示・非表示を切り替える
+  const toggleLayer = useCallback((mid: string, layer: string) => {
+    setEntries((list) => {
+      const next = list.map((e) => {
+        if (e.mid !== mid) return e;
+        const hidden = e.hiddenLayers ?? [];
+        return { ...e, hiddenLayers: hidden.includes(layer) ? hidden.filter((l) => l !== layer) : [...hidden, layer] };
+      });
+      saveMyMapEntries(next);
+      return next;
+    });
+    // 隠したレイヤーの場所を選んだままにしない
+    setSelected((place) => (place && place.mid === mid && place.layer === layer ? null : place));
+  }, []);
 
   const clearSelected = useCallback(() => setSelected(null), []);
 
@@ -319,5 +347,5 @@ export function useMyMaps(map: MutableRefObject<mapboxgl.Map | null>, focusMid: 
     return mine.length > 0 ? 'past' : 'none';
   })();
 
-  return { selected, clearSelected, checkin, selectedStatus, legend };
+  return { selected, clearSelected, checkin, selectedStatus, legend, toggleLayer };
 }
