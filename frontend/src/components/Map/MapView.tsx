@@ -15,6 +15,8 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { toast } from '../../utils/toast';
 import LocationPermissionDialog, { type LocationDialogMode } from './LocationPermissionDialog';
 import IconLabel from '../Common/IconLabel';
+import MyMapsSettings from './MyMapsSettings';
+import { useMyMaps } from '../../hooks/useMyMaps';
 import LightbulbOutlinedIcon from '@mui/icons-material/LightbulbOutlined';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import LocationOffIcon from '@mui/icons-material/LocationOff';
@@ -607,6 +609,9 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
       map.current?.remove();
     };
   }, []); // 初回のみ実行
+
+  // Google マイマップの重ね表示（地図の初期化のあとに呼ぶ）
+  const myMaps = useMyMaps(map);
 
   useEffect(() => {
     return () => {
@@ -1250,6 +1255,16 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
               </select>
             </div>
             
+            <MyMapsSettings
+              entries={myMaps.entries}
+              status={myMaps.status}
+              onAdd={myMaps.add}
+              onToggle={myMaps.toggle}
+              onRemove={myMaps.remove}
+              onReload={myMaps.reload}
+              onFocus={(mid) => { myMaps.focus(mid); setShowFilter(false); }}
+            />
+
             {/* 凡例 */}
             <div style={{
               marginTop: '20px',
