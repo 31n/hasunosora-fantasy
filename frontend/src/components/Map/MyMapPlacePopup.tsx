@@ -76,9 +76,28 @@ export default function MyMapPlacePopup({ place, distance, status, onCheckin, on
           </button>
         </div>
 
-        {place.mapName && (
-          <div style={{ marginBottom: '12px' }}>
-            <span style={{
+        {(place.mapName || place.layer) && (
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '12px' }}>
+            {/* レイヤー名は、スポットのジャンルと同じ見た目で出す */}
+            {place.layer && (
+              <span style={{
+                display: 'inline-block',
+                maxWidth: '100%',
+                padding: '4px 12px',
+                backgroundColor: '#fef3c7',
+                color: '#92400e',
+                borderRadius: '12px',
+                fontSize: '12px',
+                fontWeight: '600',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                boxSizing: 'border-box'
+              }}>
+                {place.layer}
+              </span>
+            )}
+            {place.mapName && <span style={{
               display: 'inline-block',
               maxWidth: '100%',
               padding: '4px 12px',
@@ -93,7 +112,7 @@ export default function MyMapPlacePopup({ place, distance, status, onCheckin, on
               boxSizing: 'border-box'
             }}>
               マイマップ：{place.mapName}
-            </span>
+            </span>}
           </div>
         )}
 

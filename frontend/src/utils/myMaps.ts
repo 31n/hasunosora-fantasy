@@ -178,8 +178,11 @@ export function parseKml(text: string): MyMapData {
   const features: GeoJSON.Feature[] = [];
   for (const placemark of Array.from(doc.getElementsByTagName('Placemark'))) {
     const style = resolveStyle(childText(placemark, 'styleUrl'));
+    // マイマップの「レイヤー」は、KML ではピンを入れた Folder になる。その名前をジャンルとして使う
+    const folder = placemark.parentElement?.localName === 'Folder' ? placemark.parentElement : null;
     const base = {
       name: childText(placemark, 'name'),
+      layer: folder ? childText(folder, 'name') : '',
       description: htmlToText(childText(placemark, 'description')),
     };
     const push = (geometry: GeoJSON.Geometry, color: string | undefined) => {

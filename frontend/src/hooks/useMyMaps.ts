@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type MutableRefObject } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
 import mapboxgl from 'mapbox-gl';
 import {
   fetchMyMap,
@@ -20,9 +20,13 @@ export interface MyMapPlace {
   name: string;
   description: string;
   mapName: string;
+  // マイマップのレイヤー名（ジャンルとして出す）。なければ空
+  layer: string;
   longitude: number;
   latitude: number;
   mid: string;
+  // 地図の上でこの図形を見分けるための番号（強調表示に使う）
+  fid: string;
   // ピン（点）のときだけ入る。線や面はチェックインの対象にしない
   placeKey: string | null;
 }
@@ -33,11 +37,20 @@ export interface MyMapMarks {
   all: boolean;
 }
 
+// 色と大きさは、スポットのピン（直径 30px、選択中はオレンジで大きめ）にそろえる
 const TODAY_COLOR = '#16a34a';
+const TODAY_BORDER = '#15803d';
 const PAST_COLOR = '#0ea5e9';
+const PAST_BORDER = '#0284c7';
+const SELECTED_COLOR = '#f97316';
+const SELECTED_BORDER = '#ea580c';
+const PIN_RADIUS = 12;
+const PIN_STROKE = 3;
+const NO_MATCH: mapboxgl.FilterSpecification = ['==', ['get', 'fid'], ''];
 
 const sourceId = (mid: string) => `mymap-${mid}`;
-const layerIds = (mid: string) => ['fill', 'line', 'circle', 'label', 'checked', 'check'].map((kind) => `mymap-${mid}-${kind}`);
+const layerIds = (mid: string) =>
+  ['fill', 'line', 'selectedLine', 'circle', 'label', 'checked', 'check', 'selected'].map((kind) => `mymap-${mid}-${kind}`);
 
 // Google マイマップを地図に重ねる。登録（マイページで行う）の一覧は端末内にあり、中身は開くたびに Google から取り直す
 // focusMid を渡すと、その地図が読み込めたときに全体が収まる位置へ移動する
@@ -103,9 +116,11 @@ export function useMyMaps(map: MutableRefObject<mapboxgl.Map | null>, focusMid: 
       name: props.name || '（名前なし）',
       description: props.description || '',
       mapName: props.mapName || '',
+      layer: props.layer || '',
       longitude: point ? point[0] : e.lngLat.lng,
       latitude: point ? point[1] : e.lngLat.lat,
       mid: props.mid || '',
+      fid: props.fid || '',
       placeKey: props.placeKey || null,
     });
   }, []);
@@ -131,12 +146,13 @@ export function useMyMaps(map: MutableRefObject<mapboxgl.Map | null>, focusMid: 
       // どの地図の場所かを出せるように、地図の名前を各図形に持たせる
       const geojson: GeoJSON.FeatureCollection = {
         type: 'FeatureCollection',
-        features: data[mid].geojson.features.map((f) => ({
+        features: data[mid].geojson.features.map((f, index) => ({
           ...f,
           properties: {
             ...f.properties,
             mapName: data[mid].name,
             mid,
+            fid: `${mid}#${index}`,
             placeKey: f.geometry.type === 'Point'
               ? myMapPlaceKey(mid, f.properties?.name ?? '', f.geometry.coordinates[0], f.geometry.coordinates[1])
               : null,
@@ -147,7 +163,7 @@ export function useMyMaps(map: MutableRefObject<mapboxgl.Map | null>, focusMid: 
       if (existing) {
         existing.setData(geojson);
       } else {
-        const [fill, line, circle, label, checked, check] = layerIds(mid);
+        const [fill, line, selectedLine, circle, label, checked, check, selectedPin] = layerIds(mid);
         m.addSource(sourceId(mid), { type: 'geojson', data: geojson });
         m.addLayer({
           id: fill, type: 'fill', source: sourceId(mid),
@@ -160,14 +176,21 @@ export function useMyMaps(map: MutableRefObject<mapboxgl.Map | null>, focusMid: 
           layout: { 'line-cap': 'round', 'line-join': 'round' },
           paint: { 'line-color': ['get', 'color'], 'line-width': 3 },
         });
+        // 選んだ線・面の強調。対象は下の effect で入れる
+        m.addLayer({
+          id: selectedLine, type: 'line', source: sourceId(mid),
+          filter: NO_MATCH,
+          layout: { 'line-cap': 'round', 'line-join': 'round' },
+          paint: { 'line-color': SELECTED_COLOR, 'line-width': 6 },
+        });
         m.addLayer({
           id: circle, type: 'circle', source: sourceId(mid),
           filter: ['==', ['geometry-type'], 'Point'],
           paint: {
             'circle-color': ['get', 'color'],
-            'circle-radius': 7,
+            'circle-radius': PIN_RADIUS,
             'circle-stroke-color': '#ffffff',
-            'circle-stroke-width': 2,
+            'circle-stroke-width': PIN_STROKE,
           },
         });
         m.addLayer({
@@ -178,7 +201,7 @@ export function useMyMaps(map: MutableRefObject<mapboxgl.Map | null>, focusMid: 
             'text-field': ['get', 'name'],
             'text-size': 11,
             'text-anchor': 'top',
-            'text-offset': [0, 0.9],
+            'text-offset': [0, 1.5],
             'text-max-width': 9,
             'text-optional': true,
           },
@@ -187,16 +210,27 @@ export function useMyMaps(map: MutableRefObject<mapboxgl.Map | null>, focusMid: 
         // チェックイン済みの印。対象と色は下の effect で入れる
         m.addLayer({
           id: checked, type: 'circle', source: sourceId(mid),
-          filter: ['==', ['get', 'placeKey'], ''],
-          paint: { 'circle-radius': 9, 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2 },
+          filter: NO_MATCH,
+          paint: { 'circle-radius': PIN_RADIUS, 'circle-stroke-width': PIN_STROKE },
         });
         m.addLayer({
           id: check, type: 'symbol', source: sourceId(mid),
-          filter: ['==', ['get', 'placeKey'], ''],
-          layout: { 'text-field': '✓', 'text-size': 13, 'text-allow-overlap': true, 'text-ignore-placement': true },
+          filter: NO_MATCH,
+          layout: { 'text-field': '✓', 'text-size': 16, 'text-allow-overlap': true, 'text-ignore-placement': true },
           paint: { 'text-color': '#ffffff' },
         });
-        for (const id of [fill, line, circle, checked]) m.on('click', id, handleClick);
+        // 選んだピンの強調。対象は下の effect で入れる
+        m.addLayer({
+          id: selectedPin, type: 'circle', source: sourceId(mid),
+          filter: NO_MATCH,
+          paint: {
+            'circle-color': SELECTED_COLOR,
+            'circle-radius': 17,
+            'circle-stroke-color': SELECTED_BORDER,
+            'circle-stroke-width': 4,
+          },
+        });
+        for (const id of [fill, line, circle, checked, selectedPin]) m.on('click', id, handleClick);
         added.current.add(mid);
       }
 
@@ -223,14 +257,40 @@ export function useMyMaps(map: MutableRefObject<mapboxgl.Map | null>, focusMid: 
     const filter: mapboxgl.FilterSpecification =
       ['in', ['get', 'placeKey'], ['literal', [...shownToday, ...shownPast]]];
     for (const mid of added.current) {
-      const [, , , , checked, check] = layerIds(mid);
+      const [, , , , , checked, check] = layerIds(mid);
       if (!m.getLayer(checked)) continue;
       m.setFilter(checked, filter);
       m.setFilter(check, filter);
-      m.setPaintProperty(checked, 'circle-color',
-        ['case', ['in', ['get', 'placeKey'], ['literal', shownToday]], TODAY_COLOR, PAST_COLOR]);
+      const isToday: mapboxgl.ExpressionSpecification = ['in', ['get', 'placeKey'], ['literal', shownToday]];
+      m.setPaintProperty(checked, 'circle-color', ['case', isToday, TODAY_COLOR, PAST_COLOR]);
+      m.setPaintProperty(checked, 'circle-stroke-color', ['case', isToday, TODAY_BORDER, PAST_BORDER]);
     }
   }, [mapLoaded, entries, data, checkins, marks.today, marks.all]);
+
+  // 選んでいる場所を強調する（スポットの選択中と同じオレンジ）
+  useEffect(() => {
+    const m = map.current;
+    if (!m || !mapLoaded) return;
+    const match: mapboxgl.FilterSpecification = ['==', ['get', 'fid'], selected?.fid ?? ''];
+    for (const mid of added.current) {
+      const [, , selectedLine, , , , , selectedPin] = layerIds(mid);
+      if (!m.getLayer(selectedPin)) continue;
+      m.setFilter(selectedPin, ['all', ['==', ['geometry-type'], 'Point'], match]);
+      m.setFilter(selectedLine, ['all', ['!=', ['geometry-type'], 'Point'], match]);
+    }
+  }, [mapLoaded, entries, data, selected]);
+
+  // フィルター画面の凡例に出す、表示中の地図。色はその地図でいちばん多いピンの色
+  const legend = useMemo(() => entries.filter((e) => e.visible && data[e.mid]).map((e) => {
+    const counts = new Map<string, number>();
+    for (const f of data[e.mid].geojson.features) {
+      if (f.geometry.type !== 'Point') continue;
+      const color = f.properties?.color as string;
+      counts.set(color, (counts.get(color) ?? 0) + 1);
+    }
+    const color = Array.from(counts.entries()).sort((a, b) => b[1] - a[1])[0]?.[0] ?? '#ea4335';
+    return { mid: e.mid, name: data[e.mid].name, color };
+  }), [entries, data]);
 
   const clearSelected = useCallback(() => setSelected(null), []);
 
@@ -259,5 +319,5 @@ export function useMyMaps(map: MutableRefObject<mapboxgl.Map | null>, focusMid: 
     return mine.length > 0 ? 'past' : 'none';
   })();
 
-  return { selected, clearSelected, checkin, selectedStatus };
+  return { selected, clearSelected, checkin, selectedStatus, legend };
 }

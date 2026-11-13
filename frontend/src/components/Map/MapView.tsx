@@ -1314,6 +1314,21 @@ export default function MapView({ user, spots, areas, quizTypes = [] }: MapViewP
                   <span style={{ fontSize: '14px', color: '#374151' }}>すべてのスポット</span>
                 </div>
               )}
+              {myMaps.legend.map((item) => (
+                <div key={item.mid} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
+                  <div style={{
+                    width: '20px', height: '20px', borderRadius: '50%', flexShrink: 0,
+                    backgroundColor: item.color, border: '2px solid white',
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.2)'
+                  }} />
+                  <span style={{
+                    fontSize: '14px', color: '#374151', minWidth: 0,
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+                  }}>
+                    マイマップ：{item.name}
+                  </span>
+                </div>
+              ))}
               {showTodayCheckinMark && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
                   <div style={{
